@@ -1,0 +1,98 @@
+<!DOCTYPE html>
+<html lang="hi">
+<head>
+  <meta charset="UTF-8">
+  <title>बिहार मौसम पूर्वानुमान | Bihar Weather Forecast</title>
+  <link rel="stylesheet" href="css/style.css">
+  <link href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;500;700&display=swap" rel="stylesheet">
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>बिहार मौसम पूर्वानुमान प्रणाली</h1>
+      <h2>Bihar Weather Forecast System</h2>
+    </header>
+
+    <main>
+      <div class="control-panel">
+        <!-- Mode -->
+        <div class="district-selection">
+          <label for="selectionMode">चयन मोड / Selection Mode:</label>
+          <select id="selectionMode" class="same-size">
+            <option value="single">एकल जिला / Single District</option>
+            <option value="multiple">एकाधिक जिला / Multiple Districts</option>
+            <option value="regional">क्षेत्रीय समूह / Regional Groups</option>
+          </select>
+        </div>
+
+        <!-- Single -->
+        <div id="singleDistrict" class="selection-container">
+          <label for="districtSelect">जिला चुनें / Select District:</label>
+          <select id="districtSelect" class="same-size">
+            <option value="">-- जिला चुनें --</option>
+          </select>
+        </div>
+
+        <!-- Multiple -->
+        <div id="multipleDistricts" class="selection-container" style="display:none">
+          <label>एकाधिक जिले चुनें / Select Multiple Districts:</label>
+          <div class="district-grid" id="districtGrid"></div>
+          <button type="button" class="btn-secondary same-size" onclick="selectAllDistricts()">सभी चुनें</button>
+          <button type="button" class="btn-secondary same-size" onclick="clearDistrictSelection()">साफ़ करें</button>
+        </div>
+
+        <!-- Regional -->
+        <div id="regionalGroups" class="selection-container" style="display:none">
+          <label>क्षेत्रीय समूह चुनें / Select Regional Groups:</label>
+          <div class="district-grid" id="regionalGrid"></div>
+        </div>
+
+        <!-- Place count -->
+        <div class="place-count-panel">
+          <label>स्थान की मात्रा / Place count:</label>
+          <select id="globalPlaceCount" class="same-size">
+            <option value="1">एक या दो स्थानों पर (likely at one or two places)</option>
+            <option value="2">कुछ स्थानों (likely at a Few places)</option>
+            <option value="3">अनेक स्थानों पर (likely at a many places)</option>
+            <option value="4">अधिकांश स्थानों पर (likely at a most places)</option>
+          </select>
+        </div>
+
+        <!-- Phenomena -->
+        <div class="weather-phenomena">
+          <h3>मौसम घटनाएँ / Weather Phenomena:</h3>
+          <div id="phenomenaContainer"></div>
+        </div>
+
+        <!-- Buttons -->
+        <div class="action-buttons">
+          <button id="generateForecast" class="btn-primary same-size">पूर्वानुमान तैयार करें</button>
+          <button id="clearSelection" class="btn-secondary same-size">साफ़ करें</button>
+        </div>
+      </div>
+
+      <!-- Output -->
+      <div class="forecast-output" id="forecastOutput">
+        <h3>पूर्वानुमान परिणाम / Forecast Result:</h3>
+        <div id="forecastContent">
+          <p class="placeholder-text">कोई जिला चुने और मौसम घटनाएँ चुनें...</p>
+        </div>
+      </div>
+
+      <!-- Export -->
+      <div class="export-options">
+        <button id="exportText" class="btn-export same-size">टेक्स्ट निर्यात करें</button>
+        <button id="exportPDF" class="btn-export same-size">PDF निर्यात करें</button>
+      </div>
+    </main>
+
+    <footer>
+      <p>© 2024 बिहार मौसम विभाग | विकसित और संचालित: MC Patna</p>
+    </footer>
+  </div>
+
+  <!-- Scripts -->
+  <script src="js/districts.js"></script>
+  <script src="js/main.js"></script>
+</body>
+</html>

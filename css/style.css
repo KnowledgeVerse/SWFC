@@ -1,0 +1,550 @@
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+body {
+    font-family: 'Noto Sans Devanagari', sans-serif;
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    min-height: 100vh;
+    color: #333;
+}
+
+.container {
+    max-width: 1400px;
+    margin: 0 auto;
+    padding: 20px;
+}
+
+header {
+    text-align: center;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+    margin-bottom: 30px;
+}
+
+header h1 {
+    color: #2c3e50;
+    font-size: 2.5em;
+    margin-bottom: 10px;
+}
+
+header h2 {
+    color: #7f8c8d;
+    font-size: 1.8em;
+    font-weight: 400;
+}
+
+main {
+    display: grid;
+    grid-template-columns: 1fr 1fr;
+    gap: 30px;
+    margin-bottom: 30px;
+}
+
+.control-panel {    
+    width: 100%;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.district-selection {
+    margin-bottom: 25px;
+}
+
+.district-selection label {
+    display: block;
+    font-weight: 600;
+    margin-bottom: 10px;
+    color: #2c3e50;
+    font-size: 1.1em;
+}
+
+.district-selection select {
+    width: 100%;
+    padding: 12px;
+    border: 2px solid #ddd;
+    border-radius: 8px;
+    font-size: 16px;
+    background: white;
+    transition: border-color 0.3s;
+}
+
+.district-selection select:focus {
+    outline: none;
+    border-color: #667eea;
+}
+
+.weather-phenomena h3 {
+    margin-bottom: 20px;
+    color: #2c3e50;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 10px;
+}
+
+.phenomena-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+    gap: 15px;
+    margin-bottom: 25px;
+}
+
+.checkbox-container {
+    display: block;
+    position: relative;
+    padding-left: 35px;
+    margin-bottom: 12px;
+    cursor: pointer;
+    font-size: 16px;
+    user-select: none;
+}
+
+.checkbox-container input {
+    position: absolute;
+    opacity: 0;
+    cursor: pointer;
+    height: 0;
+    width: 0;
+}
+
+.checkmark {
+    position: absolute;
+    top: 0;
+    left: 0;
+    height: 25px;
+    width: 25px;
+    background-color: #eee;
+    border-radius: 4px;
+    transition: background-color 0.3s;
+}
+
+.checkbox-container:hover input ~ .checkmark {
+    background-color: #ccc;
+}
+
+.checkbox-container input:checked ~ .checkmark {
+    background-color: #667eea;
+}
+
+.checkmark:after {
+    content: "";
+    position: absolute;
+    display: none;
+}
+
+.checkbox-container input:checked ~ .checkmark:after {
+    display: block;
+}
+
+.checkbox-container .checkmark:after {
+    left: 9px;
+    top: 5px;
+    width: 5px;
+    height: 10px;
+    border: solid white;
+    border-width: 0 3px 3px 0;
+    transform: rotate(45deg);
+}
+
+.checkbox-container small {
+    color: #7f8c8d;
+    font-size: 12px;
+}
+
+.action-buttons {
+    display: flex;
+    gap: 15px;
+    margin-bottom: 20px;
+}
+
+.btn-primary, .btn-secondary, .btn-export {
+    padding: 12px 24px;
+    border: none;
+    border-radius: 8px;
+    font-size: 16px;
+    cursor: pointer;
+    transition: all 0.3s;
+    font-weight: 600;
+}
+
+.btn-primary {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+}
+
+.btn-primary:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+}
+
+.btn-secondary {
+    background: #95a5a6;
+    color: white;
+}
+
+.btn-secondary:hover {
+    background: #7f8c8d;
+}
+
+.map-container {
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+#map {
+    height: 500px;
+    border-radius: 10px;
+}
+
+.forecast-output {
+    width: 100%;
+    grid-column: 1 / -1;
+    background: white;
+    padding: 30px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+.forecast-output h3 {
+    margin-bottom: 20px;
+    color: #2c3e50;
+    border-bottom: 2px solid #667eea;
+    padding-bottom: 10px;
+}
+
+#forecastContent {
+    background: #f8f9fa;
+    padding: 20px;
+    border-radius: 8px;
+    min-height: 150px;
+}
+
+.placeholder-text {
+    color: #7f8c8d;
+    text-align: center;
+    font-style: italic;
+}
+
+.forecast-item {
+    background: white;
+    padding: 15px;
+    margin: 10px 0;
+    border-radius: 8px;
+    border-left: 4px solid #667eea;
+    box-shadow: 0 2px 5px rgba(0,0,0,0.1);
+}
+
+.export-options {
+    grid-column: 1 / -1;
+    display: flex;
+    gap: 15px;
+    justify-content: center;
+}
+
+.btn-export {
+    background: #27ae60;
+    color: white;
+}
+
+.btn-export:hover {
+    background: #229954;
+    transform: translateY(-2px);
+}
+
+footer {
+    text-align: center;
+    background: white;
+    padding: 20px;
+    border-radius: 15px;
+    box-shadow: 0 10px 30px rgba(0,0,0,0.1);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    main {
+        grid-template-columns: 1fr;
+    }
+    
+    header h1 {
+        font-size: 2em;
+    }
+    
+    header h2 {
+        font-size: 1.4em;
+    }
+    
+    .phenomena-grid {
+        grid-template-columns: 1fr;
+    }
+    
+    .action-buttons, .export-options {
+        flex-direction: column;
+    }
+}
+
+/* Loading Animation */
+.loading {
+    display: inline-block;
+    width: 20px;
+    height: 20px;
+    border: 3px solid #f3f3f3;
+    border-top: 3px solid #667eea;
+    border-radius: 50%;
+    animation: spin 1s linear infinite;
+}
+
+@keyframes spin {
+    0% { transform: rotate(0deg); }
+    100% { transform: rotate(360deg); }
+}
+
+/* Add these styles to your existing style.css */
+
+.selection-container {
+    margin: 15px 0;
+    padding: 15px;
+    background: #f8f9fa;
+    border-radius: 8px;
+    border: 1px solid #e9ecef;
+}
+
+.district-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(200px, 1fr));
+    gap: 10px;
+    max-height: 300px;
+    overflow-y: auto;
+    padding: 10px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    margin: 10px 0;
+}
+
+.district-checkbox {
+    display: flex;
+    align-items: center;
+    padding: 8px;
+    background: white;
+    border: 1px solid #ddd;
+    border-radius: 5px;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.district-checkbox:hover {
+    background: #f0f0f0;
+    border-color: #667eea;
+}
+
+.district-checkbox input[type="checkbox"] {
+    margin-right: 8px;
+    transform: scale(1.2);
+}
+
+.regional-group-info {
+    background: #e3f2fd;
+    padding: 15px;
+    border-radius: 8px;
+    border-left: 4px solid #2196f3;
+    margin: 10px 0;
+}
+
+.selected-districts {
+    background: #f1f8e9;
+    padding: 15px;
+    border-radius: 8px;
+    border: 1px solid #c5e1a5;
+    margin-top: 15px;
+}
+
+.selected-districts h4 {
+    color: #2e7d32;
+    margin-bottom: 10px;
+}
+
+.selected-districts ul {
+    list-style: none;
+    padding-left: 0;
+}
+
+.selected-districts li {
+    padding: 5px 0;
+    border-bottom: 1px solid #e0e0e0;
+}
+
+.selected-districts li:last-child {
+    border-bottom: none;
+}
+
+.district-count {
+    background: #667eea;
+    color: white;
+    padding: 5px 10px;
+    border-radius: 15px;
+    font-size: 12px;
+    font-weight: bold;
+}
+
+.selection-mode-toggle {
+    background: #fff3e0;
+    padding: 10px;
+    border-radius: 5px;
+    margin-bottom: 15px;
+}
+
+/* Responsive adjustments */
+@media (max-width: 768px) {
+    .district-grid {
+        grid-template-columns: 1fr;
+        max-height: 250px;
+    }
+}
+
+
+/* ---------- sub-option row ---------- */
+.phenomenon-row{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:12px;
+  padding:10px 12px;
+  margin-bottom:10px;
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:6px;
+}
+.phenomenon-row .main-check{
+  transform:scale(1.3);
+  margin-right:8px;
+}
+.phenomenon-row label{
+  font-weight:600;
+}
+.sub-select{
+  padding:5px 8px;
+  font-size:14px;
+  border:1px solid #ccc;
+  border-radius:4px;
+}
+.wind-speed-select{
+  display:none;
+  margin-left:auto;
+}
+
+/* ---------- regional multi-select ---------- */
+#regionalGrid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(220px,1fr));
+  gap:10px;
+  max-height:280px;
+  overflow-y:auto;
+  padding:10px;
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:6px;
+}
+.regional-checkbox{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:8px;
+  background:#fafafa;
+  border:1px solid #ddd;
+  border-radius:4px;
+  cursor:pointer;
+}
+.regional-checkbox input{
+  transform:scale(1.2);
+}
+
+/* ---------- uniform size for all controls ---------- */
+.same-size,
+select,
+button{
+  font-size: 16px;
+  padding: 8px 12px;
+  border-radius: 6px;
+  border: 1px solid #ccc;
+  font-family: 'Noto Sans Devanagari', sans-serif;
+}
+input[type="checkbox"].same-size{
+  transform: scale(1.3);
+  margin-right: 8px;
+}
+
+/* ---------- sub-option row ---------- */
+.phenomenon-row{
+  display:flex;
+  flex-wrap:wrap;
+  align-items:center;
+  gap:12px;
+  padding:10px 12px;
+  margin-bottom:10px;
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:6px;
+}
+.phenomenon-row label{
+  font-weight:600;
+}
+
+/* ---------- regional/multi district grid ---------- */
+.district-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:10px;
+  max-height:280px;
+  overflow-y:auto;
+  padding:10px;
+  background:#fff;
+  border:1px solid #ddd;
+  border-radius:6px;
+}
+.regional-checkbox, .district-checkbox{
+  display:flex;
+  align-items:center;
+  gap:8px;
+  padding:8px;
+  background:#fafafa;
+  border:1px solid #ddd;
+  border-radius:4px;
+  cursor:pointer;
+}
+
+/* ---------- place count panel ---------- */
+.place-count-panel{
+  margin:15px 0;
+  padding:12px;
+  background:#fff3cd;
+  border-left:4px solid #ffc107;
+  border-radius:4px;
+}
+.place-count-panel label{
+  font-weight:600;
+  margin-right:10px;
+}
+
+/* ---------- action / export buttons ---------- */
+.action-buttons, .export-options{
+  display:flex;
+  gap:15px;
+  margin-top:15px;
+}
+.btn-primary, .btn-secondary, .btn-export{
+  padding:10px 20px;
+  font-weight:600;
+  cursor:pointer;
+  border:none;
+  border-radius:6px;
+}
+.btn-primary{background:#007bff;color:#fff}
+.btn-secondary{background:#6c757d;color:#fff}
+.btn-export{background:#28a745;color:#fff}
