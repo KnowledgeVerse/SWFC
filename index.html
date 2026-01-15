@@ -93,6 +93,26 @@
             <button class="day-tab" onclick="switchDay(5)">Day 5</button>
             <button class="day-tab" onclick="switchDay(6)">Day 6</button>
             <button class="day-tab" onclick="switchDay(7)">Day 7</button>
+            <label
+              class="checkbox-container small-checkbox"
+              style="
+                margin-left: 10px;
+                background: #fff;
+                padding: 5px 10px;
+                border-radius: 15px;
+                border: 1px solid #ddd;
+                display: flex;
+                align-items: center;
+                height: 36px;
+              "
+            >
+              <input type="checkbox" id="multiDaySelectToggle" />
+              <span
+                class="checkmark"
+                style="position: relative; top: 0; left: 0; margin-right: 5px"
+              ></span>
+              Multi-Select
+            </label>
             <button
               id="copyDayData"
               class="day-tab special-feature"
@@ -393,57 +413,34 @@
         ></path>
       </svg>
       <footer class="main-footer">
-        <div class="footer-content">
-          <div class="footer-section">
+        <div
+          class="footer-content"
+          style="flex-direction: column; align-items: center"
+        >
+          <div class="footer-section" style="text-align: center; width: 100%">
             <h3>Bihar Weather Forecast</h3>
             <p class="footer-credit">
               डेटा स्रोत: India Meteorological Department (IMD), Meteorological
-              Centre, Patna
+              Centre, Patna.
             </p>
+            <br />
             <p class="footer-analysis">
-              विश्लेषण एवं प्रस्तुतीकरण: बिहार मौसम पूर्वानुमान प्रणाली
+              बिहार मौसम पूर्वानुमान प्रणाली: विश्लेषण एवं प्रस्तुतीकरण
             </p>
+            <br />
             <div style="margin-top: 15px; margin-bottom: 5px">
               <span style="font-size: 1.8em; font-weight: 800; color: #ff9966"
                 >@ Lal Kamal</span
               >
             </div>
-            <div class="social-links" style="margin: 10px 0">
-              <a
-                href="https://www.facebook.com/lalkamal"
-                target="_blank"
-                aria-label="Facebook"
-                class="social-fb"
-              >
-                <i class="fab fa-facebook"></i>
-              </a>
-              <a
-                href="https://www.instagram.com/lalkamal"
-                target="_blank"
-                aria-label="Instagram"
-                class="social-insta"
-              >
-                <i class="fab fa-instagram"></i>
-              </a>
-              <a
-                href="https://twitter.com/lalkaml007"
-                target="_blank"
-                aria-label="Twitter"
-                class="social-x"
-              >
-                <i class="fab fa-x-twitter"></i>
-              </a>
-              <a
-                href="#"
-                onclick="shareApp()"
-                aria-label="Share"
-                class="social-share"
-              >
-                <i class="fas fa-share-alt"></i>
-              </a>
-            </div>
-            <p class="footer-copy">© Lal Kamal. All Rights Reserved.</p>
-            <p class="visitor-count" title="Total Views">
+            <p class="footer-copy" style="margin-top: 5px; margin-bottom: 15px">
+              All Rights Reserved.
+            </p>
+            <p
+              class="visitor-count"
+              title="Total Views"
+              style="justify-content: center; margin-top: 15px"
+            >
               <i class="fas fa-eye"></i> Visitors:
               <span id="visitorCount">...</span>
             </p>
@@ -452,10 +449,10 @@
           <div
             class="footer-section"
             style="
-              flex: 0 0 auto;
+              width: 100%;
               display: flex;
-              align-items: center;
               justify-content: flex-end;
+              margin-top: 20px;
             "
           >
             <button id="backToTop" class="btn-secondary">

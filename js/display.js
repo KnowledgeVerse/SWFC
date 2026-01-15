@@ -36,6 +36,11 @@ let districtPhenomenaMap = {};
 let currentAudio = new Audio();
 currentAudio.loop = true;
 let isSoundEnabled = false;
+let customImages = [];
+let isImageMode = false;
+let slideDuration = 5000;
+let currentZoom = 1;
+let isGridView = false;
 
 document.addEventListener("DOMContentLoaded", () => {
   initDisplay();
@@ -54,6 +59,7 @@ function initDisplay() {
   if (!root) {
     root = document.createElement("div");
     root.id = "displayRoot";
+    root.className = "display-root-bg";
     document.body.appendChild(root);
   }
 
@@ -61,41 +67,71 @@ function initDisplay() {
   const style = document.createElement("style");
   style.innerHTML = `
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #eef2f3; font-family: sans-serif; }
-    #displayRoot { width: 100%; height: 100%; position: relative; }
+    #displayRoot { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
   `;
   document.head.appendChild(style);
 
+  // Check login status for Admin controls
+  const isAdmin = localStorage.getItem("admin_logged_in") === "true";
+  const speedControlHtml = isAdmin
+    ? `
+        <div class="speed-control-compact">
+            <i class="fas fa-tachometer-alt" title="Speed Graph"></i>
+            <input type="range" id="slideSpeed" min="1" max="20" value="5" oninput="updateSpeed(this.value)" class="glass-slider-compact">
+            <span id="speedVal" style="font-size:0.8em; font-weight:bold; min-width:25px;">5s</span>
+        </div>
+  `
+    : "";
+
   root.innerHTML = `
-        <div class="header-info" style="position:fixed; top:20px; left:20px; z-index:2000; background: rgba(255,255,255,0.9); padding: 10px 20px; border-radius: 50px; box-shadow: 0 5px 15px rgba(0,0,0,0.1);">
-             <div id="dispDateTime" class="info-box" style="font-size: 1.2em; font-weight: bold; color: #2c3e50;"></div>
+    <div class="glass-main-panel">
+        <div class="glass-header-glow">
+            <h1>बिहार मौसम पूर्वानुमान प्रणाली</h1>
+            <h2>Bihar Weather Forecast System</h2>
         </div>
-        <div style="position:fixed; top:80px; left:20px; z-index:2000; background: rgba(255,255,255,0.9); padding: 10px; border-radius: 10px; box-shadow: 0 5px 15px rgba(0,0,0,0.1); display:flex; flex-direction:column; gap:5px;">
-             <label style="display:flex; align-items:center; gap:5px; cursor:pointer; font-weight:bold; color:#2c3e50;">
-                <input type="checkbox" id="dispStreetView" checked onchange="toggleDisplayTiles(this.checked)">
-                Street View
+
+        <div class="glass-toolbar">
+             <label class="glass-btn small-btn" title="Select Images">
+                <i class="fas fa-folder-open"></i> Select
+                <input type="file" id="imgFolderInput" multiple accept="image/*" style="display:none" onchange="handleImageSelect(this)">
              </label>
-             <label style="display:flex; align-items:center; gap:5px; cursor:pointer; font-weight:bold; color:#2c3e50;">
-                <input type="checkbox" id="dispSatelliteView" onchange="toggleDisplaySatellite(this.checked)">
-                Satellite View
-             </label>
+
+             <button class="glass-btn small-btn" onclick="loadFromGitHub()" title="Load from GitHub Repo"><i class="fab fa-github"></i> Online Load</button>
+             
+             <div class="divider"></div>
+             
+             <button class="glass-btn small-btn" onclick="toggleGridView()" title="Grid View">
+                <i class="fas fa-th"></i> Grid
+             </button>
+             
+             <div class="divider"></div>
+
+             <button class="glass-btn small-btn icon-only" onclick="zoomOut()" title="Zoom Out"><i class="fas fa-search-minus"></i></button>
+             <button class="glass-btn small-btn icon-only" onclick="zoomIn()" title="Zoom In"><i class="fas fa-search-plus"></i></button>
+             
+             <div class="divider"></div>
+
+             <button class="glass-btn small-btn icon-only" onclick="prevSlide()" title="Previous"><i class="fas fa-chevron-left"></i></button>
+             <button class="glass-btn small-btn icon-only" onclick="togglePlayPause()" id="playPauseBtn" title="Pause"><i class="fas fa-pause"></i></button>
+             <button class="glass-btn small-btn icon-only" onclick="nextSlide()" title="Next"><i class="fas fa-chevron-right"></i></button>
+
+             ${isAdmin ? `<div class="divider"></div>` + speedControlHtml : ""}
         </div>
-        <div style="position:fixed; top:20px; right:20px; z-index:2000; display: flex; gap: 10px;">
-            <button onclick="toggleSound()" title="Toggle Sound" style="background: rgba(255,255,255,0.9); border: none; padding: 10px; border-radius: 50%; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.1); width: 45px; height: 45px; font-size: 1.2em; color: #2c3e50; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
-                <i class="fas fa-volume-mute" id="soundIcon"></i>
-            </button>
-            <button onclick="togglePlayPause()" title="Pause Slideshow" style="background: rgba(255,255,255,0.9); border: none; padding: 10px; border-radius: 50%; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.1); width: 45px; height: 45px; font-size: 1.2em; color: #2c3e50; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
-                <i class="fas fa-pause" id="playPauseIcon"></i>
-            </button>
-            <button onclick="toggleFullScreen()" title="Toggle Fullscreen" style="background: rgba(255,255,255,0.9); border: none; padding: 10px; border-radius: 50%; cursor: pointer; box-shadow: 0 5px 15px rgba(0,0,0,0.1); width: 45px; height: 45px; font-size: 1.2em; color: #2c3e50; transition: transform 0.2s;" onmouseover="this.style.transform='scale(1.1)'" onmouseout="this.style.transform='scale(1)'">
-                <i class="fas fa-expand" id="fsIcon"></i>
-            </button>
+
+        <div id="displayContentArea" class="display-content-area">
+            <div id="noDataState" class="no-data-state">
+                <div class="pulse-icon"><i class="fas fa-cloud-sun-rain"></i></div>
+                <h2>कोई डेटा उपलब्ध नहीं है</h2>
+                <h3>No Data Available</h3>
+            </div>
+            <div id="imageDisplayContainer" class="image-display-container" style="display:none;">
+                <!-- Images will be injected here -->
+            </div>
+            <div id="nextImagePreview" class="next-image-preview" style="display:none;"></div>
+            <div id="gridViewContainer" class="grid-view-container" style="display:none;"></div>
         </div>
-        <div id="map" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 1;"></div>
-        <div id="contentArea" class="display-container slide-view" style="position: absolute; top: 0; left: 0; width: 100%; height: 100%; z-index: 10; pointer-events: none; display: flex; align-items: center; justify-content: center;"></div>
-    `;
-  updateTime();
-  initMap();
-  setInterval(updateTime, 1000);
+    </div>
+  `;
 }
 
 function updateTime() {
@@ -115,78 +151,88 @@ function updateTime() {
 }
 
 function loadData() {
-  const raw = localStorage.getItem("bihar_weather_data");
-  if (raw) {
-    try {
-      weatherData = JSON.parse(raw);
-    } catch (e) {
-      weatherData = [];
-    }
-  }
-
-  // Ensure we have 7 days of data (even if empty) to run the slideshow
-  if (!Array.isArray(weatherData) || weatherData.length === 0) {
-    weatherData = Array(7).fill({});
-  } else {
-    // Pad with empty objects if less than 7 days
-    while (weatherData.length < 7) weatherData.push({});
-  }
-
-  const ca = document.getElementById("contentArea");
-  if (ca) ca.innerHTML = "";
-  startSlideShow();
+  // Function intentionally left empty to prevent loading map data
+  // as per user request to only show selected images or "No Data".
 }
 
 function startSlideShow() {
   if (slideInterval) clearInterval(slideInterval);
   render(); // Render immediately
+  const count = isImageMode ? customImages.length || 1 : 7;
   slideInterval = setInterval(() => {
-    currentSlide = (currentSlide + 1) % 7;
+    currentSlide = (currentSlide + 1) % count;
     render();
-  }, 5000); // Change slide every 5 seconds
+  }, slideDuration);
 }
 
 function render() {
-  if (!weatherData || weatherData.length === 0) {
+  if (isImageMode) {
+    renderImageSlide();
     return;
   }
+}
 
-  const mapDiv = document.getElementById("map");
-  const header = document.getElementById("slideHeader");
+function handleImageSelect(input) {
+  if (input.files && input.files.length > 0) {
+    customImages = Array.from(input.files).map((file) =>
+      URL.createObjectURL(file)
+    );
+    isImageMode = true;
+    currentSlide = 0;
 
-  if (mapDiv) {
-    mapDiv.style.transition = "opacity 0.5s ease-in-out";
-    mapDiv.style.opacity = "0";
+    document.getElementById("noDataState").style.display = "none";
+    const container = document.getElementById("imageDisplayContainer");
+    document.getElementById("gridViewContainer").style.display = "none";
+    document.getElementById("nextImagePreview").style.display = "block";
+    container.style.display = "flex";
+    container.innerHTML = ""; // Clear previous images
+
+    startSlideShow();
   }
-  if (header) {
-    header.style.transition = "opacity 0.5s ease-in-out";
-    header.style.opacity = "0";
-  }
+}
 
-  setTimeout(() => {
-    const dayData = weatherData[currentSlide];
-    const dayPhenomena = new Set();
+function renderImageSlide() {
+  if (customImages.length === 0) return;
 
-    // Update map data
-    districtPhenomenaMap = {};
-    if (dayData) {
-      for (const [id, list] of Object.entries(dayData)) {
-        districtPhenomenaMap[id] = new Set(list);
-        list.forEach((p) => dayPhenomena.add(p));
+  const container = document.getElementById("imageDisplayContainer");
+  const imgUrl = customImages[currentSlide];
+
+  // Create new image element
+  const newImg = document.createElement("img");
+  newImg.src = imgUrl;
+  newImg.className = "slide-image enter";
+  resetZoom(); // Reset zoom on new slide
+
+  // Find the current visible image (if any) to animate out
+  const oldImg = container.querySelector("img.slide-image:not(.enter)");
+
+  container.appendChild(newImg);
+
+  if (oldImg) {
+    oldImg.classList.add("exit");
+    // Remove old image after transition duration (500ms)
+    setTimeout(() => {
+      if (oldImg.parentNode === container) {
+        container.removeChild(oldImg);
       }
-    }
+    }, 500);
+  }
 
-    updateMapStyle();
-    playWeatherSound(dayPhenomena);
-    updateSlideHeader(currentSlide + 1);
-
-    if (mapDiv) mapDiv.style.opacity = "1";
-    const newHeader = document.getElementById("slideHeader");
-    if (newHeader) {
-      newHeader.style.transition = "opacity 0.5s ease-in-out";
-      newHeader.style.opacity = "1";
-    }
+  // Remove 'enter' class after animation to mark it as stable
+  setTimeout(() => {
+    newImg.classList.remove("enter");
   }, 500);
+
+  // Update Next Image Preview
+  const nextIndex = (currentSlide + 1) % customImages.length;
+  const nextImgUrl = customImages[nextIndex];
+  const previewContainer = document.getElementById("nextImagePreview");
+  if (previewContainer) {
+    previewContainer.innerHTML = `
+        <span style="font-size: 10px; color: #2c3e50; font-weight:bold; display: block; margin-bottom: 2px; text-align:center;">Next</span>
+        <img src="${nextImgUrl}">
+    `;
+  }
 }
 
 function updateSlideHeader(dayNum) {
@@ -410,18 +456,18 @@ document.addEventListener("fullscreenchange", () => {
 window.toggleFullScreen = toggleFullScreen;
 
 function togglePlayPause() {
-  const icon = document.getElementById("playPauseIcon");
+  const btn = document.getElementById("playPauseBtn");
+  const icon = btn.querySelector("i");
+
   if (slideInterval) {
     clearInterval(slideInterval);
     slideInterval = null;
-    icon.classList.remove("fa-pause");
-    icon.classList.add("fa-play");
-    icon.parentElement.title = "Play Slideshow";
+    icon.className = "fas fa-play";
+    btn.title = "Play Slideshow";
   } else {
     startSlideShow();
-    icon.classList.remove("fa-play");
-    icon.classList.add("fa-pause");
-    icon.parentElement.title = "Pause Slideshow";
+    icon.className = "fas fa-pause";
+    btn.title = "Pause Slideshow";
   }
 }
 window.togglePlayPause = togglePlayPause;
@@ -439,6 +485,167 @@ function toggleSound() {
     currentAudio.pause();
   }
 }
+
+function updateSpeed(val) {
+  slideDuration = val * 1000;
+  document.getElementById("speedVal").innerText = val + "s";
+  startSlideShow(); // Restart with new speed
+}
+window.updateSpeed = updateSpeed;
+
+function toggleGridView() {
+  isGridView = !isGridView;
+  const slideContainer = document.getElementById("imageDisplayContainer");
+  const gridContainer = document.getElementById("gridViewContainer");
+
+  if (customImages.length === 0) return;
+
+  if (isGridView) {
+    // Stop slideshow
+    if (slideInterval) clearInterval(slideInterval);
+    slideContainer.style.display = "none";
+    gridContainer.style.display = "grid";
+    renderGridView();
+  } else {
+    // Resume slideshow
+    gridContainer.style.display = "none";
+    slideContainer.style.display = "flex";
+    startSlideShow();
+  }
+}
+window.toggleGridView = toggleGridView;
+
+function renderGridView() {
+  const container = document.getElementById("gridViewContainer");
+  container.innerHTML = customImages
+    .map(
+      (src, index) => `
+        <div class="grid-item" onclick="selectGridImage(${index})">
+            <img src="${src}">
+        </div>
+    `
+    )
+    .join("");
+}
+
+function selectGridImage(index) {
+  currentSlide = index;
+  toggleGridView(); // Switch back to slide view
+}
+window.selectGridImage = selectGridImage;
+
+function zoomIn() {
+  currentZoom += 0.1;
+  applyZoom();
+}
+window.zoomIn = zoomIn;
+
+function zoomOut() {
+  if (currentZoom > 0.2) currentZoom -= 0.1;
+  applyZoom();
+}
+window.zoomOut = zoomOut;
+
+function applyZoom() {
+  const img = document.querySelector(".slide-image:not(.exit)");
+  if (img) {
+    img.style.transform = `translate(-50%, -50%) scale(${currentZoom})`;
+  }
+}
+
+function resetZoom() {
+  currentZoom = 1;
+}
+
+function prevSlide() {
+  if (customImages.length === 0) return;
+  currentSlide = (currentSlide - 1 + customImages.length) % customImages.length;
+  render();
+}
+window.prevSlide = prevSlide;
+
+function nextSlide() {
+  if (customImages.length === 0) return;
+  currentSlide = (currentSlide + 1) % customImages.length;
+  render();
+}
+window.nextSlide = nextSlide;
+
+async function loadFromGitHub() {
+  let repoConfig = localStorage.getItem("github_repo_config");
+  let user, repo, path;
+
+  if (repoConfig) {
+    const conf = JSON.parse(repoConfig);
+    user = conf.user;
+    repo = conf.repo;
+    path = conf.path;
+  } else {
+    const repoInput = prompt(
+      "Enter GitHub Repository (username/repo):",
+      "lalkamal/Bihar-Weather-Forecast"
+    );
+    if (!repoInput) return;
+    const pathInput = prompt("Enter Folder Path in Repo:", "slideshow");
+    if (!pathInput) return;
+
+    const parts = repoInput.split("/");
+    if (parts.length !== 2) {
+      alert("Invalid repository format. Use username/repo");
+      return;
+    }
+    user = parts[0];
+    repo = parts[1];
+    path = pathInput;
+
+    localStorage.setItem(
+      "github_repo_config",
+      JSON.stringify({ user, repo, path })
+    );
+  }
+
+  try {
+    const apiUrl = `https://api.github.com/repos/${user}/${repo}/contents/${path}`;
+    const response = await fetch(apiUrl);
+    if (!response.ok) throw new Error("Failed to fetch from GitHub");
+
+    const data = await response.json();
+    // Filter for images and get download URLs
+    const images = data
+      .filter(
+        (file) =>
+          file.type === "file" && /\.(jpg|jpeg|png|gif)$/i.test(file.name)
+      )
+      .map((file) => file.download_url);
+
+    if (images.length > 0) {
+      customImages = images;
+      isImageMode = true;
+      currentSlide = 0;
+
+      document.getElementById("noDataState").style.display = "none";
+      const container = document.getElementById("imageDisplayContainer");
+      document.getElementById("gridViewContainer").style.display = "none";
+      document.getElementById("nextImagePreview").style.display = "block";
+      container.style.display = "flex";
+      container.innerHTML = "";
+
+      startSlideShow();
+      alert(`Loaded ${images.length} images from GitHub!`);
+    } else {
+      alert("No images found in the specified folder.");
+    }
+  } catch (error) {
+    console.error(error);
+    alert(
+      "Error loading from GitHub. Check console for details or clear config to try again."
+    );
+    if (confirm("Clear saved GitHub config?")) {
+      localStorage.removeItem("github_repo_config");
+    }
+  }
+}
+window.loadFromGitHub = loadFromGitHub;
 window.toggleSound = toggleSound;
 
 function playWeatherSound(dayPhenomena) {

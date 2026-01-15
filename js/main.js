@@ -45,6 +45,7 @@ let selectedDistricts = [],
   selectedPhenomena = [],
   showFoothill = true,
   currentDay = 1,
+  activeDays = new Set([1]),
   weeklyData = Array(7)
     .fill(null)
     .map(() => ({})),
@@ -148,6 +149,11 @@ document.addEventListener("DOMContentLoaded", () => {
   fetchTemperature();
   setInterval(fetchTemperature, 900000); // 15 minutes
   initVisitorCounter();
+
+  // Check login persistence
+  if (localStorage.getItem("admin_logged_in") === "true") {
+    document.body.classList.add("logged-in");
+  }
 });
 
 // ---------- UI builders ----------
@@ -544,6 +550,65 @@ function downloadMapImage() {
       alert("मैप इमेज डाउनलोड करने में त्रुटि हुई।");
     });
 }
+async function download7DaysPDF() {
+  const { jsPDF } = window.jspdf;
+  const doc = new jsPDF({ orientation: "landscape" });
+  const originalDay = currentDay;
+  const overlay = document.getElementById("loadingOverlay");
+
+  if (overlay) {
+    overlay.style.display = "flex";
+    overlay.querySelector("p").innerText = "Generating 7 Days PDF...";
+  }
+
+  try {
+    for (let i = 1; i <= 7; i++) {
+      switchDay(i);
+      // Wait for map update and render
+      await new Promise((r) => setTimeout(r, 800));
+
+      const node = document.getElementById("map");
+      const canvas = await domtoimage.toPng(node, {
+        width: node.offsetWidth,
+        height: node.offsetHeight,
+        bgcolor: "#ffffff",
+      });
+
+      if (i > 1) doc.addPage();
+
+      const imgProps = doc.getImageProperties(canvas);
+      const pdfWidth = doc.internal.pageSize.getWidth();
+      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      doc.addImage(canvas, "PNG", 0, 0, pdfWidth, pdfHeight);
+
+      // Check if day is empty
+      const dayData = weeklyData[i - 1];
+      const isEmpty = !dayData || Object.keys(dayData).length === 0;
+
+      if (isEmpty) {
+        doc.setFontSize(14);
+        doc.setTextColor(100);
+        doc.text("No Warning / कोई चेतावनी नहीं", 10, 10);
+      }
+    }
+    doc.save(
+      `Bihar_Weather_Forecast_7Days_${
+        new Date().toISOString().split("T")[0]
+      }.pdf`
+    );
+  } catch (e) {
+    console.error("PDF Generation Error:", e);
+    alert("PDF generate karne me truti hui.");
+  } finally {
+    switchDay(originalDay);
+    if (overlay) {
+      overlay.style.display = "none";
+      overlay.querySelector("p").innerText =
+        "पूर्वानुमान तैयार किया जा रहा है... / Generating Forecast...";
+    }
+  }
+}
 async function downloadAllMaps() {
   const originalDay = currentDay;
   const today = new Date().toISOString().split("T")[0];
@@ -617,6 +682,12 @@ function clearSelection() {
   selectedPhenomena = [];
   weeklyData[currentDay - 1] = {};
   districtPhenomenaMap = weeklyData[currentDay - 1];
+
+  // If in multi-select mode, clear all active days
+  activeDays.forEach((dayNum) => {
+    weeklyData[dayNum - 1] = {};
+  });
+
   document.querySelectorAll("#districtGrid input").forEach((cb) => {
     cb.checked = false;
     cb.closest(".district-checkbox").classList.remove("highlighted");
@@ -650,11 +721,14 @@ function updateMapWithPhenomena() {
     return;
   }
 
-  selectedDistricts.forEach((id) => {
-    if (!districtPhenomenaMap[id]) {
-      districtPhenomenaMap[id] = new Set();
-    }
-    activePhenomena.forEach((p) => districtPhenomenaMap[id].add(p));
+  activeDays.forEach((dayNum) => {
+    const dayData = weeklyData[dayNum - 1];
+    selectedDistricts.forEach((id) => {
+      if (!dayData[id]) {
+        dayData[id] = new Set();
+      }
+      activePhenomena.forEach((p) => dayData[id].add(p));
+    });
   });
 
   updateMapStyle();
@@ -689,13 +763,12 @@ function openCopyModal() {
   container.innerHTML = "";
   for (let i = 1; i <= 7; i++) {
     if (i === currentDay) continue; // Skip current day
-    const div = document.createElement("div");
+    const div = document.createElement("label");
     div.className = "checkbox-container";
     div.innerHTML = `
-        <label style="display:flex; align-items:center; cursor:pointer;">
-            <input type="checkbox" value="${i}" class="copy-target-day" style="width:18px; height:18px; margin-right:8px;">
-            Day ${i}
-        </label>
+        Day ${i}
+        <input type="checkbox" value="${i}" class="copy-target-day">
+        <span class="checkmark"></span>
     `;
     container.appendChild(div);
   }
@@ -756,6 +829,7 @@ function submitLogin() {
   if (id === "admin" && pass === "Kamal@007") {
     // Success
     document.body.classList.add("logged-in");
+    localStorage.setItem("admin_logged_in", "true");
     document.getElementById("userLogoBtn").classList.add("active-session");
     closeLoginModal();
     alert("Login Successful! Welcome Admin.");
@@ -767,6 +841,7 @@ function submitLogin() {
 
 function performLogout() {
   document.body.classList.remove("logged-in");
+  localStorage.removeItem("admin_logged_in");
   document.getElementById("userLogoBtn").classList.remove("active-session");
   document.getElementById("userDropdown").style.display = "none";
   alert("Logged Out Successfully.");
@@ -1266,7 +1341,7 @@ function fetchTemperature() {
 function initVisitorCounter() {
   let count = localStorage.getItem("page_views");
   if (!count) {
-    count = 1500; // Start with base number
+    count = 1117; // Start with base number
   } else {
     count = parseInt(count) + 1;
   }
@@ -1323,12 +1398,28 @@ function toggleMapRegion(regionCode, isChecked) {
 }
 
 function switchDay(day) {
-  currentDay = day;
-  districtPhenomenaMap = weeklyData[day - 1];
+  const isMulti = document.getElementById("multiDaySelectToggle")?.checked;
+
+  if (isMulti) {
+    if (activeDays.has(day)) {
+      if (activeDays.size > 1) activeDays.delete(day);
+    } else {
+      activeDays.add(day);
+    }
+    currentDay = day; // Focus view on the clicked day
+  } else {
+    activeDays.clear();
+    activeDays.add(day);
+    currentDay = day;
+  }
+
+  districtPhenomenaMap = weeklyData[currentDay - 1];
 
   // Update UI tabs
   document.querySelectorAll(".day-tab").forEach((btn, idx) => {
-    if (idx + 1 === day) btn.classList.add("active");
+    const d = idx + 1;
+    if (d > 7) return; // Skip copy buttons
+    if (activeDays.has(d)) btn.classList.add("active");
     else btn.classList.remove("active");
   });
 
