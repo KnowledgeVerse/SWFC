@@ -31,7 +31,12 @@ const weatherSounds = {
 let currentSlide = 0;
 let slideInterval;
 let weatherData = [];
-let map, geojsonLayer, phenomenaMarkersLayer, tileLayer, satelliteLayer;
+let map,
+  geojsonLayer,
+  phenomenaMarkersLayer,
+  tileLayer,
+  satelliteLayer,
+  hybridLayer;
 let districtPhenomenaMap = {};
 let currentAudio = new Audio();
 currentAudio.loop = true;
@@ -103,6 +108,12 @@ function initDisplay() {
              <button class="glass-btn small-btn" onclick="toggleGridView()" title="Grid View">
                 <i class="fas fa-th"></i> Grid
              </button>
+
+             <div class="divider"></div>
+
+             <label class="glass-btn small-btn" title="Hybrid View">
+                <input type="checkbox" id="dispHybridView" onchange="toggleDisplayHybrid(this.checked)"> Hybrid
+             </label>
              
              <div class="divider"></div>
 
@@ -124,6 +135,7 @@ function initDisplay() {
                 <h2>कोई डेटा उपलब्ध नहीं है</h2>
                 <h3>No Data Available</h3>
             </div>
+            <div id="map" style="width:100%; height:100%; display:none; border-radius:15px;"></div>
             <div id="imageDisplayContainer" class="image-display-container" style="display:none;">
                 <!-- Images will be injected here -->
             </div>
@@ -132,6 +144,8 @@ function initDisplay() {
         </div>
     </div>
   `;
+
+  initMap();
 }
 
 function updateTime() {
@@ -283,6 +297,11 @@ function initMap() {
     { maxZoom: 18, attribution: "Tiles &copy; Esri" }
   );
 
+  hybridLayer = L.tileLayer(
+    "http://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}",
+    { attribution: "Google", maxZoom: 20 }
+  );
+
   tileLayer.addTo(map);
   phenomenaMarkersLayer = L.layerGroup().addTo(map);
 
@@ -332,6 +351,7 @@ function toggleDisplayTiles(show) {
     if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
     if (!map.hasLayer(tileLayer)) map.addLayer(tileLayer);
     document.getElementById("dispSatelliteView").checked = false;
+    document.getElementById("dispHybridView").checked = false;
   } else {
     if (map.hasLayer(tileLayer)) map.removeLayer(tileLayer);
   }
@@ -342,8 +362,19 @@ function toggleDisplaySatellite(show) {
     if (map.hasLayer(tileLayer)) map.removeLayer(tileLayer);
     if (!map.hasLayer(satelliteLayer)) map.addLayer(satelliteLayer);
     document.getElementById("dispStreetView").checked = false;
+    document.getElementById("dispHybridView").checked = false;
   } else {
     if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
+  }
+}
+
+function toggleDisplayHybrid(show) {
+  if (show) {
+    if (map.hasLayer(tileLayer)) map.removeLayer(tileLayer);
+    if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
+    if (!map.hasLayer(hybridLayer)) map.addLayer(hybridLayer);
+  } else {
+    if (map.hasLayer(hybridLayer)) map.removeLayer(hybridLayer);
   }
 }
 

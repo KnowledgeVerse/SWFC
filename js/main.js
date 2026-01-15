@@ -234,6 +234,9 @@ function attachHandlers() {
   document.getElementById("openDisplayHeader").onclick = () => {
     window.open("display.html", "_blank");
   };
+  document.getElementById("openLivePreview").onclick = () => {
+    window.open("live.html", "_blank");
+  };
   document.getElementById("userLogoBtn").onclick = handleUserLogoClick;
 }
 function updateMultipleSelection() {

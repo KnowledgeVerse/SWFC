@@ -604,9 +604,41 @@ footer h3 {
   backdrop-filter: blur(15px);
   -webkit-backdrop-filter: blur(15px);
   border: 1px solid rgba(255, 255, 255, 0.3) !important;
-  box-shadow: 0 0 20px rgba(0, 123, 255, 0.5), 0 0 20px rgba(40, 167, 69, 0.5) !important;
-  color: #2c3e50;
-  font-weight: 500;
+  box-shadow: 0 8px 32px 0 rgba(31, 38, 135, 0.37) !important;
+  color: #000000;
+  font-weight: 600;
+  text-shadow: 0 1px 0 rgba(255, 255, 255, 0.4);
+  position: relative;
+  overflow: hidden;
+}
+
+.glass-modal::before {
+  content: "";
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, #007bff, transparent);
+  box-shadow: 0 0 15px #007bff;
+  animation: modal-glow-blink 2s infinite ease-in-out;
+}
+
+.glass-modal::after {
+  content: "";
+  position: absolute;
+  bottom: 0;
+  left: 0;
+  right: 0;
+  height: 4px;
+  background: linear-gradient(90deg, transparent, #28a745, transparent);
+  box-shadow: 0 0 15px #28a745;
+  animation: modal-glow-blink 2s infinite ease-in-out;
+}
+
+@keyframes modal-glow-blink {
+  0%, 100% { opacity: 1; }
+  50% { opacity: 0.4; }
 }
 
 .main-footer .btn-secondary:hover {
@@ -2025,4 +2057,26 @@ body.dark-mode .place-count-panel {
   to {
     opacity: 1;
   }
+}
+
+/* System Live Button Animation */
+.system-live-btn i {
+  color: #e74c3c;
+  animation: system-pulse 1.5s infinite;
+}
+
+@keyframes system-pulse {
+  0% {
+    opacity: 1;
+    text-shadow: 0 0 5px rgba(231, 76, 60, 0.8);
+  }
+  50% {
+    opacity: 0.4;
+    text-shadow: none;
+  }
+  100% {
+    opacity: 1;
+    text-shadow: 0 0 5px rgba(231, 76, 60, 0.8);
+  }
+}
 }
