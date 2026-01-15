@@ -533,20 +533,17 @@ footer h3 {
   }
 }
 
-@keyframes counter-spin {
-  0% {
-    transform: rotateX(0deg);
-  }
-  100% {
-    transform: rotateX(360deg);
-  }
-}
-
 .counter-anim {
   display: inline-block;
   color: #fff;
-  animation: blink-glow 2s infinite ease-in-out, counter-spin 3s infinite linear;
+  animation: blink-glow 2s infinite ease-in-out;
   padding: 0 5px;
+}
+
+.blink-active {
+  animation: blink-glow 2s infinite ease-in-out;
+  color: #fff;
+  font-weight: bold;
 }
 
 .footer-section {
@@ -570,7 +567,7 @@ footer h3 {
 }
 
 .main-footer .social-links {
-  justify-content: flex-start;
+  justify-content: center;
 }
 
 .main-footer .social-links a {
@@ -591,11 +588,25 @@ footer h3 {
   text-shadow: 0 0 2px #ffffff; /* White glow for visibility on dark bg */
   transform: translateY(-5px);
 }
+.main-footer .social-links a.social-share:hover {
+  color: #2ecc71; /* Green */
+  transform: translateY(-5px);
+}
 
 .main-footer .btn-secondary {
   background: rgba(255, 255, 255, 0.1);
   border: 1px solid rgba(255, 255, 255, 0.2);
   margin-bottom: 15px;
+}
+
+.glass-modal {
+  background: rgba(255, 255, 255, 0.2) !important;
+  backdrop-filter: blur(15px);
+  -webkit-backdrop-filter: blur(15px);
+  border: 1px solid rgba(255, 255, 255, 0.3) !important;
+  box-shadow: 0 0 20px rgba(0, 123, 255, 0.5), 0 0 20px rgba(40, 167, 69, 0.5) !important;
+  color: #2c3e50;
+  font-weight: 500;
 }
 
 .main-footer .btn-secondary:hover {
@@ -937,9 +948,9 @@ body.dark-mode .star {
   display: flex;
   align-items: center;
   justify-content: center;
-  width: 32px;
-  height: 32px;
-  font-size: 22px;
+  width: 40px;
+  height: 40px;
+  font-size: 28px;
   margin-right: 5px;
 }
 
@@ -948,10 +959,12 @@ body.dark-mode .star {
   100% {
     color: #ffc107;
     transform: scale(1);
+    filter: drop-shadow(0 0 2px rgba(255, 193, 7, 0.5));
   }
   50% {
     color: #e67e22;
-    transform: scale(1.1);
+    transform: scale(1.2);
+    filter: drop-shadow(0 0 8px rgba(230, 126, 34, 0.8));
   }
 }
 .phenom-anim-thunderstorm {
@@ -1090,6 +1103,20 @@ body.dark-mode .star {
   border: none !important;
 }
 
+/* Map Date Control */
+.map-date-control {
+  background: rgba(255, 255, 255, 0.95);
+  padding: 8px 15px;
+  border-radius: 8px;
+  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+  font-weight: 800;
+  font-size: 18px;
+  color: #2c3e50;
+  border: 2px solid #667eea;
+  text-align: center;
+  min-width: 200px;
+}
+
 /* Special Features Visibility */
 .special-feature {
   display: none !important;
@@ -1116,6 +1143,14 @@ body.logged-in .special-feature {
 
 .user-logo:hover {
   transform: scale(1.1);
+}
+
+/* Copy Days Checkbox Grid */
+.copy-days-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(100px, 1fr));
+  gap: 10px;
+  margin: 15px 0;
 }
 
 /* Green Ring for Active Session */

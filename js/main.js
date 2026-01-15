@@ -217,7 +217,11 @@ function attachHandlers() {
   document.getElementById("toggleStreetView").onchange = (e) => {
     toggleTiles(e.target.checked);
   };
+  document.getElementById("toggleSatelliteView").onchange = (e) => {
+    toggleSatellite(e.target.checked);
+  };
   document.getElementById("copyDayData").onclick = copyCurrentDayToAll;
+  document.getElementById("copyDayDataSelect").onclick = openCopyModal;
   document.querySelectorAll(".map-region-check").forEach((cb) => {
     cb.onchange = (e) => toggleMapRegion(e.target.value, e.target.checked);
   });
@@ -680,6 +684,46 @@ function copyCurrentDayToAll() {
   saveData();
 }
 
+function openCopyModal() {
+  const container = document.getElementById("copyDaysContainer");
+  container.innerHTML = "";
+  for (let i = 1; i <= 7; i++) {
+    if (i === currentDay) continue; // Skip current day
+    const div = document.createElement("div");
+    div.className = "checkbox-container";
+    div.innerHTML = `
+        <label style="display:flex; align-items:center; cursor:pointer;">
+            <input type="checkbox" value="${i}" class="copy-target-day" style="width:18px; height:18px; margin-right:8px;">
+            Day ${i}
+        </label>
+    `;
+    container.appendChild(div);
+  }
+  document.getElementById("copyModal").style.display = "flex";
+}
+
+function submitCopyDays() {
+  const checkboxes = document.querySelectorAll(".copy-target-day:checked");
+  if (checkboxes.length === 0) {
+    alert("Please select at least one day.");
+    return;
+  }
+
+  const sourceData = weeklyData[currentDay - 1];
+  checkboxes.forEach((cb) => {
+    const targetIndex = parseInt(cb.value) - 1;
+    const newDayData = {};
+    for (const [distId, phenSet] of Object.entries(sourceData)) {
+      newDayData[distId] = new Set(phenSet);
+    }
+    weeklyData[targetIndex] = newDayData;
+  });
+
+  alert(`Forecast copied to ${checkboxes.length} selected days.`);
+  document.getElementById("copyModal").style.display = "none";
+  saveData();
+}
+
 function saveData() {
   // Convert Sets to Arrays for JSON serialization
   const serializableData = weeklyData.map((dayData) => {
@@ -739,7 +783,7 @@ function renderUserMenu(isLoggedIn) {
   dropdown.innerHTML =
     html +
     `
-    <a href="#" onclick="showAbout()">About Smart Study</a>
+    <a href="#" onclick="showAbout()">About Bihar Weather Forecast System</a>
     <a href="#" onclick="showContact()">Contact Us</a>
   `;
 }
@@ -784,6 +828,21 @@ function togglePasswordVisibility() {
   }
 }
 
+function shareApp() {
+  if (navigator.share) {
+    navigator
+      .share({
+        title: "Bihar Weather Forecast",
+        text: "Check out the Bihar Weather Forecast System developed by Lal Kamal.",
+        url: window.location.href,
+      })
+      .catch(console.error);
+  } else {
+    alert("Link copied to clipboard!");
+    navigator.clipboard.writeText(window.location.href);
+  }
+}
+
 // Close dropdown if clicked outside
 window.onclick = function (event) {
   if (!event.target.matches(".user-logo")) {
@@ -795,20 +854,33 @@ window.onclick = function (event) {
 };
 
 // ---------- Map & Shapefile ----------
-let map, geojsonLayer, tileLayer;
+let map, geojsonLayer, tileLayer, satelliteLayer, mapDateControl;
 
 function initMap() {
   // Initialize Leaflet Map
   map = L.map("map").setView([25.6, 85.6], 7); // Center on Bihar
-  phenomenaMarkersLayer = L.layerGroup().addTo(map);
-  // Tiles enabled to ensure map visibility
+
+  // Base Layers
   tileLayer = L.tileLayer(
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     {
       maxZoom: 18,
       attribution: "© OpenStreetMap",
     }
-  ).addTo(map);
+  );
+
+  satelliteLayer = L.tileLayer(
+    "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
+    {
+      maxZoom: 18,
+      attribution: "Tiles &copy; Esri",
+    }
+  );
+
+  // Add default layer
+  tileLayer.addTo(map);
+
+  phenomenaMarkersLayer = L.layerGroup().addTo(map);
 
   // Add Legend
   const legend = L.control({ position: "bottomright" });
@@ -838,6 +910,24 @@ function initMap() {
     return div;
   };
   legend.addTo(map);
+
+  // Add Date Control
+  const DateControl = L.Control.extend({
+    onAdd: function (map) {
+      const div = L.DomUtil.create("div", "map-date-control");
+      div.id = "mapDateDisplay";
+      div.innerHTML = "Loading Date...";
+      return div;
+    },
+    onRemove: function (map) {},
+  });
+  mapDateControl = new DateControl({ position: "topright" });
+  mapDateControl.addTo(map);
+  updateMapDateHeader(); // Initial set
+
+  // Layer Control (Hidden by default, toggled via UI buttons if needed, or we can add standard control)
+  // We are using custom buttons for toggling, but let's add standard control for Satellite
+  // L.control.layers({ "Street View": tileLayer, "Satellite View": satelliteLayer }).addTo(map);
 
   // Load Shapefile (Bihar.shp and Bihar.dbf)
   const basePath = "data/Bihar_Districts_Shapefile/Bihar";
@@ -945,8 +1035,25 @@ function initMap() {
 }
 
 function toggleTiles(show) {
-  if (show) map.addLayer(tileLayer);
-  else map.removeLayer(tileLayer);
+  if (show) {
+    // Turn on Street, Turn off Satellite
+    if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
+    if (!map.hasLayer(tileLayer)) map.addLayer(tileLayer);
+    document.getElementById("toggleSatelliteView").checked = false;
+  } else {
+    if (map.hasLayer(tileLayer)) map.removeLayer(tileLayer);
+  }
+}
+
+function toggleSatellite(show) {
+  if (show) {
+    // Turn on Satellite, Turn off Street
+    if (map.hasLayer(tileLayer)) map.removeLayer(tileLayer);
+    if (!map.hasLayer(satelliteLayer)) map.addLayer(satelliteLayer);
+    document.getElementById("toggleStreetView").checked = false;
+  } else {
+    if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
+  }
 }
 
 function toggleDistrictByMap(oid) {
@@ -992,7 +1099,7 @@ function updateMapStyle(skipMarkers = false) {
 
         // Add icon for the first/primary phenomenon
         const primary = assignedPhenomenaList[0];
-        const iconHtml = `<div style="font-size: 20px; color: ${
+        const iconHtml = `<div style="font-size: 32px; color: ${
           phenColors[primary.id]
         }; text-shadow: 0 0 3px #fff;">
                             <i class="fas ${primary.icon} phenom-anim-${
@@ -1002,8 +1109,8 @@ function updateMapStyle(skipMarkers = false) {
         const icon = L.divIcon({
           html: iconHtml,
           className: "map-phenom-marker",
-          iconSize: [24, 24],
-          iconAnchor: [12, 12],
+          iconSize: [40, 40],
+          iconAnchor: [20, 20],
         });
         // Calculate center of polygon
         const center = layer.getBounds().getCenter();
@@ -1159,13 +1266,38 @@ function fetchTemperature() {
 function initVisitorCounter() {
   let count = localStorage.getItem("page_views");
   if (!count) {
-    count = 1000; // Start with a base number
+    count = 1500; // Start with base number
   } else {
     count = parseInt(count) + 1;
   }
   localStorage.setItem("page_views", count);
   const el = document.getElementById("visitorCount");
-  if (el) el.innerText = count;
+  if (el) {
+    // Speedometer rolling effect
+    const duration = 2000; // 2 seconds
+    const start = 0;
+    const end = count;
+    let startTime = null;
+
+    function animation(currentTime) {
+      if (startTime === null) startTime = currentTime;
+      const timeElapsed = currentTime - startTime;
+      const progress = Math.min(timeElapsed / duration, 1);
+
+      // Ease-out function
+      const easeOut = 1 - Math.pow(1 - progress, 3);
+
+      el.innerText = Math.floor(easeOut * (end - start) + start);
+
+      if (timeElapsed < duration) {
+        requestAnimationFrame(animation);
+      } else {
+        el.innerText = end;
+        el.classList.add("blink-active");
+      }
+    }
+    requestAnimationFrame(animation);
+  }
 }
 
 function toggleMapRegion(regionCode, isChecked) {
@@ -1200,5 +1332,25 @@ function switchDay(day) {
     else btn.classList.remove("active");
   });
 
+  updateMapDateHeader();
   updateMapStyle();
+}
+
+function updateMapDateHeader() {
+  const el = document.getElementById("mapDateDisplay");
+  if (el) {
+    const date = new Date();
+    const targetDate = new Date();
+    targetDate.setDate(date.getDate() + (currentDay - 1));
+
+    const options = { day: "2-digit", month: "2-digit", year: "numeric" };
+    const todayStr = date
+      .toLocaleDateString("en-IN", options)
+      .replace(/\//g, "-");
+    const targetDateStr = targetDate
+      .toLocaleDateString("en-IN", options)
+      .replace(/\//g, "-");
+
+    el.innerHTML = `Date: ${todayStr} | Day ${currentDay}: ${targetDateStr}`;
+  }
 }
