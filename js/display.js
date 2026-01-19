@@ -96,6 +96,10 @@ function initDisplay() {
         </div>
 
         <div class="glass-toolbar">
+             <button class="glass-btn small-btn" onclick="window.location.href='index.html'" title="Home"><i class="fas fa-home"></i></button>
+             <button class="glass-btn small-btn" onclick="window.open('live.html', '_blank')" title="Live Preview"><i class="fas fa-tower-broadcast"></i></button>
+             <div class="divider"></div>
+
              <label class="glass-btn small-btn" title="Select Images">
                 <i class="fas fa-folder-open"></i> Select
                 <input type="file" id="imgFolderInput" multiple accept="image/*" style="display:none" onchange="handleImageSelect(this)">
@@ -160,7 +164,7 @@ function updateTime() {
       hour: "2-digit",
       minute: "2-digit",
       second: "2-digit",
-    }
+    },
   );
 }
 
@@ -189,7 +193,7 @@ function render() {
 function handleImageSelect(input) {
   if (input.files && input.files.length > 0) {
     customImages = Array.from(input.files).map((file) =>
-      URL.createObjectURL(file)
+      URL.createObjectURL(file),
     );
     isImageMode = true;
     currentSlide = 0;
@@ -289,17 +293,17 @@ function initMap() {
 
   tileLayer = L.tileLayer(
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    { maxZoom: 18, attribution: "© OpenStreetMap" }
+    { maxZoom: 18, attribution: "© OpenStreetMap" },
   );
 
   satelliteLayer = L.tileLayer(
     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    { maxZoom: 18, attribution: "Tiles &copy; Esri" }
+    { maxZoom: 18, attribution: "Tiles &copy; Esri" },
   );
 
   hybridLayer = L.tileLayer(
     "http://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}",
-    { attribution: "Google", maxZoom: 20 }
+    { attribution: "Google", maxZoom: 20 },
   );
 
   tileLayer.addTo(map);
@@ -461,7 +465,7 @@ function toggleFullScreen() {
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen().catch((err) => {
       console.error(
-        `Error attempting to enable full-screen mode: ${err.message} (${err.name})`
+        `Error attempting to enable full-screen mode: ${err.message} (${err.name})`,
       );
     });
   } else {
@@ -554,7 +558,7 @@ function renderGridView() {
         <div class="grid-item" onclick="selectGridImage(${index})">
             <img src="${src}">
         </div>
-    `
+    `,
     )
     .join("");
 }
@@ -614,7 +618,7 @@ async function loadFromGitHub() {
   } else {
     const repoInput = prompt(
       "Enter GitHub Repository (username/repo):",
-      "lalkamal/Bihar-Weather-Forecast"
+      "lalkamal/Bihar-Weather-Forecast",
     );
     if (!repoInput) return;
     const pathInput = prompt("Enter Folder Path in Repo:", "slideshow");
@@ -631,7 +635,7 @@ async function loadFromGitHub() {
 
     localStorage.setItem(
       "github_repo_config",
-      JSON.stringify({ user, repo, path })
+      JSON.stringify({ user, repo, path }),
     );
   }
 
@@ -645,7 +649,7 @@ async function loadFromGitHub() {
     const images = data
       .filter(
         (file) =>
-          file.type === "file" && /\.(jpg|jpeg|png|gif)$/i.test(file.name)
+          file.type === "file" && /\.(jpg|jpeg|png|gif)$/i.test(file.name),
       )
       .map((file) => file.download_url);
 
@@ -669,7 +673,7 @@ async function loadFromGitHub() {
   } catch (error) {
     console.error(error);
     alert(
-      "Error loading from GitHub. Check console for details or clear config to try again."
+      "Error loading from GitHub. Check console for details or clear config to try again.",
     );
     if (confirm("Clear saved GitHub config?")) {
       localStorage.removeItem("github_repo_config");

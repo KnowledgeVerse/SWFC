@@ -40,6 +40,18 @@ const phenColors = {
   warmnight: "#e83e8c", // Pink
 };
 
+// ---------- Audio Assets ----------
+const weatherSounds = {
+  thunderstorm: "assets/audio/thunderstorm.mp3",
+  gustywind: "assets/audio/gustywind.mp3",
+  heatwave: "assets/audio/heatwave.mp3",
+  hailstorm: "assets/audio/hailstorm.mp3",
+  heavyrain: "assets/audio/heavyrain.mp3",
+  densefog: "assets/audio/densefog.mp3",
+  coldday: "assets/audio/coldday.mp3",
+  warmnight: "assets/audio/warmnight.mp3",
+};
+
 // ---------- Globals ----------
 let selectedDistricts = [],
   selectedPhenomena = [],
@@ -50,7 +62,9 @@ let selectedDistricts = [],
     .fill(null)
     .map(() => ({})),
   districtPhenomenaMap = weeklyData[0],
-  phenomenaMarkersLayer;
+  phenomenaMarkersLayer,
+  isAudioEnabled = false,
+  currentAudio = new Audio();
 
 // ---------- Phenomena + Scripts.xlsx sub-options ----------
 const phenDefs = [
@@ -188,8 +202,8 @@ function buildPhenomenaPanel() {
         d.id
       }" onchange="togglePhenom('${d.id}')">
       <div class="phenom-icon"><i class="fas ${d.icon} phenom-anim-${
-      d.id
-    }"></i></div>
+        d.id
+      }"></i></div>
       <label><strong>${d.hindi}</strong><br><small>${d.english}</small></label>
       <select class="sub-select intensity-select same-size" id="intensity-${
         d.id
@@ -226,6 +240,12 @@ function attachHandlers() {
   document.getElementById("toggleSatelliteView").onchange = (e) => {
     toggleSatellite(e.target.checked);
   };
+  document.getElementById("toggleHybridView").onchange = (e) => {
+    toggleHybrid(e.target.checked);
+  };
+  document.getElementById("fitMapBounds").onclick = () => {
+    if (geojsonLayer) map.fitBounds(geojsonLayer.getBounds());
+  };
   document.getElementById("copyDayData").onclick = copyCurrentDayToAll;
   document.getElementById("copyDayDataSelect").onclick = openCopyModal;
   document.querySelectorAll(".map-region-check").forEach((cb) => {
@@ -237,11 +257,46 @@ function attachHandlers() {
   document.getElementById("openLivePreview").onclick = () => {
     window.open("live.html", "_blank");
   };
+  document.getElementById("toggleAudioEffects").onchange = (e) => {
+    isAudioEnabled = e.target.checked;
+    const slider = document.getElementById("audioVolumeSlider");
+    if (slider) slider.style.display = isAudioEnabled ? "block" : "none";
+    if (!isAudioEnabled) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+    } else {
+      // If enabled, check if any phenomenon is already selected and play its sound
+      const checked = document.querySelector(
+        "#phenomenaContainer input:checked",
+      );
+      if (checked) togglePhenom(checked.value);
+    }
+  };
+  const volSlider = document.getElementById("audioVolumeSlider");
+  if (volSlider) {
+    currentAudio.volume = volSlider.value;
+    volSlider.oninput = (e) => (currentAudio.volume = e.target.value);
+  }
+
+  // Audio Visualizer Events
+  currentAudio.onplay = () => {
+    const ind = document.getElementById("audioPlayingIndicator");
+    if (ind) ind.style.display = "block";
+  };
+  currentAudio.onpause = () => {
+    const ind = document.getElementById("audioPlayingIndicator");
+    if (ind) ind.style.display = "none";
+  };
+  currentAudio.onended = () => {
+    const ind = document.getElementById("audioPlayingIndicator");
+    if (ind) ind.style.display = "none";
+  };
+
   document.getElementById("userLogoBtn").onclick = handleUserLogoClick;
 }
 function updateMultipleSelection() {
   selectedDistricts = Array.from(
-    document.querySelectorAll("#districtGrid input:checked")
+    document.querySelectorAll("#districtGrid input:checked"),
   ).map((cb) => cb.value);
   updateMapStyle();
 }
@@ -271,14 +326,14 @@ function handleRegionChange(checkbox) {
 }
 function updateRegionalSelection() {
   const checkedRegions = Array.from(
-    document.querySelectorAll("#regionalGrid input:checked")
+    document.querySelectorAll("#regionalGrid input:checked"),
   ).map((cb) => cb.value);
   const regionDistricts = new Set();
 
   checkedRegions.forEach((key) => {
     if (regionalGroups[key]) {
       regionalGroups[key].districts.forEach((d) =>
-        regionDistricts.add(String(d))
+        regionDistricts.add(String(d)),
       );
     }
   });
@@ -328,7 +383,30 @@ function clearDistrictSelection() {
   updateMapStyle();
   updateMultipleSelection();
 }
-function togglePhenom(id) {} // placeholder
+
+function togglePhenom(id) {
+  // Play/Stop sound based on checkbox state
+  const checkbox = document.querySelector(
+    `#phenomenaContainer input[value="${id}"]`,
+  );
+
+  if (checkbox && checkbox.checked) {
+    if (isAudioEnabled && weatherSounds[id]) {
+      if (!currentAudio.paused) {
+        currentAudio.pause();
+        currentAudio.currentTime = 0;
+      }
+      currentAudio.src = weatherSounds[id];
+      currentAudio.play().catch((e) => console.warn("Audio play failed:", e));
+    }
+  } else {
+    // Stop audio if unchecked
+    if (!currentAudio.paused) {
+      currentAudio.pause();
+      currentAudio.currentTime = 0;
+    }
+  }
+}
 
 // ---------- Forecast ----------
 function generateForecast() {
@@ -356,7 +434,7 @@ function generateForecast() {
       .forEach((inp) => {
         const phenom = inp.value;
         const intensity = document.getElementById(
-          `intensity-${phenom}`
+          `intensity-${phenom}`,
         ).selectedIndex;
         const place = document.getElementById("globalPlaceCount").value;
         selectedPhenomena.push({ phenom, intensity, place });
@@ -383,18 +461,18 @@ function displayConsolidatedForecast(list) {
     hindiNames.length === 1
       ? hindiNames[0]
       : hindiNames.length === 2
-      ? `${hindiNames[0]} और ${hindiNames[1]}`
-      : `${hindiNames.slice(0, -1).join(", ")} और ${
-          hindiNames[hindiNames.length - 1]
-        }`;
+        ? `${hindiNames[0]} और ${hindiNames[1]}`
+        : `${hindiNames.slice(0, -1).join(", ")} और ${
+            hindiNames[hindiNames.length - 1]
+          }`;
   const engStr =
     engNames.length === 1
       ? engNames[0]
       : engNames.length === 2
-      ? `${engNames[0]} and ${engNames[1]}`
-      : `${engNames.slice(0, -1).join(", ")} and ${
-          engNames[engNames.length - 1]
-        }`;
+        ? `${engNames[0]} and ${engNames[1]}`
+        : `${engNames.slice(0, -1).join(", ")} and ${
+            engNames[engNames.length - 1]
+          }`;
 
   // ---------- intensity lines (Scripts.xlsx order) ----------
   const intensityLines = {
@@ -526,8 +604,8 @@ function exportToPDF() {
   const win = window.open("", "_blank");
   win.document.write(
     `<html><head><title>बिहार मौसम पूर्वानुमान</title><style>body{font-family:'Noto Sans Devanagari',sans-serif;padding:20px}</style></head><body><h1>बिहार मौसम पूर्वानुमान</h1><p>तिथि: ${new Date().toLocaleString(
-      "hi-IN"
-    )}</p>${html}</body></html>`
+      "hi-IN",
+    )}</p>${html}</body></html>`,
   );
   win.document.close();
   win.print();
@@ -598,7 +676,7 @@ async function download7DaysPDF() {
     doc.save(
       `Bihar_Weather_Forecast_7Days_${
         new Date().toISOString().split("T")[0]
-      }.pdf`
+      }.pdf`,
     );
   } catch (e) {
     console.error("PDF Generation Error:", e);
@@ -716,7 +794,7 @@ function updateMapWithPhenomena() {
     return;
   }
   const activePhenomena = Array.from(
-    document.querySelectorAll("#phenomenaContainer input:checked")
+    document.querySelectorAll("#phenomenaContainer input:checked"),
   ).map((cb) => cb.value);
 
   if (!activePhenomena.length) {
@@ -741,7 +819,7 @@ function updateMapWithPhenomena() {
 function copyCurrentDayToAll() {
   if (
     !confirm(
-      `Are you sure you want to copy Day ${currentDay} data to all other days? This will overwrite existing data.`
+      `Are you sure you want to copy Day ${currentDay} data to all other days? This will overwrite existing data.`,
     )
   )
     return;
@@ -932,7 +1010,7 @@ window.onclick = function (event) {
 };
 
 // ---------- Map & Shapefile ----------
-let map, geojsonLayer, tileLayer, satelliteLayer, mapDateControl;
+let map, geojsonLayer, tileLayer, satelliteLayer, hybridLayer, mapDateControl;
 
 function initMap() {
   // Initialize Leaflet Map
@@ -944,7 +1022,7 @@ function initMap() {
     {
       maxZoom: 18,
       attribution: "© OpenStreetMap",
-    }
+    },
   );
 
   satelliteLayer = L.tileLayer(
@@ -952,7 +1030,12 @@ function initMap() {
     {
       maxZoom: 18,
       attribution: "Tiles &copy; Esri",
-    }
+    },
+  );
+
+  hybridLayer = L.tileLayer(
+    "http://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}",
+    { attribution: "Google", maxZoom: 20 },
   );
 
   // Add default layer
@@ -1030,7 +1113,7 @@ function initMap() {
     .then(([shpBuffer, dbfBuffer, prjStr]) => {
       if (!prjStr) {
         alert(
-          "Warning: Bihar.prj file missing. Map projection may be incorrect."
+          "Warning: Bihar.prj file missing. Map projection may be incorrect.",
         );
       }
       // Parse and combine SHP + DBF
@@ -1107,17 +1190,19 @@ function initMap() {
       console.error("Error loading shapefile:", err);
       alert(
         "Map loading failed. Ensure you are using a Local Server and data files exist.\n" +
-          err.message
+          err.message,
       );
     });
 }
 
 function toggleTiles(show) {
   if (show) {
-    // Turn on Street, Turn off Satellite
+    // Turn on Street, Turn off Satellite & Hybrid
     if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
+    if (map.hasLayer(hybridLayer)) map.removeLayer(hybridLayer);
     if (!map.hasLayer(tileLayer)) map.addLayer(tileLayer);
     document.getElementById("toggleSatelliteView").checked = false;
+    document.getElementById("toggleHybridView").checked = false;
   } else {
     if (map.hasLayer(tileLayer)) map.removeLayer(tileLayer);
   }
@@ -1125,12 +1210,27 @@ function toggleTiles(show) {
 
 function toggleSatellite(show) {
   if (show) {
-    // Turn on Satellite, Turn off Street
+    // Turn on Satellite, Turn off Street & Hybrid
     if (map.hasLayer(tileLayer)) map.removeLayer(tileLayer);
+    if (map.hasLayer(hybridLayer)) map.removeLayer(hybridLayer);
     if (!map.hasLayer(satelliteLayer)) map.addLayer(satelliteLayer);
     document.getElementById("toggleStreetView").checked = false;
+    document.getElementById("toggleHybridView").checked = false;
   } else {
     if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
+  }
+}
+
+function toggleHybrid(show) {
+  if (show) {
+    // Turn on Hybrid, Turn off Street & Satellite
+    if (map.hasLayer(tileLayer)) map.removeLayer(tileLayer);
+    if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
+    if (!map.hasLayer(hybridLayer)) map.addLayer(hybridLayer);
+    document.getElementById("toggleStreetView").checked = false;
+    document.getElementById("toggleSatelliteView").checked = false;
+  } else {
+    if (map.hasLayer(hybridLayer)) map.removeLayer(hybridLayer);
   }
 }
 
@@ -1181,8 +1281,8 @@ function updateMapStyle(skipMarkers = false) {
           phenColors[primary.id]
         }; text-shadow: 0 0 3px #fff;">
                             <i class="fas ${primary.icon} phenom-anim-${
-          primary.id
-        }"></i>
+                              primary.id
+                            }"></i>
                           </div>`;
         const icon = L.divIcon({
           html: iconHtml,
@@ -1211,7 +1311,7 @@ function updateMapStyle(skipMarkers = false) {
                 </strong><br>
                 <small style="color: #555;">${p.english}</small>
               </div>
-            `
+            `,
               )
               .join("")}
           </div>
@@ -1286,26 +1386,24 @@ function validateDistrictCoverage() {
       .join(", ");
     console.error("Validation Error: Missing districts:", names);
     alert(
-      `Configuration Error:\nThe following districts are not assigned to any regional group:\n${names}`
+      `Configuration Error:\nThe following districts are not assigned to any regional group:\n${names}`,
     );
   }
 }
 
 function updateDateTime() {
   const now = new Date();
-  const options = {
+
+  const dateOptions = {
     weekday: "long",
     year: "numeric",
     month: "long",
     day: "numeric",
-    hour: "2-digit",
-    minute: "2-digit",
-    second: "2-digit",
   };
-  document.getElementById("currentDateTime").innerText = now.toLocaleString(
-    "hi-IN",
-    options
-  );
+  const timeOptions = { hour: "2-digit", minute: "2-digit", second: "2-digit" };
+
+  const dateStr = now.toLocaleDateString("hi-IN", dateOptions);
+  const timeStr = now.toLocaleTimeString("hi-IN", timeOptions);
 
   const h = now.getHours();
   let icon = "fa-moon";
@@ -1316,10 +1414,9 @@ function updateDateTime() {
     iconStyle = "color: #e67e22;"; // Orange for sun
   }
 
-  const timeStr = now.toLocaleString("hi-IN", options);
-  document.getElementById(
-    "currentDateTime"
-  ).innerHTML = `<i class="fas ${icon}" style="margin-right:8px; ${iconStyle}"></i>${timeStr}`;
+  document.getElementById("currentDateTime").innerHTML =
+    `<div><i class="fas ${icon}" style="margin-right:8px; ${iconStyle}"></i>${dateStr}</div>
+     <div>${timeStr}</div>`;
 }
 
 function fetchTemperature() {
@@ -1327,15 +1424,14 @@ function fetchTemperature() {
   const lat = 25.61;
   const lon = 85.14;
   fetch(
-    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`
+    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`,
   )
     .then((response) => response.json())
     .then((data) => {
       if (data.current_weather) {
         const temp = data.current_weather.temperature;
-        document.getElementById(
-          "currentTemp"
-        ).innerHTML = `<i class="fas fa-temperature-high" style="margin-right:8px; color:#e74c3c;"></i>Patna: ${temp}°C`;
+        document.getElementById("currentTemp").innerHTML =
+          `<i class="fas fa-temperature-high" style="margin-right:8px; color:#e74c3c;"></i>Patna: ${temp}°C`;
       }
     })
     .catch((err) => console.error("Weather fetch error:", err));

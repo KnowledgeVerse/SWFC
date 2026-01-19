@@ -21,6 +21,17 @@ const phenDefs = [
   { id: "warmnight", hindi: "गर्म रात्रि", icon: "fa-temperature-high" },
 ];
 
+const weatherSounds = {
+  thunderstorm: "assets/audio/thunderstorm.mp3",
+  gustywind: "assets/audio/gustywind.mp3",
+  heatwave: "assets/audio/heatwave.mp3",
+  hailstorm: "assets/audio/hailstorm.mp3",
+  heavyrain: "assets/audio/heavyrain.mp3",
+  densefog: "assets/audio/densefog.mp3",
+  coldday: "assets/audio/coldday.mp3",
+  warmnight: "assets/audio/warmnight.mp3",
+};
+
 let currentSlide = 0;
 let slideInterval;
 let weatherData = [];
@@ -35,6 +46,8 @@ let districtPhenomenaMap = {};
 let showFoothill = true;
 let isPlaying = true;
 let slideSpeed = 3000;
+let isSoundEnabled = false;
+let currentAudio = new Audio();
 
 document.addEventListener("DOMContentLoaded", () => {
   initLiveDisplay();
@@ -79,6 +92,8 @@ function initLiveDisplay() {
             <div id="map"></div>
             
             <div class="live-controls-top">
+                <button class="layer-btn" onclick="window.location.href='index.html'" title="Home"><i class="fas fa-home"></i></button>
+                <button class="layer-btn" onclick="window.open('display.html', '_blank')" title="Display Mode"><i class="fas fa-tv"></i></button>
                 <button class="layer-btn active" onclick="setLayer('street')" id="btnStreet">Street</button>
                 <button class="layer-btn" onclick="setLayer('satellite')" id="btnSat">Satellite</button>
                 <button class="layer-btn" onclick="setLayer('hybrid')" id="btnHybrid">Hybrid</button>
@@ -90,6 +105,7 @@ function initLiveDisplay() {
                 <button class="control-btn" onclick="togglePlayPause()" id="btnPlayPause" title="Pause"><i class="fas fa-pause"></i></button>
                 <button class="control-btn" onclick="nextSlide()" title="Next"><i class="fas fa-step-forward"></i></button>
                 <button class="control-btn" onclick="toggleFullScreen()" id="btnFullScreen" title="Full Screen"><i class="fas fa-expand"></i></button>
+                <button class="control-btn" onclick="toggleSound()" id="btnSound" title="Toggle Sound"><i class="fas fa-volume-mute"></i></button>
                 
                 <div class="speed-control">
                     <i class="fas fa-tachometer-alt"></i>
@@ -120,17 +136,17 @@ function initMap() {
 
   streetLayer = L.tileLayer(
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
-    { maxZoom: 18, attribution: "© OpenStreetMap" }
+    { maxZoom: 18, attribution: "© OpenStreetMap" },
   );
 
   satelliteLayer = L.tileLayer(
     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-    { maxZoom: 18, attribution: "Tiles &copy; Esri" }
+    { maxZoom: 18, attribution: "Tiles &copy; Esri" },
   );
 
   hybridLayer = L.tileLayer(
     "http://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}",
-    { attribution: "Google", maxZoom: 20 }
+    { attribution: "Google", maxZoom: 20 },
   );
 
   radarLayer = L.tileLayer.wms(
@@ -140,7 +156,7 @@ function initMap() {
       format: "image/png",
       transparent: true,
       attribution: "Weather data © 2012 IEM Nexrad",
-    }
+    },
   );
 
   streetLayer.addTo(map);
@@ -246,12 +262,16 @@ function render() {
 
   const dayData = weatherData[currentSlide];
   districtPhenomenaMap = {};
+  let dayPhenomena = new Set();
+
   if (dayData) {
     for (const [id, list] of Object.entries(dayData)) {
       districtPhenomenaMap[id] = new Set(list);
+      list.forEach((p) => dayPhenomena.add(p));
     }
   }
   updateMapStyle();
+  playWeatherSound(dayPhenomena);
 }
 
 function updateSlideHeader(dayNum) {
@@ -403,11 +423,61 @@ function toggleRadar(btn) {
 }
 window.toggleRadar = toggleRadar;
 
+function toggleSound() {
+  isSoundEnabled = !isSoundEnabled;
+  const btn = document.getElementById("btnSound");
+  if (isSoundEnabled) {
+    btn.innerHTML = '<i class="fas fa-volume-up"></i>';
+    // Trigger sound for current slide immediately
+    render();
+  } else {
+    btn.innerHTML = '<i class="fas fa-volume-mute"></i>';
+    currentAudio.pause();
+  }
+}
+window.toggleSound = toggleSound;
+
+function playWeatherSound(dayPhenomena) {
+  if (!isSoundEnabled) {
+    if (!currentAudio.paused) currentAudio.pause();
+    return;
+  }
+
+  // Priority order for sounds
+  const priorities = [
+    "thunderstorm",
+    "hailstorm",
+    "heavyrain",
+    "gustywind",
+    "heatwave",
+    "densefog",
+    "coldday",
+    "warmnight",
+  ];
+  let soundToPlay = null;
+
+  for (const p of priorities) {
+    if (dayPhenomena.has(p) && weatherSounds[p]) {
+      soundToPlay = weatherSounds[p];
+      break;
+    }
+  }
+
+  if (soundToPlay) {
+    if (!currentAudio.src.includes(soundToPlay) || currentAudio.paused) {
+      currentAudio.src = soundToPlay;
+      currentAudio.play().catch((e) => console.warn("Audio play failed:", e));
+    }
+  } else {
+    currentAudio.pause();
+  }
+}
+
 function toggleFullScreen() {
   if (!document.fullscreenElement) {
     document.documentElement.requestFullscreen().catch((err) => {
       console.error(
-        `Error attempting to enable full-screen mode: ${err.message} (${err.name})`
+        `Error attempting to enable full-screen mode: ${err.message} (${err.name})`,
       );
     });
   } else {
