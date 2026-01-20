@@ -68,6 +68,13 @@
           <button id="darkModeToggle" class="btn-secondary" title="Dark Mode">
             <i class="fas fa-moon"></i>
           </button>
+          <button
+            id="langToggle"
+            class="btn-secondary"
+            title="Switch Language (HI/EN)"
+          >
+            HI
+          </button>
           <!-- User Logo / Sign In Trigger -->
           <div class="user-profile-container">
             <img
@@ -82,7 +89,7 @@
           </div>
         </div>
         <h1>बिहार मौसम पूर्वानुमान प्रणाली</h1>
-        <h2>Bihar Weather Forecast System</h2>
+        <h2 style="display: none">Bihar Weather Forecast System</h2>
         <div class="header-info">
           <div id="currentDateTime" class="info-box"></div>
           <div id="currentTemp" class="info-box">Loading...</div>
@@ -296,7 +303,7 @@
         <div class="control-panel">
           <!-- Regional -->
           <div id="regionalGroups" class="selection-container">
-            <label>क्षेत्रीय समूह चुनें / Select Regional Groups:</label>
+            <label>क्षेत्रीय समूह चुनें:</label>
             <div class="district-grid" id="regionalGrid"></div>
             <button
               type="button"
@@ -316,7 +323,7 @@
 
           <!-- Multiple -->
           <div id="multipleDistricts" class="selection-container">
-            <label>एकाधिक जिले चुनें / Select Multiple Districts:</label>
+            <label>एकाधिक जिले चुनें:</label>
             <input
               type="text"
               id="districtSearch"
@@ -343,7 +350,7 @@
 
           <!-- Place count -->
           <div class="place-count-panel">
-            <label>स्थान की मात्रा / Place count:</label>
+            <label>स्थान की मात्रा:</label>
             <select id="globalPlaceCount" class="same-size">
               <option value="1">
                 एक या दो स्थानों पर (likely at one or two places)
@@ -361,7 +368,7 @@
           <!-- Phenomena -->
           <div class="weather-phenomena">
             <div style="position: relative">
-              <h3>मौसम घटनाएँ / Weather Phenomena:</h3>
+              <h3>मौसम घटनाएँ:</h3>
               <div
                 style="
                   position: absolute;
@@ -422,7 +429,7 @@
 
         <!-- Output -->
         <div class="forecast-output" id="forecastOutput">
-          <h3>पूर्वानुमान परिणाम / Forecast Result:</h3>
+          <h3>पूर्वानुमान परिणाम:</h3>
           <div id="forecastContent">
             <p class="placeholder-text">
               कोई जिला चुने और मौसम घटनाएँ चुनें...

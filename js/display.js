@@ -46,6 +46,20 @@ let isImageMode = false;
 let slideDuration = 5000;
 let currentZoom = 1;
 let isGridView = false;
+let currentLang = localStorage.getItem("lang") || "hi";
+
+const uiTranslations = {
+  hi: {
+    title: "बिहार मौसम पूर्वानुमान प्रणाली",
+    date: "दिनांक",
+    day: "दिन",
+  },
+  en: {
+    title: "Bihar Weather Forecast System",
+    date: "Date",
+    day: "Day",
+  },
+};
 
 document.addEventListener("DOMContentLoaded", () => {
   initDisplay();
@@ -57,6 +71,10 @@ document.addEventListener("DOMContentLoaded", () => {
       loadData();
     }
   });
+
+  if (localStorage.getItem("darkMode") === "true") {
+    document.body.classList.add("dark-mode");
+  }
 });
 
 function initDisplay() {
@@ -91,8 +109,7 @@ function initDisplay() {
   root.innerHTML = `
     <div class="glass-main-panel">
         <div class="glass-header-glow">
-            <h1>बिहार मौसम पूर्वानुमान प्रणाली</h1>
-            <h2>Bihar Weather Forecast System</h2>
+            <h1 id="dispTitle">बिहार मौसम पूर्वानुमान प्रणाली</h1>
         </div>
 
         <div class="glass-toolbar">
@@ -130,6 +147,10 @@ function initDisplay() {
              <button class="glass-btn small-btn icon-only" onclick="togglePlayPause()" id="playPauseBtn" title="Pause"><i class="fas fa-pause"></i></button>
              <button class="glass-btn small-btn icon-only" onclick="nextSlide()" title="Next"><i class="fas fa-chevron-right"></i></button>
 
+             <div class="divider"></div>
+             <button class="glass-btn small-btn icon-only" onclick="toggleDarkMode()" id="btnDarkMode" title="Toggle Dark Mode"><i class="fas fa-moon"></i></button>
+             <button class="glass-btn small-btn" onclick="toggleLanguage()" id="btnLang" title="Switch Language">${currentLang.toUpperCase()}</button>
+
              ${isAdmin ? `<div class="divider"></div>` + speedControlHtml : ""}
         </div>
 
@@ -150,6 +171,7 @@ function initDisplay() {
   `;
 
   initMap();
+  updateLanguageUI();
 }
 
 function updateTime() {
@@ -285,7 +307,8 @@ function updateSlideHeader(dayNum) {
     const container = document.getElementById("contentArea");
     if (container) container.appendChild(header);
   }
-  header.innerText = `Date: ${todayStr} | Day ${dayNum}: ${targetDateStr}`;
+  const t = uiTranslations[currentLang];
+  header.innerText = `${t.date}: ${todayStr} | ${t.day} ${dayNum}: ${targetDateStr}`;
 }
 
 function initMap() {
@@ -682,6 +705,33 @@ async function loadFromGitHub() {
 }
 window.loadFromGitHub = loadFromGitHub;
 window.toggleSound = toggleSound;
+
+function toggleDarkMode() {
+  document.body.classList.toggle("dark-mode");
+  const isDark = document.body.classList.contains("dark-mode");
+  localStorage.setItem("darkMode", isDark);
+  const btn = document.getElementById("btnDarkMode");
+  if (btn)
+    btn.innerHTML = isDark
+      ? '<i class="fas fa-sun"></i>'
+      : '<i class="fas fa-moon"></i>';
+}
+window.toggleDarkMode = toggleDarkMode;
+
+function toggleLanguage() {
+  currentLang = currentLang === "hi" ? "en" : "hi";
+  localStorage.setItem("lang", currentLang);
+  updateLanguageUI();
+}
+window.toggleLanguage = toggleLanguage;
+
+function updateLanguageUI() {
+  const t = uiTranslations[currentLang];
+  const titleEl = document.getElementById("dispTitle");
+  const btn = document.getElementById("btnLang");
+  if (titleEl) titleEl.innerText = t.title;
+  if (btn) btn.innerText = currentLang.toUpperCase();
+}
 
 function playWeatherSound(dayPhenomena) {
   if (!isSoundEnabled) {

@@ -48,6 +48,20 @@ let isPlaying = true;
 let slideSpeed = 3000;
 let isSoundEnabled = false;
 let currentAudio = new Audio();
+let currentLang = localStorage.getItem("lang") || "hi";
+
+const uiTranslations = {
+  hi: {
+    title: "बिहार मौसम पूर्वानुमान - लाइव पूर्वावलोकन",
+    date: "दिनांक",
+    day: "दिन",
+  },
+  en: {
+    title: "Bihar Weather Forecast - Live Preview",
+    date: "Date",
+    day: "Day",
+  },
+};
 
 document.addEventListener("DOMContentLoaded", () => {
   initLiveDisplay();
@@ -58,6 +72,10 @@ document.addEventListener("DOMContentLoaded", () => {
       loadData();
     }
   });
+
+  if (localStorage.getItem("darkMode") === "true") {
+    document.body.classList.add("dark-mode");
+  }
 });
 
 function initLiveDisplay() {
@@ -84,8 +102,7 @@ function initLiveDisplay() {
   root.innerHTML = `
     <div class="glass-main-panel">
         <div class="glass-header-glow">
-            <h1>बिहार मौसम पूर्वानुमान - लाइव पूर्वावलोकन</h1>
-            <h2>Bihar Weather Forecast - Live Preview</h2>
+            <h1 id="liveTitle">बिहार मौसम पूर्वानुमान - लाइव पूर्वावलोकन</h1>
         </div>
         <div id="slideHeader" style="text-align: center; font-size: 1.2em; font-weight: bold; color: #2c3e50; padding: 5px; background: rgba(255,255,255,0.5); border-radius: 50px; margin: 0 auto; width: fit-content; padding-left: 20px; padding-right: 20px;">Loading...</div>
         <div class="display-content-area">
@@ -97,13 +114,17 @@ function initLiveDisplay() {
                 <button class="layer-btn active" onclick="setLayer('street')" id="btnStreet">Street</button>
                 <button class="layer-btn" onclick="setLayer('satellite')" id="btnSat">Satellite</button>
                 <button class="layer-btn" onclick="setLayer('hybrid')" id="btnHybrid">Hybrid</button>
+                <button class="layer-btn" onclick="setLayer('clean')" id="btnClean">Clean</button>
                 <button class="layer-btn" onclick="toggleRadar(this)" id="btnRadar" style="margin-left:5px; border-color:#e74c3c; color:#e74c3c;"><i class="fas fa-satellite-dish"></i> Radar</button>
+                <button class="layer-btn" onclick="toggleDarkMode()" id="btnDarkMode" title="Dark Mode"><i class="fas fa-moon"></i></button>
+                <button class="layer-btn" onclick="toggleLanguage()" id="btnLang" title="Language">${currentLang.toUpperCase()}</button>
             </div>
 
             <div class="live-controls-bottom">
                 <button class="control-btn" onclick="prevSlide()" title="Previous"><i class="fas fa-step-backward"></i></button>
                 <button class="control-btn" onclick="togglePlayPause()" id="btnPlayPause" title="Pause"><i class="fas fa-pause"></i></button>
                 <button class="control-btn" onclick="nextSlide()" title="Next"><i class="fas fa-step-forward"></i></button>
+                <button class="control-btn" onclick="fitMapBounds()" title="Fit Map"><i class="fas fa-compress-arrows-alt"></i></button>
                 <button class="control-btn" onclick="toggleFullScreen()" id="btnFullScreen" title="Full Screen"><i class="fas fa-expand"></i></button>
                 <button class="control-btn" onclick="toggleSound()" id="btnSound" title="Toggle Sound"><i class="fas fa-volume-mute"></i></button>
                 
@@ -129,6 +150,7 @@ function initLiveDisplay() {
   }
 
   initMap();
+  updateLanguageUI();
 }
 
 function initMap() {
@@ -288,8 +310,9 @@ function updateSlideHeader(dayNum) {
     .replace(/\//g, "-");
 
   const header = document.getElementById("slideHeader");
+  const t = uiTranslations[currentLang];
   if (header) {
-    header.innerText = `Date: ${todayStr} | Day ${dayNum}: ${targetDateStr}`;
+    header.innerText = `${t.date}: ${todayStr} | ${t.day} ${dayNum}: ${targetDateStr}`;
   }
 }
 
@@ -370,6 +393,9 @@ function setLayer(type) {
   } else if (type === "hybrid") {
     map.addLayer(hybridLayer);
     document.getElementById("btnHybrid").classList.add("active");
+  } else if (type === "clean") {
+    // No layer added, just clean background
+    document.getElementById("btnClean").classList.add("active");
   }
 }
 window.setLayer = setLayer;
@@ -437,6 +463,33 @@ function toggleSound() {
 }
 window.toggleSound = toggleSound;
 
+function toggleDarkMode() {
+  document.body.classList.toggle("dark-mode");
+  const isDark = document.body.classList.contains("dark-mode");
+  localStorage.setItem("darkMode", isDark);
+  const btn = document.getElementById("btnDarkMode");
+  if (btn)
+    btn.innerHTML = isDark
+      ? '<i class="fas fa-sun"></i>'
+      : '<i class="fas fa-moon"></i>';
+}
+window.toggleDarkMode = toggleDarkMode;
+
+function toggleLanguage() {
+  currentLang = currentLang === "hi" ? "en" : "hi";
+  localStorage.setItem("lang", currentLang);
+  updateLanguageUI();
+}
+window.toggleLanguage = toggleLanguage;
+
+function updateLanguageUI() {
+  const t = uiTranslations[currentLang];
+  const titleEl = document.getElementById("liveTitle");
+  const btn = document.getElementById("btnLang");
+  if (titleEl) titleEl.innerText = t.title;
+  if (btn) btn.innerText = currentLang.toUpperCase();
+}
+
 function playWeatherSound(dayPhenomena) {
   if (!isSoundEnabled) {
     if (!currentAudio.paused) currentAudio.pause();
@@ -472,6 +525,13 @@ function playWeatherSound(dayPhenomena) {
     currentAudio.pause();
   }
 }
+
+function fitMapBounds() {
+  if (geojsonLayer) {
+    map.fitBounds(geojsonLayer.getBounds());
+  }
+}
+window.fitMapBounds = fitMapBounds;
 
 function toggleFullScreen() {
   if (!document.fullscreenElement) {

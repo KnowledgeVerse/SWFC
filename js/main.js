@@ -28,6 +28,32 @@ const intensityLines = {
   warmnight: ["गर्म रात्रि की संभावना है ।"],
 };
 
+const intensityLinesEn = {
+  thunderstorm: [
+    "Light to moderate thunderstorm & lightning with rain likely to continue.",
+    "Moderate thunderstorm & lightning with rain very likely.",
+    "Light to moderate thunderstorm, lightning (wind 30-40 kmph) with light rain likely.",
+    "Moderate thunderstorm, lightning, wind (40-50 kmph) with rain very likely.",
+    "Intense thunderstorm, lightning & heavy rain with strong wind (50-60 kmph) very likely.",
+    "Thunderstorm, lightning, hail & wind (40-50 kmph) with rain very likely.",
+  ],
+  gustywind: [
+    "Gusty wind (speed 30-40 kmph) likely.",
+    "Gusty wind (speed 40-50 kmph) likely.",
+    "Gusty wind (speed 50-60 kmph) likely.",
+  ],
+  heatwave: [
+    "Heat wave likely.",
+    "Hot day likely.",
+    "Severe heat wave likely.",
+  ],
+  hailstorm: ["Hailstorm likely."],
+  heavyrain: ["Heavy rainfall likely."],
+  densefog: ["Dense fog likely.", "Very dense fog likely."],
+  coldday: ["Cold day likely."],
+  warmnight: ["Warm night likely."],
+};
+
 // ---------- Phenomena colour-map ----------
 const phenColors = {
   thunderstorm: "#ffc107", // Amber
@@ -65,6 +91,61 @@ let selectedDistricts = [],
   phenomenaMarkersLayer,
   isAudioEnabled = false,
   currentAudio = new Audio();
+
+let currentLang = localStorage.getItem("lang") || "hi";
+
+const uiTranslations = {
+  hi: {
+    title: "बिहार मौसम पूर्वानुमान प्रणाली",
+    regional: "क्षेत्रीय समूह चुनें:",
+    multiple: "एकाधिक जिले चुनें:",
+    searchPlaceholder: "जिला खोजें...",
+    placeCount: "स्थान की मात्रा:",
+    phenomena: "मौसम घटनाएँ:",
+    forecastRes: "पूर्वानुमान परिणाम:",
+    btnGenerate: "पूर्वानुमान तैयार करें",
+    btnUpdateMap: "मैप अपडेट करें",
+    btnClear: "साफ़ करें",
+    btnExportTxt: "टेक्स्ट निर्यात करें",
+    btnExportPdf: "PDF निर्यात करें",
+    btnCopy: "क्लिपबोर्ड पर कॉपी करें",
+    btnSelectAll: "सभी चुनें",
+    btnClearAll: "साफ़ करें",
+    placeholder: "कोई जिला चुने और मौसम घटनाएँ चुनें...",
+    placeOptions: [
+      "चुनें...",
+      "एक या दो स्थानों पर",
+      "कुछ स्थानों पर",
+      "अनेक स्थानों पर",
+      "अधिकांश स्थानों पर",
+    ],
+  },
+  en: {
+    title: "Bihar Weather Forecast System",
+    regional: "Select Regional Groups:",
+    multiple: "Select Multiple Districts:",
+    searchPlaceholder: "Search District...",
+    placeCount: "Place Count:",
+    phenomena: "Weather Phenomena:",
+    forecastRes: "Forecast Result:",
+    btnGenerate: "Generate Forecast",
+    btnUpdateMap: "Update Map",
+    btnClear: "Clear",
+    btnExportTxt: "Export Text",
+    btnExportPdf: "Export PDF",
+    btnCopy: "Copy to Clipboard",
+    btnSelectAll: "Select All",
+    btnClearAll: "Clear All",
+    placeholder: "Select a district and weather phenomena...",
+    placeOptions: [
+      "Select...",
+      "At one or two places",
+      "At a few places",
+      "At many places",
+      "At most places",
+    ],
+  },
+};
 
 // ---------- Phenomena + Scripts.xlsx sub-options ----------
 const phenDefs = [
@@ -156,6 +237,7 @@ document.addEventListener("DOMContentLoaded", () => {
       '<i class="fas fa-sun"></i>';
     document.getElementById("darkModeToggle").title = "Light Mode";
   }
+  updateLanguageUI();
   initMap();
   validateDistrictCoverage();
   updateDateTime();
@@ -176,8 +258,8 @@ function buildRegionalGrid() {
   Object.entries(regionalGroups).forEach(([key, g]) => {
     const lbl = document.createElement("label");
     lbl.className = `regional-checkbox region-${key}`;
-    lbl.innerHTML = `<input type="checkbox" value="${key}" onchange="handleRegionChange(this)">
-                   <span>${g.name} – ${g.english}</span>`;
+    const text = currentLang === "hi" ? g.name : g.english;
+    lbl.innerHTML = `<input type="checkbox" value="${key}" onchange="handleRegionChange(this)"><span>${text}</span>`;
     box.appendChild(lbl);
   });
 }
@@ -186,8 +268,8 @@ function buildMultipleDistrictGrid() {
   districtsData.forEach((d) => {
     const lbl = document.createElement("label");
     lbl.className = "district-checkbox";
-    lbl.innerHTML = `<input type="checkbox" value="${d.id}" onchange="updateMultipleSelection()">
-                   <span>${d.hindi} (${d.name})</span>`;
+    const text = currentLang === "hi" ? d.hindi : d.name;
+    lbl.innerHTML = `<input type="checkbox" value="${d.id}" onchange="updateMultipleSelection()"><span>${text}</span>`;
     grid.appendChild(lbl);
   });
 }
@@ -196,19 +278,16 @@ function buildPhenomenaPanel() {
   phenDefs.forEach((d) => {
     const row = document.createElement("div");
     row.className = "phenomenon-row";
-    row.style.borderLeft = `5px solid ${phenColors[d.id]}`; // यूनिक बॉर्डर
+    row.style.borderLeft = `5px solid ${phenColors[d.id]}`;
+    const name = currentLang === "hi" ? d.hindi : d.english;
+    const lines =
+      currentLang === "hi" ? intensityLines[d.id] : intensityLinesEn[d.id];
     row.innerHTML = `
-      <input class="main-check same-size" type="checkbox" value="${
-        d.id
-      }" onchange="togglePhenom('${d.id}')">
-      <div class="phenom-icon"><i class="fas ${d.icon} phenom-anim-${
-        d.id
-      }"></i></div>
-      <label><strong>${d.hindi}</strong><br><small>${d.english}</small></label>
-      <select class="sub-select intensity-select same-size" id="intensity-${
-        d.id
-      }">
-        ${d.sub.map((s, i) => `<option value="${i}">${s}</option>`).join("")}
+      <input class="main-check same-size" type="checkbox" value="${d.id}" onchange="togglePhenom('${d.id}')">
+      <div class="phenom-icon"><i class="fas ${d.icon} phenom-anim-${d.id}"></i></div>
+      <label><strong>${name}</strong></label>
+      <select class="sub-select intensity-select same-size" id="intensity-${d.id}">
+        ${lines.map((s, i) => `<option value="${i}">${s}</option>`).join("")}
       </select>`;
     box.appendChild(row);
   });
@@ -223,6 +302,7 @@ function attachHandlers() {
   document.getElementById("exportPDF").onclick = exportToPDF;
   document.getElementById("copyClipboard").onclick = copyToClipboard;
   document.getElementById("darkModeToggle").onclick = toggleDarkMode;
+  document.getElementById("langToggle").onclick = toggleLanguage;
   document.getElementById("backToTop").onclick = scrollToTop;
   document.getElementById("toggleFoothill").onchange = (e) => {
     showFoothill = e.target.checked;
@@ -455,126 +535,44 @@ function makeForecastSentence(districtId, phenList) {
 }
 
 function displayConsolidatedForecast(list) {
-  const hindiNames = list.map((x) => x.district.hindi);
-  const engNames = list.map((x) => x.district.name);
-  const hindiStr =
-    hindiNames.length === 1
-      ? hindiNames[0]
-      : hindiNames.length === 2
-        ? `${hindiNames[0]} और ${hindiNames[1]}`
-        : `${hindiNames.slice(0, -1).join(", ")} और ${
-            hindiNames[hindiNames.length - 1]
-          }`;
-  const engStr =
-    engNames.length === 1
-      ? engNames[0]
-      : engNames.length === 2
-        ? `${engNames[0]} and ${engNames[1]}`
-        : `${engNames.slice(0, -1).join(", ")} and ${
-            engNames[engNames.length - 1]
-          }`;
-
-  // ---------- intensity lines (Scripts.xlsx order) ----------
-  const intensityLines = {
-    thunderstorm: [
-      "हल्के से मध्यम दर्जे की मेघ गर्जन तथा वज्रपात के साथ वर्षा जारी रहने की संभावना है।",
-      "मध्यम दर्जे की मेघ गर्जन, वज्रपात के साथ वर्षा होने की प्रबल संभावना है।",
-      "हल्के से मध्यम दर्जे की मेघ गर्जन, वज्रपात, (हवा की गति 30-40 कि. मी. प्रति घंटे तक) के साथ हल्की वर्षा होने की संभावना है।",
-      "मध्यम दर्जे की मेघ गर्जन, वज्रपात,हवा (हवा की गति 40-50 कि. मी. प्रति घंटे तक) के साथ वर्षा होने की प्रबल संभावना है।",
-      "तीव्र दर्जे की मेघ गर्जन, वज्रपात तथा भारी वर्षा के साथ तेज हवा (हवा की गति 50-60 कि. मी. प्रति घंटे तक) की प्रबल संभावना है।",
-      "मेघ गर्जन, वज्रपात, ओलावृष्टि एवं  हवा (हवा की गति 40-50 कि. मी. प्रति घंटे तक) के साथ वर्षा होने की प्रबल संभावना है।",
-    ],
-    gustywind: [
-      "तेज़ हवा (हवा की गति 30-40 कि. मी. प्रति घंटे तक) रहने की संभावना है।",
-      "तेज़ हवा (हवा की गति 40-50 कि. मी. प्रति घंटे तक) रहने की संभावना है।",
-      "तेज़ हवा (हवा की गति 50-60 कि. मी. प्रति घंटे तक) रहने की संभावना है।",
-    ],
-    heatwave: [
-      "लू (उष्ण लहर ) की संभावना है ।",
-      "उष्ण दिवस होने की संभावना है।",
-      "अत्यधिक भीषण उष्ण लहर (लू) की संभावना है।",
-    ],
-    hailstorm: ["ओलावृष्टि की संभावना है।"],
-    heavyrain: ["भारी वर्षा होने की संभावना है।"],
-    densefog: [
-      "घना कोहरा / कुहासा छाए रहने की प्रबल संभावना है।",
-      "घना से बहुत घना कोहरा / कुहासा छाए रहने की प्रबल संभावना है।",
-    ],
-    coldday: ["शीत दिवस होने की संभावना है।"],
-    warmnight: ["गर्म रात्रि की संभावना है ।"],
-  };
-  const intensityLinesEn = {
-    thunderstorm: [
-      "Light to moderate thunderstorm & lightning with rain likely to continue.",
-      "Moderate thunderstorm & lightning with rain very likely.",
-      "Light to moderate thunderstorm, lightning (wind 30-40 kmph) with light rain likely.",
-      "Moderate thunderstorm, lightning, wind (40-50 kmph) with rain very likely.",
-      "Intense thunderstorm, lightning & heavy rain with strong wind (50-60 kmph) very likely.",
-      "Thunderstorm, lightning, hail & wind (40-50 kmph) with rain very likely.",
-    ],
-    gustywind: [
-      "Gusty wind (speed 30-40 kmph) likely.",
-      "Gusty wind (speed 40-50 kmph) likely.",
-      "Gusty wind (speed 50-60 kmph) likely.",
-    ],
-    heatwave: [
-      "Heat wave likely.",
-      "Hot day likely.",
-      "Severe heat wave likely.",
-    ],
-    hailstorm: ["Hailstorm likely."],
-    heavyrain: ["Heavy rainfall likely."],
-    densefog: ["Dense fog likely.", "Very dense fog likely."],
-    coldday: ["Cold day likely."],
-    warmnight: ["Warm night likely."],
-  };
+  const distNames = list.map((x) =>
+    currentLang === "hi" ? x.district.hindi : x.district.name,
+  );
+  const joiner = currentLang === "hi" ? " और " : " and ";
+  const distStr =
+    distNames.length === 1
+      ? distNames[0]
+      : distNames.length === 2
+        ? distNames.join(joiner)
+        : distNames.slice(0, -1).join(", ") +
+          joiner +
+          distNames[distNames.length - 1];
 
   let html = "";
   selectedPhenomena.forEach((p) => {
     const color = phenColors[p.phenom];
-    const placeMap = {
-      1: "एक या दो स्थानों पर",
-      2: "कुछ स्थानों",
-      3: "अनेक स्थानों पर",
-      4: "अधिकांश स्थानों पर",
-    };
-    const placeEng = {
-      1: "at one or two places",
-      2: "at a few places",
-      3: "at many places",
-      4: "at most places",
-    };
+    const intensitySentence =
+      currentLang === "hi"
+        ? intensityLines[p.phenom][p.intensity]
+        : intensityLinesEn[p.phenom][p.intensity];
 
-    // सिर्फ़ चुनी हुई intensity
-    const intensitySentenceHi = intensityLines[p.phenom][p.intensity];
-    const intensitySentenceEn = intensityLinesEn[p.phenom][p.intensity];
+    const placePhrase = uiTranslations[currentLang].placeOptions[p.place];
 
-    const placePhraseHi = placeMap[p.place];
-    const placePhraseEn = placeEng[p.place];
+    const phenomName =
+      currentLang === "hi"
+        ? phenDefs.find((x) => x.id === p.phenom).hindi
+        : phenDefs.find((x) => x.id === p.phenom).english;
 
-    const phenomNames = {
-      thunderstorm: {
-        hindi: "मेघगर्जन/वज्रपात",
-        english: "Thunderstorm/Lightning",
-      },
-      gustywind: { hindi: "तेज़ हवा", english: "Gusty Wind" },
-      heatwave: { hindi: "लू (उष्ण लहर)", english: "Heat Wave" },
-      hailstorm: { hindi: "ओलावृष्टि", english: "Hailstorm" },
-      heavyrain: { hindi: "भारी वर्षा", english: "Heavy Rainfall" },
-      densefog: { hindi: "घना कोहरा", english: "Dense Fog" },
-      coldday: { hindi: "शीत दिवस", english: "Cold Day" },
-      warmnight: { hindi: "गर्म रात्रि", english: "Warm Night" },
-    };
-    const phenH = phenomNames[p.phenom].hindi;
-    const phenE = phenomNames[p.phenom].english;
-
-    const hindiFinal = `${hindiStr} जिलों के ${placePhraseHi} ${intensitySentenceHi}`;
-    const engFinal = `${intensitySentenceEn} ${placePhraseEn} over ${engStr} districts.`;
+    let finalSentence = "";
+    if (currentLang === "hi") {
+      finalSentence = `${distStr} जिलों के ${placePhrase} ${intensitySentence}`;
+    } else {
+      finalSentence = `${intensitySentence} ${placePhrase} over ${distStr} district(s).`;
+    }
 
     html += `<div class="forecast-item" style="background:${color}20; border-left:5px solid ${color};">
-               <strong>${phenH}</strong><br><small>${phenE}</small>
-               <p style="margin-top:10px;font-size:1.05em">${hindiFinal}</p>
-               <p style="font-style:italic;margin-top:6px">${engFinal}</p>
+               <strong>${phenomName}</strong>
+               <p style="margin-top:10px;font-size:1.05em">${finalSentence}</p>
              </div>`;
   });
   document.getElementById("forecastContent").innerHTML = html;
@@ -753,6 +751,118 @@ function toggleDarkMode() {
     : '<i class="fas fa-moon"></i>';
   btn.title = isDark ? "Light Mode" : "Dark Mode";
 }
+
+function toggleLanguage() {
+  currentLang = currentLang === "hi" ? "en" : "hi";
+  localStorage.setItem("lang", currentLang);
+  updateLanguageUI();
+}
+
+function updateLanguageUI() {
+  const t = uiTranslations[currentLang];
+  const btn = document.getElementById("langToggle");
+  btn.innerText = currentLang.toUpperCase();
+
+  // Header
+  document.querySelector("header h1").innerText = t.title;
+  const h2 = document.querySelector("header h2");
+  if (h2) h2.style.display = "none";
+
+  // Labels
+  document.querySelector("#regionalGroups label").innerText = t.regional;
+  document.querySelector("#multipleDistricts label").innerText = t.multiple;
+  document.querySelector(".place-count-panel label").innerText = t.placeCount;
+  document.querySelector(".weather-phenomena h3").innerText = t.phenomena;
+  document.querySelector(".forecast-output h3").innerText = t.forecastRes;
+
+  // Search Placeholder
+  document.getElementById("districtSearch").placeholder = t.searchPlaceholder;
+
+  // Buttons
+  document.getElementById("generateForecast").innerText = t.btnGenerate;
+  document.getElementById("updateMapPhenomena").innerText = t.btnUpdateMap;
+  document.getElementById("clearSelection").innerText = t.btnClear;
+  document.getElementById("exportText").innerText = t.btnExportTxt;
+  document.getElementById("exportPDF").innerText = t.btnExportPdf;
+  document.getElementById("copyClipboard").innerText = t.btnCopy;
+
+  // Select All / Clear All buttons
+  const regBtns = document.querySelectorAll("#regionalGroups button");
+  if (regBtns.length >= 2) {
+    regBtns[0].innerText = t.btnSelectAll;
+    regBtns[1].innerText = t.btnClearAll;
+  }
+  const distBtns = document.querySelectorAll("#multipleDistricts button");
+  if (distBtns.length >= 2) {
+    distBtns[0].innerText = t.btnSelectAll;
+    distBtns[1].innerText = t.btnClearAll;
+  }
+
+  // Update Regional Grid Text
+  document
+    .querySelectorAll("#regionalGrid .regional-checkbox")
+    .forEach((lbl) => {
+      const input = lbl.querySelector("input");
+      const key = input.value;
+      const group = regionalGroups[key];
+      const span = lbl.querySelector("span");
+      if (group && span) {
+        span.innerText = currentLang === "hi" ? group.name : group.english;
+      }
+    });
+
+  // Update District Grid Text
+  document
+    .querySelectorAll("#districtGrid .district-checkbox")
+    .forEach((lbl) => {
+      const input = lbl.querySelector("input");
+      const id = parseInt(input.value);
+      const dist = districtsData.find((d) => d.id === id);
+      const span = lbl.querySelector("span");
+      if (dist && span) {
+        span.innerText = currentLang === "hi" ? dist.hindi : dist.name;
+      }
+    });
+
+  // Update Phenomena Panel
+  document
+    .querySelectorAll("#phenomenaContainer .phenomenon-row")
+    .forEach((row) => {
+      const input = row.querySelector("input");
+      const id = input.value;
+      const pDef = phenDefs.find((p) => p.id === id);
+      const label = row.querySelector("label");
+      if (pDef && label) {
+        const text = currentLang === "hi" ? pDef.hindi : pDef.english;
+        label.innerHTML = `<strong>${text}</strong>`;
+      }
+      const select = row.querySelector("select");
+      if (select && pDef) {
+        const lines =
+          currentLang === "hi" ? intensityLines[id] : intensityLinesEn[id];
+        const selectedIdx = select.selectedIndex;
+        select.innerHTML = lines
+          .map((s, i) => `<option value="${i}">${s}</option>`)
+          .join("");
+        if (selectedIdx < lines.length) select.selectedIndex = selectedIdx;
+      }
+    });
+
+  // Update Place Count Dropdown
+  const placeSelect = document.getElementById("globalPlaceCount");
+  if (placeSelect) {
+    const selectedVal = placeSelect.value;
+    placeSelect.innerHTML = "";
+    for (let i = 1; i <= 4; i++) {
+      const opt = document.createElement("option");
+      opt.value = i;
+      opt.innerText = t.placeOptions[i];
+      placeSelect.appendChild(opt);
+    }
+    placeSelect.value = selectedVal;
+  }
+}
+
 function scrollToTop() {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }

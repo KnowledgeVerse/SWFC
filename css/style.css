@@ -2103,4 +2103,49 @@ body.dark-mode .place-count-panel {
 .audio-playing-icon {
   animation: sound-wave-pulse 1s infinite ease-in-out;
 }
+
+/* Dark Mode for Glass Elements (Display & Live Pages) */
+body.dark-mode .glass-main-panel {
+  background: rgba(30, 30, 30, 0.6);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+body.dark-mode .glass-header-glow {
+  color: #ecf0f1;
+  text-shadow: 0 1px 2px rgba(0, 0, 0, 0.8);
+  border-bottom-color: rgba(255, 255, 255, 0.1);
+}
+body.dark-mode .glass-header-glow h2 {
+  color: #bdc3c7;
+}
+body.dark-mode .glass-toolbar,
+body.dark-mode .live-controls-top,
+body.dark-mode .live-controls-bottom {
+  background: rgba(45, 52, 54, 0.8);
+  border-color: rgba(255, 255, 255, 0.1);
+}
+body.dark-mode .glass-btn,
+body.dark-mode .layer-btn,
+body.dark-mode .control-btn {
+  background: rgba(255, 255, 255, 0.1);
+  color: #ecf0f1;
+  border-color: rgba(255, 255, 255, 0.2);
+}
+body.dark-mode .glass-btn:hover,
+body.dark-mode .layer-btn:hover,
+body.dark-mode .control-btn:hover {
+  background: rgba(255, 255, 255, 0.2);
+  color: #fff;
+}
+body.dark-mode .layer-btn.active {
+  background: #667eea;
+  border-color: #667eea;
+}
+body.dark-mode .speed-control {
+  color: #ecf0f1;
+  border-left-color: rgba(255, 255, 255, 0.2);
+}
+body.dark-mode #slideHeader {
+  background: rgba(45, 52, 54, 0.8);
+  color: #ecf0f1;
+}
 }
