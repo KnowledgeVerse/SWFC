@@ -78,6 +78,47 @@ const weatherSounds = {
   warmnight: "assets/audio/warmnight.mp3",
 };
 
+// ---------- Dropdown Options (Custom Colors) ----------
+const forecastDropdownOptions = [
+  { value: 0, text: "DRY – शुष्क", color: null },
+  {
+    value: 1,
+    text: "ISOL (ONE OR TWO PLACES) – एक दो स्थानों पर",
+    color: "rgb(51, 204, 51)",
+  },
+  {
+    value: 2,
+    text: "SCATTERED (FEW PLACES) – कुछ स्थानों पर",
+    color: "rgb(0, 153, 0)",
+  },
+  {
+    value: 3,
+    text: "FAIRLY WIDESPREAD (MANY PLACES) – अनेक स्थानों पर",
+    color: "rgb(51, 204, 255)",
+  },
+  {
+    value: 4,
+    text: "WIDESPREAD (MOST PLACES) – अधिकांश स्थानों पर",
+    color: "rgb(0, 102, 255)",
+  },
+];
+
+const warningDropdownOptions = [
+  { value: 0, text: "NO WARNING – कोई चेतावनी नहीं", color: "rgb(0, 153, 0)" },
+  { value: 1, text: "YELLOW – पीला", color: "rgb(255, 255, 0)" },
+  { value: 2, text: "ORANGE – नारंगी", color: "rgb(255, 192, 0)" },
+  { value: 3, text: "RED – लाल", color: "rgb(255, 0, 0)" },
+];
+
+// Combine options for the Color Selection dropdown
+const combinedColorOptions = [
+  { value: "default", text: "Select Color...", color: null },
+  ...forecastDropdownOptions
+    .filter((o) => o.value !== 0)
+    .map((o) => ({ ...o, text: "Forecast: " + o.text })),
+  ...warningDropdownOptions.map((o) => ({ ...o, text: "Warning: " + o.text })),
+];
+
 // ---------- Globals ----------
 let selectedDistricts = [],
   selectedPhenomena = [],
@@ -100,7 +141,9 @@ const uiTranslations = {
     regional: "क्षेत्रीय समूह चुनें:",
     multiple: "एकाधिक जिले चुनें:",
     searchPlaceholder: "जिला खोजें...",
-    placeCount: "स्थान की मात्रा:",
+    placeCount: "FORECAST",
+    warning: "WARNING",
+    colorSelect: "COLOR SELECTION",
     phenomena: "मौसम घटनाएँ:",
     forecastRes: "पूर्वानुमान परिणाम:",
     btnGenerate: "पूर्वानुमान तैयार करें",
@@ -113,7 +156,7 @@ const uiTranslations = {
     btnClearAll: "साफ़ करें",
     placeholder: "कोई जिला चुने और मौसम घटनाएँ चुनें...",
     placeOptions: [
-      "चुनें...",
+      "शुष्क (Dry)",
       "एक या दो स्थानों पर",
       "कुछ स्थानों पर",
       "अनेक स्थानों पर",
@@ -125,7 +168,9 @@ const uiTranslations = {
     regional: "Select Regional Groups:",
     multiple: "Select Multiple Districts:",
     searchPlaceholder: "Search District...",
-    placeCount: "Place Count:",
+    placeCount: "FORECAST",
+    warning: "WARNING",
+    colorSelect: "COLOR SELECTION",
     phenomena: "Weather Phenomena:",
     forecastRes: "Forecast Result:",
     btnGenerate: "Generate Forecast",
@@ -138,7 +183,7 @@ const uiTranslations = {
     btnClearAll: "Clear All",
     placeholder: "Select a district and weather phenomena...",
     placeOptions: [
-      "Select...",
+      "Dry Weather",
       "At one or two places",
       "At a few places",
       "At many places",
@@ -230,6 +275,7 @@ document.addEventListener("DOMContentLoaded", () => {
   buildRegionalGrid();
   buildMultipleDistrictGrid();
   buildPhenomenaPanel();
+  buildColorSelectionDropdown();
   attachHandlers();
   if (localStorage.getItem("darkMode") === "true") {
     document.body.classList.add("dark-mode");
@@ -290,6 +336,17 @@ function buildPhenomenaPanel() {
         ${lines.map((s, i) => `<option value="${i}">${s}</option>`).join("")}
       </select>`;
     box.appendChild(row);
+  });
+}
+function buildColorSelectionDropdown() {
+  const select = document.getElementById("globalColorSelect");
+  select.innerHTML = "";
+  combinedColorOptions.forEach((opt) => {
+    const option = document.createElement("option");
+    option.value = opt.color || "";
+    option.innerText = opt.text;
+    if (opt.color) option.style.backgroundColor = opt.color;
+    select.appendChild(option);
   });
 }
 
@@ -373,6 +430,51 @@ function attachHandlers() {
   };
 
   document.getElementById("userLogoBtn").onclick = handleUserLogoClick;
+
+  // Dropdown Color Handlers
+  document.getElementById("globalPlaceCount").addEventListener("change", () => {
+    updateDropdownBackgrounds();
+  });
+  document.getElementById("globalWarning").addEventListener("change", () => {
+    updateDropdownBackgrounds();
+    updateMapStyle(); // Update map fill color based on warning
+  });
+  document
+    .getElementById("globalColorSelect")
+    .addEventListener("change", (e) => {
+      const val = e.target.value;
+      if (val) {
+        e.target.style.backgroundColor = val;
+      } else {
+        e.target.style.backgroundColor = "";
+      }
+    });
+
+  // Mode Checkbox Handlers
+  const modeForecast = document.getElementById("modeForecast");
+  const modeWarning = document.getElementById("modeWarning");
+
+  if (modeForecast && modeWarning) {
+    modeForecast.addEventListener("change", () => {
+      if (modeForecast.checked) {
+        modeWarning.checked = false;
+      } else if (!modeWarning.checked) {
+        modeForecast.checked = true; // Enforce one always on
+      }
+      updateMapStyle();
+      updateLegend();
+    });
+
+    modeWarning.addEventListener("change", () => {
+      if (modeWarning.checked) {
+        modeForecast.checked = false;
+      } else if (!modeForecast.checked) {
+        modeWarning.checked = true; // Enforce one always on
+      }
+      updateMapStyle();
+      updateLegend();
+    });
+  }
 }
 function updateMultipleSelection() {
   selectedDistricts = Array.from(
@@ -772,6 +874,10 @@ function updateLanguageUI() {
   document.querySelector("#regionalGroups label").innerText = t.regional;
   document.querySelector("#multipleDistricts label").innerText = t.multiple;
   document.querySelector(".place-count-panel label").innerText = t.placeCount;
+  const warningLabel = document.querySelector(".warning-panel label");
+  if (warningLabel) warningLabel.innerText = t.warning;
+  const colorLabel = document.querySelector(".color-selection-panel label");
+  if (colorLabel) colorLabel.innerText = t.colorSelect;
   document.querySelector(".weather-phenomena h3").innerText = t.phenomena;
   document.querySelector(".forecast-output h3").innerText = t.forecastRes;
 
@@ -853,13 +959,53 @@ function updateLanguageUI() {
   if (placeSelect) {
     const selectedVal = placeSelect.value;
     placeSelect.innerHTML = "";
-    for (let i = 1; i <= 4; i++) {
+    forecastDropdownOptions.forEach((optData) => {
       const opt = document.createElement("option");
-      opt.value = i;
-      opt.innerText = t.placeOptions[i];
+      opt.value = optData.value;
+      opt.innerText = optData.text;
+      if (optData.color) opt.style.backgroundColor = optData.color;
       placeSelect.appendChild(opt);
-    }
+    });
     placeSelect.value = selectedVal;
+  }
+
+  // Update Warning Dropdown
+  const warningSelect = document.getElementById("globalWarning");
+  if (warningSelect) {
+    const selectedVal = warningSelect.value;
+    warningSelect.innerHTML = "";
+    warningDropdownOptions.forEach((optData) => {
+      const opt = document.createElement("option");
+      opt.value = optData.value;
+      opt.innerText = optData.text;
+      if (optData.color) opt.style.backgroundColor = optData.color;
+      warningSelect.appendChild(opt);
+    });
+    warningSelect.value = selectedVal;
+  }
+  updateDropdownBackgrounds();
+}
+
+function updateDropdownBackgrounds() {
+  const pSelect = document.getElementById("globalPlaceCount");
+  if (pSelect) {
+    const val = parseInt(pSelect.value);
+    const opt = forecastDropdownOptions.find((o) => o.value === val);
+    if (opt && opt.color) {
+      pSelect.style.backgroundColor = opt.color;
+    } else {
+      pSelect.style.backgroundColor = "";
+    }
+  }
+  const wSelect = document.getElementById("globalWarning");
+  if (wSelect) {
+    const val = parseInt(wSelect.value);
+    const opt = warningDropdownOptions.find((o) => o.value === val);
+    if (opt && opt.color) {
+      wSelect.style.backgroundColor = opt.color;
+    } else {
+      wSelect.style.backgroundColor = "";
+    }
   }
 }
 
@@ -912,13 +1058,18 @@ function updateMapWithPhenomena() {
     return;
   }
 
+  const selectedColor = document.getElementById("globalColorSelect").value;
+
   activeDays.forEach((dayNum) => {
     const dayData = weeklyData[dayNum - 1];
     selectedDistricts.forEach((id) => {
       if (!dayData[id]) {
-        dayData[id] = new Set();
+        dayData[id] = { phenomena: new Set(), color: selectedColor || null };
+      } else {
+        // Update color if a new one is selected, otherwise keep existing
+        if (selectedColor) dayData[id].color = selectedColor;
       }
-      activePhenomena.forEach((p) => dayData[id].add(p));
+      activePhenomena.forEach((p) => dayData[id].phenomena.add(p));
     });
   });
 
@@ -941,7 +1092,10 @@ function copyCurrentDayToAll() {
     const newDayData = {};
     // Deep copy the district map (Sets need to be cloned)
     for (const [distId, phenSet] of Object.entries(sourceData)) {
-      newDayData[distId] = new Set(phenSet);
+      newDayData[distId] = {
+        phenomena: new Set(phenSet.phenomena),
+        color: phenSet.color,
+      };
     }
     weeklyData[i] = newDayData;
   }
@@ -978,7 +1132,10 @@ function submitCopyDays() {
     const targetIndex = parseInt(cb.value) - 1;
     const newDayData = {};
     for (const [distId, phenSet] of Object.entries(sourceData)) {
-      newDayData[distId] = new Set(phenSet);
+      newDayData[distId] = {
+        phenomena: new Set(phenSet.phenomena),
+        color: phenSet.color,
+      };
     }
     weeklyData[targetIndex] = newDayData;
   });
@@ -993,7 +1150,10 @@ function saveData() {
   const serializableData = weeklyData.map((dayData) => {
     const newDay = {};
     for (const [id, set] of Object.entries(dayData)) {
-      newDay[id] = Array.from(set);
+      newDay[id] = {
+        phenomena: Array.from(set.phenomena),
+        color: set.color,
+      };
     }
     return newDay;
   });
@@ -1154,33 +1314,13 @@ function initMap() {
   phenomenaMarkersLayer = L.layerGroup().addTo(map);
 
   // Add Legend
-  const legend = L.control({ position: "bottomright" });
+  const legend = L.control({ position: "bottomleft" });
   legend.onAdd = function () {
     const div = L.DomUtil.create("div", "info legend");
-    const items = [
-      { label: "चयनित (Selected)", color: "#667eea" },
-      { label: "उत्तर-पश्चिम (NW)", color: "#00897b" },
-      { label: "उत्तर-मध्य (NC)", color: "#1976d2" },
-      { label: "उत्तर-पूर्व (NE)", color: "#673ab7" },
-      { label: "दक्षिण-पश्चिम (SW)", color: "#f44336" },
-      { label: "दक्षिण-मध्य (SC)", color: "#fbc02d" },
-      { label: "दक्षिण-पूर्व (SE)", color: "#795548" },
-      { label: "मेघगर्जन (Thunderstorm)", color: "#ffc107" },
-      { label: "तेज़ हवा (Gusty Wind)", color: "#17a2b8" },
-      { label: "लू (Heat Wave)", color: "#fd7e14" },
-      { label: "ओलावृष्टि (Hailstorm)", color: "#6f42c1" },
-      { label: "भारी वर्षा (Heavy Rain)", color: "#007bff" },
-      { label: "घना कोहरा (Dense Fog)", color: "#6c757d" },
-      { label: "शीत दिवस (Cold Day)", color: "#20c997" },
-      { label: "गर्म रात्रि (Warm Night)", color: "#e83e8c" },
-    ];
-    items.forEach((item) => {
-      div.innerHTML +=
-        '<i style="background:' + item.color + '"></i> ' + item.label + "<br>";
-    });
     return div;
   };
   legend.addTo(map);
+  updateLegend();
 
   // Add Date Control
   const DateControl = L.Control.extend({
@@ -1368,10 +1508,11 @@ function updateMapStyle(skipMarkers = false) {
     let phenomColor = null;
     let assignedPhenomenaList = [];
 
-    if (districtPhenomenaMap[oid] && districtPhenomenaMap[oid].size > 0) {
+    const distData = districtPhenomenaMap[oid];
+    if (distData && distData.phenomena && distData.phenomena.size > 0) {
       // Find highest priority color based on phenDefs order
       for (const pDef of phenDefs) {
-        if (districtPhenomenaMap[oid].has(pDef.id)) {
+        if (distData.phenomena.has(pDef.id)) {
           if (!phenomColor) phenomColor = phenColors[pDef.id];
           assignedPhenomenaList.push(pDef);
         }
@@ -1385,19 +1526,21 @@ function updateMapStyle(skipMarkers = false) {
           .map((p) => p.hindi)
           .join(", ");
 
-        // Add icon for the first/primary phenomenon
-        const primary = assignedPhenomenaList[0];
-        const iconHtml = `<div style="font-size: 32px; color: ${
-          phenColors[primary.id]
-        }; text-shadow: 0 0 3px #fff;">
-                            <i class="fas ${primary.icon} phenom-anim-${
-                              primary.id
-                            }"></i>
+        // Generate HTML for multiple icons
+        let iconsHtml = "";
+        // If multiple, use smaller size
+        const iconSize = assignedPhenomenaList.length > 1 ? "18px" : "32px";
+
+        assignedPhenomenaList.forEach((p) => {
+          iconsHtml += `<div style="font-size: ${iconSize}; color: ${phenColors[p.id]}; text-shadow: 0 0 3px #fff; margin: 1px;">
+                            <i class="fas ${p.icon} phenom-anim-${p.id}"></i>
                           </div>`;
+        });
+
         const icon = L.divIcon({
-          html: iconHtml,
+          html: iconsHtml,
           className: "map-phenom-marker",
-          iconSize: [40, 40],
+          iconSize: [40, 40], // Container size
           iconAnchor: [20, 20],
         });
         // Calculate center of polygon
@@ -1433,9 +1576,10 @@ function updateMapStyle(skipMarkers = false) {
       }
     }
 
-    if (phenomColor) {
+    if (distData && (distData.phenomena.size > 0 || distData.color)) {
+      // Use stored color if available, else fallback to phenom color
       layer.setStyle({
-        fillColor: phenomColor,
+        fillColor: distData.color || phenomColor || "#667eea",
         fillOpacity: 0.8,
         color: "#333",
         weight: 2,
@@ -1461,6 +1605,60 @@ function updateMapStyle(skipMarkers = false) {
         weight: 2,
         dashArray: isFoothill ? "5, 5" : "",
       });
+    }
+  });
+}
+
+function updateLegend() {
+  const legendDiv = document.querySelector(".info.legend");
+  if (!legendDiv) return;
+
+  legendDiv.innerHTML = "";
+
+  const items = [
+    { label: "<strong>FORECAST</strong>", color: "transparent" },
+    ...forecastDropdownOptions
+      .filter((o) => o.value !== 0)
+      .map((o) => ({ label: o.text, color: o.color })),
+
+    { label: "<strong>WARNING</strong>", color: "transparent" },
+    ...warningDropdownOptions.map((o) => ({ label: o.text, color: o.color })),
+
+    { label: "<strong>PHENOMENA</strong>", color: "transparent" },
+    {
+      label: "मेघगर्जन (Thunderstorm)",
+      color: "#ffc107",
+      icon: "fa-cloud-bolt",
+    },
+    { label: "तेज़ हवा (Gusty Wind)", color: "#17a2b8", icon: "fa-wind" },
+    { label: "लू (Heat Wave)", color: "#fd7e14", icon: "fa-fire" },
+    {
+      label: "ओलावृष्टि (Hailstorm)",
+      color: "#6f42c1",
+      icon: "fa-cloud-meatball",
+    },
+    {
+      label: "भारी वर्षा (Heavy Rain)",
+      color: "#007bff",
+      icon: "fa-cloud-showers-heavy",
+    },
+    { label: "घना कोहरा (Dense Fog)", color: "#6c757d", icon: "fa-smog" },
+    { label: "शीत दिवस (Cold Day)", color: "#20c997", icon: "fa-snowflake" },
+    {
+      label: "गर्म रात्रि (Warm Night)",
+      color: "#e83e8c",
+      icon: "fa-temperature-high",
+    },
+  ];
+
+  items.forEach((item) => {
+    if (item.color === "transparent") {
+      legendDiv.innerHTML += `<div style="margin: 5px 0 2px 0; font-weight:bold; border-bottom:1px solid #ccc;">${item.label}</div>`;
+    } else if (item.icon) {
+      legendDiv.innerHTML += `<div style="clear:both; margin-bottom:2px;"><i class="fas ${item.icon}" style="color:${item.color}; width:18px; text-align:center;"></i> ${item.label}</div>`;
+    } else {
+      legendDiv.innerHTML +=
+        '<i style="background:' + item.color + '"></i> ' + item.label + "<br>";
     }
   });
 }

@@ -350,19 +350,47 @@
 
           <!-- Place count -->
           <div class="place-count-panel">
-            <label>स्थान की मात्रा:</label>
-            <select id="globalPlaceCount" class="same-size">
-              <option value="1">
-                एक या दो स्थानों पर (likely at one or two places)
-              </option>
-              <option value="2">कुछ स्थानों (likely at a Few places)</option>
-              <option value="3">
-                अनेक स्थानों पर (likely at a many places)
-              </option>
-              <option value="4">
-                अधिकांश स्थानों पर (likely at a most places)
-              </option>
-            </select>
+            <div style="display: flex; align-items: center; margin-bottom: 5px">
+              <input
+                type="checkbox"
+                id="modeForecast"
+                checked
+                style="
+                  transform: scale(1.2);
+                  margin-right: 8px;
+                  cursor: pointer;
+                "
+              />
+              <label for="modeForecast" style="cursor: pointer; margin: 0"
+                >FORECAST</label
+              >
+            </div>
+            <select id="globalPlaceCount" class="same-size"></select>
+          </div>
+
+          <!-- Warning Panel -->
+          <div class="warning-panel">
+            <div style="display: flex; align-items: center; margin-bottom: 5px">
+              <input
+                type="checkbox"
+                id="modeWarning"
+                style="
+                  transform: scale(1.2);
+                  margin-right: 8px;
+                  cursor: pointer;
+                "
+              />
+              <label for="modeWarning" style="cursor: pointer; margin: 0"
+                >WARNING</label
+              >
+            </div>
+            <select id="globalWarning" class="same-size"></select>
+          </div>
+
+          <!-- Color Selection Panel -->
+          <div class="color-selection-panel">
+            <label>COLOR SELECTION</label>
+            <select id="globalColorSelect" class="same-size"></select>
           </div>
 
           <!-- Phenomena -->

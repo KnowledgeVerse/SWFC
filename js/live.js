@@ -288,8 +288,15 @@ function render() {
 
   if (dayData) {
     for (const [id, list] of Object.entries(dayData)) {
-      districtPhenomenaMap[id] = new Set(list);
-      list.forEach((p) => dayPhenomena.add(p));
+      // Handle new object structure { phenomena: [], color: '' }
+      const phenomenaList = Array.isArray(list) ? list : list.phenomena || [];
+      const color = Array.isArray(list) ? null : list.color;
+
+      districtPhenomenaMap[id] = {
+        phenomena: new Set(phenomenaList),
+        color: color,
+      };
+      phenomenaList.forEach((p) => dayPhenomena.add(p));
     }
   }
   updateMapStyle();
@@ -325,9 +332,10 @@ function updateMapStyle() {
     let phenomColor = null;
     let assignedPhenomenaList = [];
 
-    if (districtPhenomenaMap[oid] && districtPhenomenaMap[oid].size > 0) {
+    const distData = districtPhenomenaMap[oid];
+    if (distData && distData.phenomena && distData.phenomena.size > 0) {
       for (const pDef of phenDefs) {
-        if (districtPhenomenaMap[oid].has(pDef.id)) {
+        if (distData.phenomena.has(pDef.id)) {
           if (!phenomColor) phenomColor = phenColors[pDef.id];
           assignedPhenomenaList.push(pDef);
         }
@@ -335,14 +343,17 @@ function updateMapStyle() {
     }
 
     if (assignedPhenomenaList.length > 0) {
-      const primary = assignedPhenomenaList[0];
-      const iconHtml = `<div style="font-size: 32px; color: ${
-        phenColors[primary.id]
-      }; text-shadow: 0 0 3px #fff;"><i class="fas ${
-        primary.icon
-      } phenom-anim-${primary.id}"></i></div>`;
+      let iconsHtml = "";
+      const iconSize = assignedPhenomenaList.length > 1 ? "18px" : "32px";
+
+      assignedPhenomenaList.forEach((p) => {
+        iconsHtml += `<div style="font-size: ${iconSize}; color: ${phenColors[p.id]}; text-shadow: 0 0 3px #fff; margin: 1px;">
+                          <i class="fas ${p.icon} phenom-anim-${p.id}"></i>
+                        </div>`;
+      });
+
       const icon = L.divIcon({
-        html: iconHtml,
+        html: iconsHtml,
         className: "map-phenom-marker",
         iconSize: [40, 40],
         iconAnchor: [20, 20],
@@ -354,11 +365,15 @@ function updateMapStyle() {
     const isFoothill =
       showFoothill && subRegionDistricts.fh.includes(parseInt(oid));
     layer.setStyle({
-      fillColor: phenomColor || getDistrictRegionColor(oid),
-      fillOpacity: phenomColor ? 0.8 : 0.2,
+      fillColor:
+        (distData && distData.color) ||
+        phenomColor ||
+        getDistrictRegionColor(oid),
+      fillOpacity:
+        distData && (distData.color || distData.phenomena.size > 0) ? 0.8 : 0.2,
       color: "#333",
       weight: 2,
-      dashArray: !phenomColor && isFoothill ? "5, 5" : "",
+      dashArray: !phenomColor && !distData?.color && isFoothill ? "5, 5" : "",
     });
   });
 }

@@ -1146,6 +1146,11 @@ body.dark-mode .star {
 .map-phenom-marker {
   background: transparent !important;
   border: none !important;
+  display: flex;
+  flex-wrap: wrap;
+  justify-content: center;
+  align-items: center;
+  gap: 2px;
 }
 
 /* Map Date Control */
@@ -1541,6 +1546,32 @@ input[type="checkbox"].same-size {
   margin-right: 10px;
 }
 
+/* ---------- warning panel ---------- */
+.warning-panel {
+  margin: 15px 0;
+  padding: 12px;
+  background: #ffebee;
+  border-left: 4px solid #f44336;
+  border-radius: 4px;
+}
+.warning-panel label {
+  font-weight: 600;
+  margin-right: 10px;
+}
+
+/* ---------- color selection panel ---------- */
+.color-selection-panel {
+  margin: 15px 0;
+  padding: 12px;
+  background: #e0f7fa;
+  border-left: 4px solid #00bcd4;
+  border-radius: 4px;
+}
+.color-selection-panel label {
+  font-weight: 600;
+  margin-right: 10px;
+}
+
 /* ---------- action / export buttons ---------- */
 .action-buttons,
 .export-options {
@@ -1664,6 +1695,16 @@ body.dark-mode .place-count-panel {
   border-left-color: #ffc107;
   color: #dfe6e9;
 }
+body.dark-mode .warning-panel {
+  background-color: #5c0000;
+  border-left-color: #f44336;
+  color: #dfe6e9;
+}
+body.dark-mode .color-selection-panel {
+  background-color: #006064;
+  border-left-color: #00bcd4;
+  color: #dfe6e9;
+}
 
 /* Leaflet Legend */
 .legend {
@@ -1673,6 +1714,8 @@ body.dark-mode .place-count-panel {
   padding: 10px;
   border-radius: 5px;
   box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
+  max-height: 400px;
+  overflow-y: auto;
 }
 .legend i {
   width: 18px;
