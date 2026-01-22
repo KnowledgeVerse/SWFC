@@ -364,6 +364,7 @@ function attachHandlers() {
   document.getElementById("toggleFoothill").onchange = (e) => {
     showFoothill = e.target.checked;
     updateMapStyle();
+    updateLegend();
   };
   document.getElementById("updateMapPhenomena").onclick =
     updateMapWithPhenomena;
@@ -434,10 +435,12 @@ function attachHandlers() {
   // Dropdown Color Handlers
   document.getElementById("globalPlaceCount").addEventListener("change", () => {
     updateDropdownBackgrounds();
+    updateLegend();
   });
   document.getElementById("globalWarning").addEventListener("change", () => {
     updateDropdownBackgrounds();
     updateMapStyle(); // Update map fill color based on warning
+    updateLegend();
   });
   document
     .getElementById("globalColorSelect")
@@ -475,6 +478,10 @@ function attachHandlers() {
       updateLegend();
     });
   }
+
+  document
+    .getElementById("toggleLegend")
+    .addEventListener("change", updateLegend);
 }
 function updateMultipleSelection() {
   selectedDistricts = Array.from(
@@ -582,12 +589,14 @@ function togglePhenom(id) {
       currentAudio.play().catch((e) => console.warn("Audio play failed:", e));
     }
   } else {
+    updateLegend(); // Update legend when checkbox changes
     // Stop audio if unchecked
     if (!currentAudio.paused) {
       currentAudio.pause();
       currentAudio.currentTime = 0;
     }
   }
+  updateLegend();
 }
 
 // ---------- Forecast ----------
@@ -1042,6 +1051,48 @@ function clearSelection() {
     '<p class="placeholder-text">कोई जिला चुने और मौसम घटनाएँ चुनें...</p>';
   updateMapStyle();
   saveData();
+  updateLegend();
+}
+
+function resetUI() {
+  selectedDistricts = [];
+  selectedPhenomena = [];
+
+  document.querySelectorAll("#districtGrid input").forEach((cb) => {
+    cb.checked = false;
+    cb.closest(".district-checkbox").classList.remove("highlighted");
+  });
+  document
+    .querySelectorAll("#regionalGrid input")
+    .forEach((cb) => (cb.checked = false));
+  document
+    .querySelectorAll(".map-region-check")
+    .forEach((cb) => (cb.checked = false));
+  document
+    .querySelectorAll("#phenomenaContainer input")
+    .forEach((cb) => (cb.checked = false));
+  document
+    .querySelectorAll(".intensity-select")
+    .forEach((s) => (s.selectedIndex = 0));
+
+  const pSelect = document.getElementById("globalPlaceCount");
+  if (pSelect) {
+    pSelect.value = 0;
+    updateDropdownBackgrounds();
+  }
+  const wSelect = document.getElementById("globalWarning");
+  if (wSelect) {
+    wSelect.value = 0;
+    updateDropdownBackgrounds();
+  }
+  const cSelect = document.getElementById("globalColorSelect");
+  if (cSelect) {
+    cSelect.value = "";
+    cSelect.style.backgroundColor = "";
+  }
+
+  document.getElementById("forecastContent").innerHTML =
+    '<p class="placeholder-text">कोई जिला चुने और मौसम घटनाएँ चुनें...</p>';
 }
 
 function updateMapWithPhenomena() {
@@ -1075,6 +1126,7 @@ function updateMapWithPhenomena() {
 
   updateMapStyle();
   saveData();
+  updateLegend();
 }
 
 function copyCurrentDayToAll() {
@@ -1611,56 +1663,82 @@ function updateMapStyle(skipMarkers = false) {
 
 function updateLegend() {
   const legendDiv = document.querySelector(".info.legend");
+  const showLegend = document.getElementById("toggleLegend")?.checked;
+
   if (!legendDiv) return;
 
+  if (!showLegend) {
+    legendDiv.style.display = "none";
+    return;
+  }
+  legendDiv.style.display = "block";
   legendDiv.innerHTML = "";
 
-  const items = [
-    { label: "<strong>FORECAST</strong>", color: "transparent" },
-    ...forecastDropdownOptions
-      .filter((o) => o.value !== 0)
-      .map((o) => ({ label: o.text, color: o.color })),
+  const activeColors = new Set();
+  const activePhenomena = new Set();
 
-    { label: "<strong>WARNING</strong>", color: "transparent" },
-    ...warningDropdownOptions.map((o) => ({ label: o.text, color: o.color })),
+  // 1. From Current Selection (Preview)
+  const placeVal = parseInt(document.getElementById("globalPlaceCount").value);
+  const placeOpt = forecastDropdownOptions.find((o) => o.value === placeVal);
+  if (placeOpt && placeOpt.color) activeColors.add(placeOpt.color);
 
-    { label: "<strong>PHENOMENA</strong>", color: "transparent" },
-    {
-      label: "मेघगर्जन (Thunderstorm)",
-      color: "#ffc107",
-      icon: "fa-cloud-bolt",
-    },
-    { label: "तेज़ हवा (Gusty Wind)", color: "#17a2b8", icon: "fa-wind" },
-    { label: "लू (Heat Wave)", color: "#fd7e14", icon: "fa-fire" },
-    {
-      label: "ओलावृष्टि (Hailstorm)",
-      color: "#6f42c1",
-      icon: "fa-cloud-meatball",
-    },
-    {
-      label: "भारी वर्षा (Heavy Rain)",
-      color: "#007bff",
-      icon: "fa-cloud-showers-heavy",
-    },
-    { label: "घना कोहरा (Dense Fog)", color: "#6c757d", icon: "fa-smog" },
-    { label: "शीत दिवस (Cold Day)", color: "#20c997", icon: "fa-snowflake" },
-    {
-      label: "गर्म रात्रि (Warm Night)",
-      color: "#e83e8c",
-      icon: "fa-temperature-high",
-    },
-  ];
+  const warnVal = parseInt(document.getElementById("globalWarning").value);
+  const warnOpt = warningDropdownOptions.find((o) => o.value === warnVal);
+  if (warnOpt && warnOpt.color) activeColors.add(warnOpt.color);
 
-  items.forEach((item) => {
-    if (item.color === "transparent") {
-      legendDiv.innerHTML += `<div style="margin: 5px 0 2px 0; font-weight:bold; border-bottom:1px solid #ccc;">${item.label}</div>`;
-    } else if (item.icon) {
-      legendDiv.innerHTML += `<div style="clear:both; margin-bottom:2px;"><i class="fas ${item.icon}" style="color:${item.color}; width:18px; text-align:center;"></i> ${item.label}</div>`;
-    } else {
-      legendDiv.innerHTML +=
-        '<i style="background:' + item.color + '"></i> ' + item.label + "<br>";
-    }
-  });
+  document
+    .querySelectorAll("#phenomenaContainer input:checked")
+    .forEach((cb) => {
+      activePhenomena.add(cb.value);
+    });
+
+  // 2. From Map Data (Current Day)
+  if (districtPhenomenaMap) {
+    Object.values(districtPhenomenaMap).forEach((d) => {
+      if (d.color) activeColors.add(d.color);
+      if (d.phenomena) {
+        d.phenomena.forEach((p) => activePhenomena.add(p));
+      }
+    });
+  }
+
+  // Render Forecasts
+  const activeForecasts = forecastDropdownOptions.filter(
+    (o) => o.color && activeColors.has(o.color),
+  );
+  if (activeForecasts.length > 0) {
+    legendDiv.innerHTML += `<div style="margin: 5px 0 2px 0; font-weight:bold; border-bottom:1px solid #ccc;">FORECAST</div>`;
+    activeForecasts.forEach((opt) => {
+      legendDiv.innerHTML += `<i style="background:${opt.color}"></i> ${opt.text}<br>`;
+    });
+  }
+
+  // Render Warnings
+  const activeWarnings = warningDropdownOptions.filter(
+    (o) => o.color && activeColors.has(o.color),
+  );
+  if (activeWarnings.length > 0) {
+    legendDiv.innerHTML += `<div style="margin: 5px 0 2px 0; font-weight:bold; border-bottom:1px solid #ccc;">WARNING</div>`;
+    activeWarnings.forEach((opt) => {
+      legendDiv.innerHTML += `<i style="background:${opt.color}"></i> ${opt.text}<br>`;
+    });
+  }
+
+  // Render Phenomena
+  if (activePhenomena.size > 0) {
+    legendDiv.innerHTML += `<div style="margin: 5px 0 2px 0; font-weight:bold; border-bottom:1px solid #ccc;">PHENOMENA</div>`;
+    phenDefs.forEach((p) => {
+      if (activePhenomena.has(p.id)) {
+        const color = phenColors[p.id];
+        const label = currentLang === "hi" ? p.hindi : p.english;
+        legendDiv.innerHTML += `<div style="clear:both; margin-bottom:2px;"><i class="fas ${p.icon}" style="color:${color}; width:18px; text-align:center;"></i> ${label}</div>`;
+      }
+    });
+  }
+
+  if (legendDiv.innerHTML === "") {
+    legendDiv.innerHTML = "<em>No items selected</em>";
+  }
 }
 
 function getDistrictRegionColor(id) {
@@ -1822,6 +1900,11 @@ function switchDay(day) {
 
   districtPhenomenaMap = weeklyData[currentDay - 1];
 
+  // Auto-clear legend/UI if day has no data
+  if (!districtPhenomenaMap || Object.keys(districtPhenomenaMap).length === 0) {
+    resetUI();
+  }
+
   // Update UI tabs
   document.querySelectorAll(".day-tab").forEach((btn, idx) => {
     const d = idx + 1;
@@ -1832,6 +1915,7 @@ function switchDay(day) {
 
   updateMapDateHeader();
   updateMapStyle();
+  updateLegend();
 }
 
 function updateMapDateHeader() {

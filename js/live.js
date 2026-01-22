@@ -11,14 +11,49 @@ const phenColors = {
 };
 
 const phenDefs = [
-  { id: "thunderstorm", hindi: "मेघगर्जन/वज्रपात", icon: "fa-cloud-bolt" },
-  { id: "gustywind", hindi: "तेज़ हवा", icon: "fa-wind" },
-  { id: "heatwave", hindi: "लू (उष्ण लहर)", icon: "fa-fire" },
-  { id: "hailstorm", hindi: "ओलावृष्टि", icon: "fa-cloud-meatball" },
-  { id: "heavyrain", hindi: "भारी वर्षा", icon: "fa-cloud-showers-heavy" },
-  { id: "densefog", hindi: "घना कोहरा", icon: "fa-smog" },
-  { id: "coldday", hindi: "शीत दिवस", icon: "fa-snowflake" },
-  { id: "warmnight", hindi: "गर्म रात्रि", icon: "fa-temperature-high" },
+  {
+    id: "thunderstorm",
+    hindi: "मेघगर्जन/वज्रपात",
+    english: "Thunderstorm/Lightning",
+    icon: "fa-cloud-bolt",
+  },
+  {
+    id: "gustywind",
+    hindi: "तेज़ हवा",
+    english: "Gusty Wind",
+    icon: "fa-wind",
+  },
+  {
+    id: "heatwave",
+    hindi: "लू (उष्ण लहर)",
+    english: "Heat Wave",
+    icon: "fa-fire",
+  },
+  {
+    id: "hailstorm",
+    hindi: "ओलावृष्टि",
+    english: "Hailstorm",
+    icon: "fa-cloud-meatball",
+  },
+  {
+    id: "heavyrain",
+    hindi: "भारी वर्षा",
+    english: "Heavy Rainfall",
+    icon: "fa-cloud-showers-heavy",
+  },
+  { id: "densefog", hindi: "घना कोहरा", english: "Dense Fog", icon: "fa-smog" },
+  {
+    id: "coldday",
+    hindi: "शीत दिवस",
+    english: "Cold Day",
+    icon: "fa-snowflake",
+  },
+  {
+    id: "warmnight",
+    hindi: "गर्म रात्रि",
+    english: "Warm Night",
+    icon: "fa-temperature-high",
+  },
 ];
 
 const weatherSounds = {
@@ -31,6 +66,38 @@ const weatherSounds = {
   coldday: "assets/audio/coldday.mp3",
   warmnight: "assets/audio/warmnight.mp3",
 };
+
+// Dropdown Options for Legend Mapping (Copied from main.js)
+const forecastDropdownOptions = [
+  { value: 0, text: "DRY – शुष्क", color: null },
+  {
+    value: 1,
+    text: "ISOL (ONE OR TWO PLACES) – एक दो स्थानों पर",
+    color: "rgb(51, 204, 51)",
+  },
+  {
+    value: 2,
+    text: "SCATTERED (FEW PLACES) – कुछ स्थानों पर",
+    color: "rgb(0, 153, 0)",
+  },
+  {
+    value: 3,
+    text: "FAIRLY WIDESPREAD (MANY PLACES) – अनेक स्थानों पर",
+    color: "rgb(51, 204, 255)",
+  },
+  {
+    value: 4,
+    text: "WIDESPREAD (MOST PLACES) – अधिकांश स्थानों पर",
+    color: "rgb(0, 102, 255)",
+  },
+];
+
+const warningDropdownOptions = [
+  { value: 0, text: "NO WARNING – कोई चेतावनी नहीं", color: "rgb(0, 153, 0)" },
+  { value: 1, text: "YELLOW – पीला", color: "rgb(255, 255, 0)" },
+  { value: 2, text: "ORANGE – नारंगी", color: "rgb(255, 192, 0)" },
+  { value: 3, text: "RED – लाल", color: "rgb(255, 0, 0)" },
+];
 
 let currentSlide = 0;
 let slideInterval;
@@ -46,6 +113,7 @@ let districtPhenomenaMap = {};
 let showFoothill = true;
 let isPlaying = true;
 let slideSpeed = 3000;
+let isLegendVisible = true;
 let isSoundEnabled = false;
 let currentAudio = new Audio();
 let currentLang = localStorage.getItem("lang") || "hi";
@@ -183,6 +251,13 @@ function initMap() {
 
   streetLayer.addTo(map);
 
+  // Add Legend Control
+  const legend = L.control({ position: "bottomleft" });
+  legend.onAdd = function () {
+    return L.DomUtil.create("div", "info legend");
+  };
+  legend.addTo(map);
+
   phenomenaMarkersLayer = L.layerGroup().addTo(map);
 
   // Load Shapefile
@@ -301,6 +376,7 @@ function render() {
   }
   updateMapStyle();
   playWeatherSound(dayPhenomena);
+  updateLegend(dayPhenomena, districtPhenomenaMap);
 }
 
 function updateSlideHeader(dayNum) {
@@ -376,6 +452,64 @@ function updateMapStyle() {
       dashArray: !phenomColor && !distData?.color && isFoothill ? "5, 5" : "",
     });
   });
+}
+
+function updateLegend(dayPhenomena, distMap) {
+  const legendDiv = document.querySelector(".info.legend");
+  if (!legendDiv) return;
+
+  if (!isLegendVisible) {
+    legendDiv.style.display = "none";
+    return;
+  }
+  legendDiv.style.display = "block";
+  legendDiv.innerHTML = "";
+
+  // Collect unique colors from map data to infer Forecast/Warning
+  const usedColors = new Set();
+  Object.values(distMap).forEach((d) => {
+    if (d.color) usedColors.add(d.color);
+  });
+
+  // 1. Forecast/Warning (Inferred from colors)
+  // We check if any used color matches our known options
+  const activeForecasts = forecastDropdownOptions.filter(
+    (o) => o.color && usedColors.has(o.color),
+  );
+  const activeWarnings = warningDropdownOptions.filter(
+    (o) => o.color && usedColors.has(o.color),
+  );
+
+  if (activeForecasts.length > 0) {
+    legendDiv.innerHTML += `<div style="margin: 5px 0 2px 0; font-weight:bold; border-bottom:1px solid #ccc;">FORECAST</div>`;
+    activeForecasts.forEach((opt) => {
+      legendDiv.innerHTML += `<i style="background:${opt.color}"></i> ${opt.text}<br>`;
+    });
+  }
+
+  if (activeWarnings.length > 0) {
+    legendDiv.innerHTML += `<div style="margin: 5px 0 2px 0; font-weight:bold; border-bottom:1px solid #ccc;">WARNING</div>`;
+    activeWarnings.forEach((opt) => {
+      legendDiv.innerHTML += `<i style="background:${opt.color}"></i> ${opt.text}<br>`;
+    });
+  }
+
+  // 2. Phenomena
+  if (dayPhenomena.size > 0) {
+    legendDiv.innerHTML += `<div style="margin: 5px 0 2px 0; font-weight:bold; border-bottom:1px solid #ccc;">PHENOMENA</div>`;
+    // Sort by phenDefs order
+    phenDefs.forEach((p) => {
+      if (dayPhenomena.has(p.id)) {
+        const color = phenColors[p.id];
+        const label = currentLang === "hi" ? p.hindi : p.english; // Simple toggle for live view
+        legendDiv.innerHTML += `<div style="clear:both; margin-bottom:2px;"><i class="fas ${p.icon}" style="color:${color}; width:18px; text-align:center;"></i> ${label}</div>`;
+      }
+    });
+  }
+
+  if (legendDiv.innerHTML === "") {
+    legendDiv.innerHTML = "<em>No items selected</em>";
+  }
 }
 
 function getDistrictRegionColor(id) {
@@ -463,6 +597,18 @@ function toggleRadar(btn) {
   }
 }
 window.toggleRadar = toggleRadar;
+
+function toggleLegend() {
+  isLegendVisible = !isLegendVisible;
+  const btn = document.getElementById("btnLegend");
+  if (isLegendVisible) {
+    btn.classList.add("active");
+  } else {
+    btn.classList.remove("active");
+  }
+  render(); // Re-render to update legend visibility
+}
+window.toggleLegend = toggleLegend;
 
 function toggleSound() {
   isSoundEnabled = !isSoundEnabled;
