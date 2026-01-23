@@ -119,15 +119,56 @@ const combinedColorOptions = [
   ...warningDropdownOptions.map((o) => ({ ...o, text: "Warning: " + o.text })),
 ];
 
+// ---------- Legend Static Items ----------
+const forecastLegendItems = [
+  { color: "transparent", text: "DRY<br>शुष्क", border: "1px solid #999" },
+  {
+    color: "rgb(51, 204, 51)",
+    text: "ISOL (ONE OR TWO PLACES)<br>एक दो स्थानों पर",
+  },
+  { color: "rgb(0, 153, 0)", text: "SCATTERED (FEW PLACES)<br>कुछ स्थानों पर" },
+  {
+    color: "rgb(51, 204, 255)",
+    text: "FAIRLY WIDESPREAD (MANY PLACES)<br>अनेक स्थानों पर",
+  },
+  {
+    color: "rgb(0, 102, 255)",
+    text: "WIDESPREAD (MOST PLACES)<br>अधिकांश स्थानों पर",
+  },
+];
+
+const warningLegendItems = [
+  {
+    color: "rgb(0, 153, 0)",
+    text: "🟢 GREEN (हरा) – NO WARNING<br>(No Action / कोई चेतावनी नहीं)",
+  },
+  {
+    color: "rgb(255, 255, 0)",
+    text: "🟡 YELLOW (पीला) – WATCH<br>(Be Updated / अपडेट रहें)",
+  },
+  {
+    color: "rgb(255, 192, 0)",
+    text: "🟠 ORANGE (नारंगी) – ALERT<br>(Be Prepared / सतर्क रहें)",
+  },
+  {
+    color: "rgb(255, 0, 0)",
+    text: "🔴 RED (लाल) – WARNING<br>(Take Action / तुरंत कार्रवाई करें)",
+  },
+];
+
 // ---------- Globals ----------
 let selectedDistricts = [],
   selectedPhenomena = [],
   showFoothill = true,
   currentDay = 1,
   activeDays = new Set([1]),
-  weeklyData = Array(7)
+  weeklyForecastData = Array(7)
     .fill(null)
     .map(() => ({})),
+  weeklyWarningData = Array(7)
+    .fill(null)
+    .map(() => ({})),
+  weeklyData = weeklyForecastData, // Default to Forecast
   districtPhenomenaMap = weeklyData[0],
   phenomenaMarkersLayer,
   isAudioEnabled = false,
@@ -147,7 +188,8 @@ const uiTranslations = {
     phenomena: "मौसम घटनाएँ:",
     forecastRes: "पूर्वानुमान परिणाम:",
     btnGenerate: "पूर्वानुमान तैयार करें",
-    btnUpdateMap: "मैप अपडेट करें",
+    btnUpdateForecast: "Forecast Map Update",
+    btnUpdateWarning: "Warning Map Update",
     btnClear: "साफ़ करें",
     btnExportTxt: "टेक्स्ट निर्यात करें",
     btnExportPdf: "PDF निर्यात करें",
@@ -174,7 +216,8 @@ const uiTranslations = {
     phenomena: "Weather Phenomena:",
     forecastRes: "Forecast Result:",
     btnGenerate: "Generate Forecast",
-    btnUpdateMap: "Update Map",
+    btnUpdateForecast: "Forecast Map Update",
+    btnUpdateWarning: "Warning Map Update",
     btnClear: "Clear",
     btnExportTxt: "Export Text",
     btnExportPdf: "Export PDF",
@@ -286,6 +329,7 @@ document.addEventListener("DOMContentLoaded", () => {
   updateLanguageUI();
   initMap();
   validateDistrictCoverage();
+  loadSavedData(); // Load data on startup
   updateDateTime();
   setInterval(updateDateTime, 1000);
   fetchTemperature();
@@ -366,8 +410,10 @@ function attachHandlers() {
     updateMapStyle();
     updateLegend();
   };
-  document.getElementById("updateMapPhenomena").onclick =
-    updateMapWithPhenomena;
+  document.getElementById("updateForecastMap").onclick = () =>
+    handleMapUpdate("forecast");
+  document.getElementById("updateWarningMap").onclick = () =>
+    handleMapUpdate("warning");
   document.getElementById("clearMapSelection").onclick = clearDistrictSelection;
   document.getElementById("downloadMap").onclick = downloadMapImage;
   document.getElementById("download7Days").onclick = downloadAllMaps;
@@ -464,6 +510,7 @@ function attachHandlers() {
       } else if (!modeWarning.checked) {
         modeForecast.checked = true; // Enforce one always on
       }
+      switchMode("forecast");
       updateMapStyle();
       updateLegend();
     });
@@ -474,6 +521,7 @@ function attachHandlers() {
       } else if (!modeForecast.checked) {
         modeWarning.checked = true; // Enforce one always on
       }
+      switchMode("warning");
       updateMapStyle();
       updateLegend();
     });
@@ -571,6 +619,16 @@ function clearDistrictSelection() {
     .forEach((cb) => (cb.checked = false));
   updateMapStyle();
   updateMultipleSelection();
+}
+
+function switchMode(mode) {
+  if (mode === "forecast") {
+    weeklyData = weeklyForecastData;
+  } else {
+    weeklyData = weeklyWarningData;
+  }
+  // Update current day view based on new mode data
+  districtPhenomenaMap = weeklyData[currentDay - 1];
 }
 
 function togglePhenom(id) {
@@ -895,7 +953,8 @@ function updateLanguageUI() {
 
   // Buttons
   document.getElementById("generateForecast").innerText = t.btnGenerate;
-  document.getElementById("updateMapPhenomena").innerText = t.btnUpdateMap;
+  document.getElementById("updateForecastMap").innerText = t.btnUpdateForecast;
+  document.getElementById("updateWarningMap").innerText = t.btnUpdateWarning;
   document.getElementById("clearSelection").innerText = t.btnClear;
   document.getElementById("exportText").innerText = t.btnExportTxt;
   document.getElementById("exportPDF").innerText = t.btnExportPdf;
@@ -1095,6 +1154,66 @@ function resetUI() {
     '<p class="placeholder-text">कोई जिला चुने और मौसम घटनाएँ चुनें...</p>';
 }
 
+function handleMapUpdate(mode) {
+  const modeForecast = document.getElementById("modeForecast");
+  const modeWarning = document.getElementById("modeWarning");
+  if (mode === "forecast") {
+    modeForecast.checked = true;
+    modeWarning.checked = false;
+  } else {
+    modeForecast.checked = false;
+    modeWarning.checked = true;
+  }
+  updateMapWithPhenomena();
+}
+
+function loadSavedData() {
+  const raw = localStorage.getItem("bihar_weather_data");
+  if (raw) {
+    try {
+      const parsed = JSON.parse(raw);
+      // Check if it's the new format with forecast/warning keys
+      if (parsed.forecast && parsed.warning) {
+        // Deserialize Forecast
+        weeklyForecastData = parsed.forecast.map((day) => {
+          const newDay = {};
+          for (const [id, data] of Object.entries(day)) {
+            newDay[id] = {
+              phenomena: new Set(data.phenomena),
+              color: data.color,
+            };
+          }
+          return newDay;
+        });
+        // Deserialize Warning
+        weeklyWarningData = parsed.warning.map((day) => {
+          const newDay = {};
+          for (const [id, data] of Object.entries(day)) {
+            newDay[id] = {
+              phenomena: new Set(data.phenomena),
+              color: data.color,
+            };
+          }
+          return newDay;
+        });
+
+        // Set initial active data
+        const modeForecast = document.getElementById("modeForecast");
+        if (modeForecast && modeForecast.checked) {
+          weeklyData = weeklyForecastData;
+        } else {
+          weeklyData = weeklyWarningData;
+        }
+        districtPhenomenaMap = weeklyData[currentDay - 1];
+        updateMapStyle();
+        updateLegend();
+      }
+    } catch (e) {
+      console.error("Failed to load saved data", e);
+    }
+  }
+}
+
 function updateMapWithPhenomena() {
   if (!selectedDistricts.length) {
     alert("कृपया कम से कम एक जिला चुनें।");
@@ -1198,18 +1317,24 @@ function submitCopyDays() {
 }
 
 function saveData() {
-  // Convert Sets to Arrays for JSON serialization
-  const serializableData = weeklyData.map((dayData) => {
-    const newDay = {};
-    for (const [id, set] of Object.entries(dayData)) {
-      newDay[id] = {
-        phenomena: Array.from(set.phenomena),
-        color: set.color,
-      };
-    }
-    return newDay;
-  });
-  localStorage.setItem("bihar_weather_data", JSON.stringify(serializableData));
+  const serialize = (dataArr) =>
+    dataArr.map((dayData) => {
+      const newDay = {};
+      for (const [id, set] of Object.entries(dayData)) {
+        newDay[id] = {
+          phenomena: Array.from(set.phenomena),
+          color: set.color,
+        };
+      }
+      return newDay;
+    });
+
+  const payload = {
+    forecast: serialize(weeklyForecastData),
+    warning: serialize(weeklyWarningData),
+  };
+
+  localStorage.setItem("bihar_weather_data", JSON.stringify(payload));
 }
 
 function handleUserLogoClick() {
@@ -1366,7 +1491,7 @@ function initMap() {
   phenomenaMarkersLayer = L.layerGroup().addTo(map);
 
   // Add Legend
-  const legend = L.control({ position: "bottomleft" });
+  const legend = L.control({ position: "bottomright" });
   legend.onAdd = function () {
     const div = L.DomUtil.create("div", "info legend");
     return div;
@@ -1674,65 +1799,65 @@ function updateLegend() {
   legendDiv.style.display = "block";
   legendDiv.innerHTML = "";
 
-  const activeColors = new Set();
   const activePhenomena = new Set();
 
-  // 1. From Current Selection (Preview)
-  const placeVal = parseInt(document.getElementById("globalPlaceCount").value);
-  const placeOpt = forecastDropdownOptions.find((o) => o.value === placeVal);
-  if (placeOpt && placeOpt.color) activeColors.add(placeOpt.color);
-
-  const warnVal = parseInt(document.getElementById("globalWarning").value);
-  const warnOpt = warningDropdownOptions.find((o) => o.value === warnVal);
-  if (warnOpt && warnOpt.color) activeColors.add(warnOpt.color);
-
+  // Collect active phenomena from checkboxes
   document
     .querySelectorAll("#phenomenaContainer input:checked")
     .forEach((cb) => {
       activePhenomena.add(cb.value);
     });
-
-  // 2. From Map Data (Current Day)
+  // Also from map data if any
   if (districtPhenomenaMap) {
     Object.values(districtPhenomenaMap).forEach((d) => {
-      if (d.color) activeColors.add(d.color);
       if (d.phenomena) {
         d.phenomena.forEach((p) => activePhenomena.add(p));
       }
     });
   }
 
-  // Render Forecasts
-  const activeForecasts = forecastDropdownOptions.filter(
-    (o) => o.color && activeColors.has(o.color),
-  );
-  if (activeForecasts.length > 0) {
-    legendDiv.innerHTML += `<div style="margin: 5px 0 2px 0; font-weight:bold; border-bottom:1px solid #ccc;">FORECAST</div>`;
-    activeForecasts.forEach((opt) => {
-      legendDiv.innerHTML += `<i style="background:${opt.color}"></i> ${opt.text}<br>`;
-    });
-  }
-
-  // Render Warnings
-  const activeWarnings = warningDropdownOptions.filter(
-    (o) => o.color && activeColors.has(o.color),
-  );
-  if (activeWarnings.length > 0) {
-    legendDiv.innerHTML += `<div style="margin: 5px 0 2px 0; font-weight:bold; border-bottom:1px solid #ccc;">WARNING</div>`;
-    activeWarnings.forEach((opt) => {
-      legendDiv.innerHTML += `<i style="background:${opt.color}"></i> ${opt.text}<br>`;
-    });
-  }
-
-  // Render Phenomena
+  // 1. Render Phenomena (First)
   if (activePhenomena.size > 0) {
     legendDiv.innerHTML += `<div style="margin: 5px 0 2px 0; font-weight:bold; border-bottom:1px solid #ccc;">PHENOMENA</div>`;
     phenDefs.forEach((p) => {
       if (activePhenomena.has(p.id)) {
         const color = phenColors[p.id];
-        const label = currentLang === "hi" ? p.hindi : p.english;
-        legendDiv.innerHTML += `<div style="clear:both; margin-bottom:2px;"><i class="fas ${p.icon}" style="color:${color}; width:18px; text-align:center;"></i> ${label}</div>`;
+        legendDiv.innerHTML += `
+          <div style="display:flex; align-items:center; margin-bottom:6px;">
+            <div style="width:35px; text-align:center; margin-right:8px;">
+                <i class="fas ${p.icon}" style="color:${color}; font-size:24px;"></i>
+            </div>
+            <div style="line-height:1.2;">
+                <span style="font-weight:bold;">${p.english}</span><br>
+                <span style="font-size:0.9em; color:#555;">${p.hindi}</span>
+            </div>
+          </div>`;
       }
+    });
+  }
+
+  // 2. Render Forecast OR Warning based on mode
+  const modeForecast = document.getElementById("modeForecast");
+  const modeWarning = document.getElementById("modeWarning");
+
+  if (modeForecast && modeForecast.checked) {
+    legendDiv.innerHTML += `<div style="margin: 10px 0 5px 0; font-weight:bold; border-bottom:1px solid #ccc;">Forecast: Distribution</div>`;
+    forecastLegendItems.forEach((item) => {
+      const borderStyle = item.border ? `border:${item.border};` : "";
+      legendDiv.innerHTML += `
+        <div style="display:flex; align-items:center; margin-bottom:6px; line-height:1.2;">
+          <span style="width:20px; height:20px; background:${item.color}; ${borderStyle} margin-right:8px; flex-shrink:0;"></span>
+          <span style="font-size:0.9em;">${item.text}</span>
+        </div>`;
+    });
+  } else if (modeWarning && modeWarning.checked) {
+    legendDiv.innerHTML += `<div style="margin: 10px 0 5px 0; font-weight:bold; border-bottom:1px solid #ccc;">Warning</div>`;
+    warningLegendItems.forEach((item) => {
+      legendDiv.innerHTML += `
+        <div style="display:flex; align-items:center; margin-bottom:6px; line-height:1.2;">
+          <span style="width:20px; height:20px; background:${item.color}; margin-right:8px; flex-shrink:0;"></span>
+          <span style="font-size:0.9em;">${item.text}</span>
+        </div>`;
     });
   }
 

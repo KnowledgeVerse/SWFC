@@ -99,9 +99,45 @@ const warningDropdownOptions = [
   { value: 3, text: "RED – लाल", color: "rgb(255, 0, 0)" },
 ];
 
+const forecastLegendItems = [
+  { color: "transparent", text: "DRY<br>शुष्क", border: "1px solid #999" },
+  {
+    color: "rgb(51, 204, 51)",
+    text: "ISOL (ONE OR TWO PLACES)<br>एक दो स्थानों पर",
+  },
+  { color: "rgb(0, 153, 0)", text: "SCATTERED (FEW PLACES)<br>कुछ स्थानों पर" },
+  {
+    color: "rgb(51, 204, 255)",
+    text: "FAIRLY WIDESPREAD (MANY PLACES)<br>अनेक स्थानों पर",
+  },
+  {
+    color: "rgb(0, 102, 255)",
+    text: "WIDESPREAD (MOST PLACES)<br>अधिकांश स्थानों पर",
+  },
+];
+
+const warningLegendItems = [
+  {
+    color: "rgb(0, 153, 0)",
+    text: "🟢 GREEN (हरा) – NO WARNING<br>(No Action / कोई चेतावनी नहीं)",
+  },
+  {
+    color: "rgb(255, 255, 0)",
+    text: "🟡 YELLOW (पीला) – WATCH<br>(Be Updated / अपडेट रहें)",
+  },
+  {
+    color: "rgb(255, 192, 0)",
+    text: "🟠 ORANGE (नारंगी) – ALERT<br>(Be Prepared / सतर्क रहें)",
+  },
+  {
+    color: "rgb(255, 0, 0)",
+    text: "🔴 RED (लाल) – WARNING<br>(Take Action / तुरंत कार्रवाई करें)",
+  },
+];
+
 let currentSlide = 0;
 let slideInterval;
-let weatherData = [];
+let weatherData = { forecast: [], warning: [] };
 let map,
   geojsonLayer,
   phenomenaMarkersLayer,
@@ -252,7 +288,7 @@ function initMap() {
   streetLayer.addTo(map);
 
   // Add Legend Control
-  const legend = L.control({ position: "bottomleft" });
+  const legend = L.control({ position: "bottomright" });
   legend.onAdd = function () {
     return L.DomUtil.create("div", "info legend");
   };
@@ -330,17 +366,24 @@ function loadData() {
   const raw = localStorage.getItem("bihar_weather_data");
   if (raw) {
     try {
-      weatherData = JSON.parse(raw);
+      const parsed = JSON.parse(raw);
+      if (parsed.forecast && parsed.warning) {
+        weatherData = parsed;
+      } else if (Array.isArray(parsed)) {
+        // Fallback for old data format
+        weatherData = { forecast: parsed, warning: Array(7).fill({}) };
+      }
     } catch (e) {
-      weatherData = [];
+      weatherData = { forecast: [], warning: [] };
     }
   }
 
-  if (!Array.isArray(weatherData) || weatherData.length === 0) {
-    weatherData = Array(7).fill({});
-  } else {
-    while (weatherData.length < 7) weatherData.push({});
-  }
+  // Ensure arrays are filled
+  if (!weatherData.forecast) weatherData.forecast = Array(7).fill({});
+  if (!weatherData.warning) weatherData.warning = Array(7).fill({});
+
+  while (weatherData.forecast.length < 7) weatherData.forecast.push({});
+  while (weatherData.warning.length < 7) weatherData.warning.push({});
 
   startSlideShow();
 }
@@ -349,21 +392,28 @@ function startSlideShow() {
   if (slideInterval) clearInterval(slideInterval);
   render();
   slideInterval = setInterval(() => {
-    currentSlide = (currentSlide + 1) % 7;
+    // Cycle 0-13 (7 days forecast + 7 days warning)
+    currentSlide = (currentSlide + 1) % 14;
     render();
   }, slideSpeed);
 }
 
 function render() {
-  updateSlideHeader(currentSlide + 1);
+  // Determine if we are in Forecast phase (0-6) or Warning phase (7-13)
+  const isForecast = currentSlide < 7;
+  const dayIndex = currentSlide % 7;
+  const dayData = isForecast
+    ? weatherData.forecast[dayIndex]
+    : weatherData.warning[dayIndex];
 
-  const dayData = weatherData[currentSlide];
+  // Update Header with Mode info
+  updateSlideHeader(dayIndex + 1, isForecast ? "Forecast" : "Warning");
+
   districtPhenomenaMap = {};
   let dayPhenomena = new Set();
 
   if (dayData) {
     for (const [id, list] of Object.entries(dayData)) {
-      // Handle new object structure { phenomena: [], color: '' }
       const phenomenaList = Array.isArray(list) ? list : list.phenomena || [];
       const color = Array.isArray(list) ? null : list.color;
 
@@ -379,7 +429,7 @@ function render() {
   updateLegend(dayPhenomena, districtPhenomenaMap);
 }
 
-function updateSlideHeader(dayNum) {
+function updateSlideHeader(dayNum, mode) {
   const date = new Date();
   const targetDate = new Date();
   targetDate.setDate(date.getDate() + (dayNum - 1));
@@ -395,7 +445,7 @@ function updateSlideHeader(dayNum) {
   const header = document.getElementById("slideHeader");
   const t = uiTranslations[currentLang];
   if (header) {
-    header.innerText = `${t.date}: ${todayStr} | ${t.day} ${dayNum}: ${targetDateStr}`;
+    header.innerText = `${mode} | ${t.date}: ${todayStr} | ${t.day} ${dayNum}: ${targetDateStr}`;
   }
 }
 
@@ -465,47 +515,47 @@ function updateLegend(dayPhenomena, distMap) {
   legendDiv.style.display = "block";
   legendDiv.innerHTML = "";
 
-  // Collect unique colors from map data to infer Forecast/Warning
-  const usedColors = new Set();
-  Object.values(distMap).forEach((d) => {
-    if (d.color) usedColors.add(d.color);
-  });
-
-  // 1. Forecast/Warning (Inferred from colors)
-  // We check if any used color matches our known options
-  const activeForecasts = forecastDropdownOptions.filter(
-    (o) => o.color && usedColors.has(o.color),
-  );
-  const activeWarnings = warningDropdownOptions.filter(
-    (o) => o.color && usedColors.has(o.color),
-  );
-
-  if (activeForecasts.length > 0) {
-    legendDiv.innerHTML += `<div style="margin: 5px 0 2px 0; font-weight:bold; border-bottom:1px solid #ccc;">FORECAST</div>`;
-    activeForecasts.forEach((opt) => {
-      legendDiv.innerHTML += `<i style="background:${opt.color}"></i> ${opt.text}<br>`;
-    });
-  }
-
-  if (activeWarnings.length > 0) {
-    legendDiv.innerHTML += `<div style="margin: 5px 0 2px 0; font-weight:bold; border-bottom:1px solid #ccc;">WARNING</div>`;
-    activeWarnings.forEach((opt) => {
-      legendDiv.innerHTML += `<i style="background:${opt.color}"></i> ${opt.text}<br>`;
-    });
-  }
-
-  // 2. Phenomena
+  // 1. Phenomena (First)
   if (dayPhenomena.size > 0) {
     legendDiv.innerHTML += `<div style="margin: 5px 0 2px 0; font-weight:bold; border-bottom:1px solid #ccc;">PHENOMENA</div>`;
     // Sort by phenDefs order
     phenDefs.forEach((p) => {
       if (dayPhenomena.has(p.id)) {
         const color = phenColors[p.id];
-        const label = currentLang === "hi" ? p.hindi : p.english; // Simple toggle for live view
-        legendDiv.innerHTML += `<div style="clear:both; margin-bottom:2px;"><i class="fas ${p.icon}" style="color:${color}; width:18px; text-align:center;"></i> ${label}</div>`;
+        legendDiv.innerHTML += `
+          <div style="display:flex; align-items:center; margin-bottom:6px;">
+            <div style="width:35px; text-align:center; margin-right:8px;">
+                <i class="fas ${p.icon}" style="color:${color}; font-size:24px;"></i>
+            </div>
+            <div style="line-height:1.2;">
+                <span style="font-weight:bold;">${p.english}</span><br>
+                <span style="font-size:0.9em; color:#555;">${p.hindi}</span>
+            </div>
+          </div>`;
       }
     });
   }
+
+  // 2. Warning (Full List)
+  legendDiv.innerHTML += `<div style="margin: 10px 0 5px 0; font-weight:bold; border-bottom:1px solid #ccc;">Warning</div>`;
+  warningLegendItems.forEach((item) => {
+    legendDiv.innerHTML += `
+      <div style="display:flex; align-items:center; margin-bottom:6px; line-height:1.2;">
+        <span style="width:20px; height:20px; background:${item.color}; margin-right:8px; flex-shrink:0;"></span>
+        <span style="font-size:0.9em;">${item.text}</span>
+      </div>`;
+  });
+
+  // 3. Forecast (Full List)
+  legendDiv.innerHTML += `<div style="margin: 10px 0 5px 0; font-weight:bold; border-bottom:1px solid #ccc;">Forecast: Distribution</div>`;
+  forecastLegendItems.forEach((item) => {
+    const borderStyle = item.border ? `border:${item.border};` : "";
+    legendDiv.innerHTML += `
+      <div style="display:flex; align-items:center; margin-bottom:6px; line-height:1.2;">
+        <span style="width:20px; height:20px; background:${item.color}; ${borderStyle} margin-right:8px; flex-shrink:0;"></span>
+        <span style="font-size:0.9em;">${item.text}</span>
+      </div>`;
+  });
 
   if (legendDiv.innerHTML === "") {
     legendDiv.innerHTML = "<em>No items selected</em>";
@@ -550,14 +600,14 @@ function setLayer(type) {
 window.setLayer = setLayer;
 
 function prevSlide() {
-  currentSlide = (currentSlide - 1 + 7) % 7;
+  currentSlide = (currentSlide - 1 + 14) % 14;
   render();
   resetInterval();
 }
 window.prevSlide = prevSlide;
 
 function nextSlide() {
-  currentSlide = (currentSlide + 1) % 7;
+  currentSlide = (currentSlide + 1) % 14;
   render();
   resetInterval();
 }
