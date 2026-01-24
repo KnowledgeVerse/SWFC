@@ -119,19 +119,19 @@ const forecastLegendItems = [
 const warningLegendItems = [
   {
     color: "rgb(0, 153, 0)",
-    text: "🟢 GREEN (हरा) – NO WARNING<br>(No Action / कोई चेतावनी नहीं)",
+    text: "GREEN (हरा) – NO WARNING<br>(No Action / कोई चेतावनी नहीं)",
   },
   {
     color: "rgb(255, 255, 0)",
-    text: "🟡 YELLOW (पीला) – WATCH<br>(Be Updated / अपडेट रहें)",
+    text: "YELLOW (पीला) – WATCH<br>(Be Updated / अपडेट रहें)",
   },
   {
     color: "rgb(255, 192, 0)",
-    text: "🟠 ORANGE (नारंगी) – ALERT<br>(Be Prepared / सतर्क रहें)",
+    text: "ORANGE (नारंगी) – ALERT<br>(Be Prepared / सतर्क रहें)",
   },
   {
     color: "rgb(255, 0, 0)",
-    text: "🔴 RED (लाल) – WARNING<br>(Take Action / तुरंत कार्रवाई करें)",
+    text: "RED (लाल) – WARNING<br>(Take Action / तुरंत कार्रवाई करें)",
   },
 ];
 
@@ -139,6 +139,7 @@ let currentSlide = 0;
 let slideInterval;
 let weatherData = { forecast: [], warning: [] };
 let map,
+  slides = [], // Array to hold generated slides
   geojsonLayer,
   phenomenaMarkersLayer,
   streetLayer,
@@ -192,8 +193,8 @@ function initLiveDisplay() {
     #liveRoot { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
     .glass-main-panel { width: 95%; height: 95%; padding: 15px; }
     #map { width: 100%; height: 100%; border-radius: 15px; z-index: 1; }
-    .display-content-area { flex: 1; width: 100%; position: relative; margin-top: 10px; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-    .live-controls-top { position: absolute; top: 10px; right: 10px; z-index: 1000; display: flex; gap: 5px; background: rgba(255,255,255,0.9); padding: 5px; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); }
+    .display-content-area { flex: 1; width: 100%; position: relative; margin-top: 5px; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
+    .live-controls-top { display: flex; justify-content: center; gap: 5px; background: rgba(255,255,255,0.5); padding: 5px; border-radius: 8px; margin-bottom: 10px; }
     .live-controls-bottom { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; gap: 15px; align-items: center; background: rgba(255,255,255,0.95); padding: 10px 25px; border-radius: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
     .control-btn { border: none; background: none; cursor: pointer; font-size: 1.4em; color: #2c3e50; transition: 0.2s; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; }
     .control-btn:hover { background: rgba(0,0,0,0.05); color: #667eea; transform: scale(1.1); }
@@ -208,22 +209,28 @@ function initLiveDisplay() {
         <div class="glass-header-glow">
             <h1 id="liveTitle">बिहार मौसम पूर्वानुमान - लाइव पूर्वावलोकन</h1>
         </div>
-        <div id="slideHeader" style="text-align: center; font-size: 1.2em; font-weight: bold; color: #2c3e50; padding: 5px; background: rgba(255,255,255,0.5); border-radius: 50px; margin: 0 auto; width: fit-content; padding-left: 20px; padding-right: 20px;">Loading...</div>
+        
+        <div class="live-controls-top">
+            <button class="layer-btn" onclick="window.location.href='index.html'" title="Home"><i class="fas fa-home"></i></button>
+            <button class="layer-btn" onclick="window.open('display.html', '_blank')" title="Display Mode"><i class="fas fa-tv"></i></button>
+            <button class="layer-btn active" onclick="setLayer('street')" id="btnStreet">Street</button>
+            <button class="layer-btn" onclick="setLayer('satellite')" id="btnSat">Satellite</button>
+            <button class="layer-btn" onclick="setLayer('hybrid')" id="btnHybrid">Hybrid</button>
+            <button class="layer-btn" onclick="setLayer('clean')" id="btnClean">Clean</button>
+            <button class="layer-btn" onclick="toggleRadar(this)" id="btnRadar" style="margin-left:5px; border-color:#e74c3c; color:#e74c3c;"><i class="fas fa-satellite-dish"></i> Radar</button>
+            <button class="layer-btn" onclick="toggleDarkMode()" id="btnDarkMode" title="Dark Mode"><i class="fas fa-moon"></i></button>
+            <label class="layer-btn" style="display:flex; align-items:center; gap:5px; cursor:pointer;">
+                <input type="checkbox" id="toggleLiveZoom" onchange="toggleMapZoom(this.checked)">
+                Zoom
+            </label>
+            <button class="layer-btn" onclick="toggleLanguage()" id="btnLang" title="Language">${currentLang.toUpperCase()}</button>
+        </div>
+
         <div class="display-content-area">
             <div id="map"></div>
+            <!-- Header inside Map Grid -->
+            <div id="slideHeader" style="position: absolute; top: 60px; left: 50%; transform: translateX(-50%); z-index: 1000; text-align: center; font-size: 1.2em; font-weight: bold; color: #2c3e50; padding: 5px 20px; background: rgba(255,255,255,0.9); border: 2px solid #2c3e50; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); min-width: 300px;">Loading...</div>
             
-            <div class="live-controls-top">
-                <button class="layer-btn" onclick="window.location.href='index.html'" title="Home"><i class="fas fa-home"></i></button>
-                <button class="layer-btn" onclick="window.open('display.html', '_blank')" title="Display Mode"><i class="fas fa-tv"></i></button>
-                <button class="layer-btn active" onclick="setLayer('street')" id="btnStreet">Street</button>
-                <button class="layer-btn" onclick="setLayer('satellite')" id="btnSat">Satellite</button>
-                <button class="layer-btn" onclick="setLayer('hybrid')" id="btnHybrid">Hybrid</button>
-                <button class="layer-btn" onclick="setLayer('clean')" id="btnClean">Clean</button>
-                <button class="layer-btn" onclick="toggleRadar(this)" id="btnRadar" style="margin-left:5px; border-color:#e74c3c; color:#e74c3c;"><i class="fas fa-satellite-dish"></i> Radar</button>
-                <button class="layer-btn" onclick="toggleDarkMode()" id="btnDarkMode" title="Dark Mode"><i class="fas fa-moon"></i></button>
-                <button class="layer-btn" onclick="toggleLanguage()" id="btnLang" title="Language">${currentLang.toUpperCase()}</button>
-            </div>
-
             <div class="live-controls-bottom">
                 <button class="control-btn" onclick="prevSlide()" title="Previous"><i class="fas fa-step-backward"></i></button>
                 <button class="control-btn" onclick="togglePlayPause()" id="btnPlayPause" title="Pause"><i class="fas fa-pause"></i></button>
@@ -258,7 +265,14 @@ function initLiveDisplay() {
 }
 
 function initMap() {
-  map = L.map("map", { zoomControl: true }).setView([25.6, 85.6], 7);
+  map = L.map("map", {
+    zoomControl: false, // Custom zoom control via toggle
+    scrollWheelZoom: false,
+    doubleClickZoom: false,
+    dragging: false,
+    boxZoom: false,
+    touchZoom: false,
+  }).setView([25.6, 85.6], 7);
 
   streetLayer = L.tileLayer(
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -294,8 +308,26 @@ function initMap() {
   };
   legend.addTo(map);
 
-  phenomenaMarkersLayer = L.layerGroup().addTo(map);
-
+  // Add Static Overlays (Logos & Arrow)
+  const overlays = L.control({ position: "topleft" });
+  overlays.onAdd = function () {
+    const div = L.DomUtil.create("div", "map-overlays-container");
+    div.innerHTML = `
+        <div style="position:absolute; top:10px; left:10px; z-index:1000; display:flex; flex-direction:column; align-items:center;">
+            <img src="assets/logo.png" class="map-logo-left" style="height:70px; margin-left: 10px;">
+            <div style="text-align:center; margin-top:5px;">
+                <div class="map-logo-text" style="margin-top:0; font-size:14px; background:rgba(255,255,255,0.8); padding:2px 5px; border-radius:4px;">मौसम विज्ञान केंद्र, पटना</div>
+                <div id="liveMapDateOverlay" style="margin-top:2px; font-weight:bold; color:#000; background:rgba(255,255,255,0.8); padding:2px 5px; border-radius:4px; font-size:12px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
+            </div>
+        </div>
+        <div style="position:absolute; top:10px; right:10px; z-index:1000; display:flex; gap:10px; align-items:center;">
+            <img src="assets/IMD_150_Year_Logo.png" style="height:70px;">
+            <img src="assets/North_Arrow.png" style="height:60px;">
+        </div>
+      `;
+    return div;
+  };
+  overlays.addTo(map);
   // Load Shapefile
   const basePath = "data/Bihar_Districts_Shapefile/Bihar";
   Promise.all([
@@ -362,6 +394,23 @@ function initMap() {
     });
 }
 
+function toggleMapZoom(enable) {
+  if (enable) {
+    map.dragging.enable();
+    map.touchZoom.enable();
+    map.doubleClickZoom.enable();
+    map.scrollWheelZoom.enable();
+    map.boxZoom.enable();
+  } else {
+    map.dragging.disable();
+    map.touchZoom.disable();
+    map.doubleClickZoom.disable();
+    map.scrollWheelZoom.disable();
+    map.boxZoom.disable();
+    fitMapBounds();
+  }
+}
+
 function loadData() {
   const raw = localStorage.getItem("bihar_weather_data");
   if (raw) {
@@ -385,29 +434,84 @@ function loadData() {
   while (weatherData.forecast.length < 7) weatherData.forecast.push({});
   while (weatherData.warning.length < 7) weatherData.warning.push({});
 
+  generateSlides();
   startSlideShow();
+}
+
+function generateSlides() {
+  slides = [];
+
+  // Helper to compare two day data objects
+  const areDaysEqual = (d1, d2) => {
+    // Simple JSON stringify comparison (works if key order is consistent, which it usually is here)
+    // Better: compare keys length and values
+    return JSON.stringify(d1) === JSON.stringify(d2);
+  };
+
+  // Process Forecast (Days 1-7)
+  let i = 0;
+  while (i < 7) {
+    let start = i + 1;
+    let end = i + 1;
+    // Check for continuous identical days
+    while (
+      end < 7 &&
+      areDaysEqual(weatherData.forecast[end - 1], weatherData.forecast[end])
+    ) {
+      end++;
+    }
+
+    slides.push({
+      type: "forecast",
+      startDay: start,
+      endDay: end,
+      data: weatherData.forecast[i],
+    });
+
+    i = end;
+  }
+
+  // Process Warning (Days 1-7)
+  i = 0;
+  while (i < 7) {
+    let start = i + 1;
+    let end = i + 1;
+    while (
+      end < 7 &&
+      areDaysEqual(weatherData.warning[end - 1], weatherData.warning[end])
+    ) {
+      end++;
+    }
+
+    slides.push({
+      type: "warning",
+      startDay: start,
+      endDay: end,
+      data: weatherData.warning[i],
+    });
+
+    i = end;
+  }
 }
 
 function startSlideShow() {
   if (slideInterval) clearInterval(slideInterval);
+  if (slides.length === 0) return; // Prevent errors if no slides
+  currentSlide = 0; // Reset to start
   render();
   slideInterval = setInterval(() => {
-    // Cycle 0-13 (7 days forecast + 7 days warning)
-    currentSlide = (currentSlide + 1) % 14;
+    currentSlide = (currentSlide + 1) % slides.length;
     render();
   }, slideSpeed);
 }
 
 function render() {
-  // Determine if we are in Forecast phase (0-6) or Warning phase (7-13)
-  const isForecast = currentSlide < 7;
-  const dayIndex = currentSlide % 7;
-  const dayData = isForecast
-    ? weatherData.forecast[dayIndex]
-    : weatherData.warning[dayIndex];
+  if (slides.length === 0) return;
+  const slide = slides[currentSlide];
+  const dayData = slide.data;
 
-  // Update Header with Mode info
-  updateSlideHeader(dayIndex + 1, isForecast ? "Forecast" : "Warning");
+  // Update Header
+  updateSlideHeader(slide);
 
   districtPhenomenaMap = {};
   let dayPhenomena = new Set();
@@ -426,26 +530,59 @@ function render() {
   }
   updateMapStyle();
   playWeatherSound(dayPhenomena);
-  updateLegend(dayPhenomena, districtPhenomenaMap);
+  updateLegend(dayPhenomena, slide.type);
 }
 
-function updateSlideHeader(dayNum, mode) {
+function updateSlideHeader(slide) {
   const date = new Date();
-  const targetDate = new Date();
-  targetDate.setDate(date.getDate() + (dayNum - 1));
+
+  // Calculate Start Date
+  const startDate = new Date(date);
+  startDate.setDate(date.getDate() + (slide.startDay - 1));
+
+  // Calculate End Date (End of the range)
+  const endDate = new Date(date);
+  endDate.setDate(date.getDate() + slide.endDay); // +1 day from the end index effectively
 
   const options = { day: "2-digit", month: "2-digit", year: "numeric" };
-  const todayStr = date
+  const startStr = startDate
     .toLocaleDateString("en-IN", options)
-    .replace(/\//g, "-");
-  const targetDateStr = targetDate
+    .replace(/\//g, ".");
+  const endStr = endDate
     .toLocaleDateString("en-IN", options)
-    .replace(/\//g, "-");
+    .replace(/\//g, ".");
 
   const header = document.getElementById("slideHeader");
-  const t = uiTranslations[currentLang];
+
+  let dayText = "";
+  if (slide.startDay === slide.endDay) {
+    dayText = `दिन - ${slide.startDay}`;
+  } else {
+    dayText = `दिन ${slide.startDay} से दिन - ${slide.endDay}`;
+  }
+
+  const modeText =
+    slide.type === "forecast" ? "वर्षा का पूर्वानुमान" : "मौसम की चेतावनी";
+  const modeColor = slide.type === "forecast" ? "#0056b3" : "#c0392b";
+
   if (header) {
-    header.innerText = `${mode} | ${t.date}: ${todayStr} | ${t.day} ${dayNum}: ${targetDateStr}`;
+    header.innerHTML = `
+        <div>
+            <span style="color:${modeColor}; font-weight:900;">${modeText} ${dayText} के लिए</span><br>
+            <span style="font-size:0.8em; font-weight:normal;">(${startStr} के 0830 IST से ${endStr} के 0830 IST तक मान्य)</span>
+        </div>
+    `;
+  }
+  // Update the date overlay on the map as well
+  const mapDateEl = document.getElementById("liveMapDateOverlay");
+  if (mapDateEl) {
+    const date = new Date();
+    date.setDate(date.getDate() + (slide.startDay - 1)); // Use start day for the date display
+    const options = { day: "2-digit", month: "2-digit", year: "numeric" };
+    const dateStr = date
+      .toLocaleDateString("en-IN", options)
+      .replace(/\//g, "-");
+    mapDateEl.innerText = `Date: ${dateStr}`;
   }
 }
 
@@ -504,7 +641,7 @@ function updateMapStyle() {
   });
 }
 
-function updateLegend(dayPhenomena, distMap) {
+function updateLegend(dayPhenomena, type) {
   const legendDiv = document.querySelector(".info.legend");
   if (!legendDiv) return;
 
@@ -537,25 +674,28 @@ function updateLegend(dayPhenomena, distMap) {
   }
 
   // 2. Warning (Full List)
-  legendDiv.innerHTML += `<div style="margin: 10px 0 5px 0; font-weight:bold; border-bottom:1px solid #ccc;">Warning</div>`;
-  warningLegendItems.forEach((item) => {
-    legendDiv.innerHTML += `
-      <div style="display:flex; align-items:center; margin-bottom:6px; line-height:1.2;">
-        <span style="width:20px; height:20px; background:${item.color}; margin-right:8px; flex-shrink:0;"></span>
-        <span style="font-size:0.9em;">${item.text}</span>
-      </div>`;
-  });
+  if (type === "warning") {
+    legendDiv.innerHTML += `<div style="margin: 10px 0 5px 0; font-weight:bold; border-bottom:1px solid #ccc;">Warning</div>`;
+    warningLegendItems.forEach((item) => {
+      legendDiv.innerHTML += `
+          <div style="display:flex; align-items:center; margin-bottom:6px; line-height:1.2;">
+            <span style="font-size:0.9em;">${item.text}</span>
+          </div>`;
+    });
+  }
 
   // 3. Forecast (Full List)
-  legendDiv.innerHTML += `<div style="margin: 10px 0 5px 0; font-weight:bold; border-bottom:1px solid #ccc;">Forecast: Distribution</div>`;
-  forecastLegendItems.forEach((item) => {
-    const borderStyle = item.border ? `border:${item.border};` : "";
-    legendDiv.innerHTML += `
-      <div style="display:flex; align-items:center; margin-bottom:6px; line-height:1.2;">
-        <span style="width:20px; height:20px; background:${item.color}; ${borderStyle} margin-right:8px; flex-shrink:0;"></span>
-        <span style="font-size:0.9em;">${item.text}</span>
-      </div>`;
-  });
+  if (type === "forecast") {
+    legendDiv.innerHTML += `<div style="margin: 10px 0 5px 0; font-weight:bold; border-bottom:1px solid #ccc;">Forecast: Distribution</div>`;
+    forecastLegendItems.forEach((item) => {
+      const borderStyle = item.border ? `border:${item.border};` : "";
+      legendDiv.innerHTML += `
+          <div style="display:flex; align-items:center; margin-bottom:6px; line-height:1.2;">
+            <span style="width:20px; height:20px; background:${item.color}; ${borderStyle} margin-right:8px; flex-shrink:0;"></span>
+            <span style="font-size:0.9em;">${item.text}</span>
+          </div>`;
+    });
+  }
 
   if (legendDiv.innerHTML === "") {
     legendDiv.innerHTML = "<em>No items selected</em>";
@@ -600,14 +740,16 @@ function setLayer(type) {
 window.setLayer = setLayer;
 
 function prevSlide() {
-  currentSlide = (currentSlide - 1 + 14) % 14;
+  if (slides.length === 0) return;
+  currentSlide = (currentSlide - 1 + slides.length) % slides.length;
   render();
   resetInterval();
 }
 window.prevSlide = prevSlide;
 
 function nextSlide() {
-  currentSlide = (currentSlide + 1) % 14;
+  if (slides.length === 0) return;
+  currentSlide = (currentSlide + 1) % slides.length;
   render();
   resetInterval();
 }

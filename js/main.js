@@ -140,19 +140,19 @@ const forecastLegendItems = [
 const warningLegendItems = [
   {
     color: "rgb(0, 153, 0)",
-    text: "🟢 GREEN (हरा) – NO WARNING<br>(No Action / कोई चेतावनी नहीं)",
+    text: "GREEN (हरा) – NO WARNING<br>(No Action / कोई चेतावनी नहीं)",
   },
   {
     color: "rgb(255, 255, 0)",
-    text: "🟡 YELLOW (पीला) – WATCH<br>(Be Updated / अपडेट रहें)",
+    text: "YELLOW (पीला) – WATCH<br>(Be Updated / अपडेट रहें)",
   },
   {
     color: "rgb(255, 192, 0)",
-    text: "🟠 ORANGE (नारंगी) – ALERT<br>(Be Prepared / सतर्क रहें)",
+    text: "ORANGE (नारंगी) – ALERT<br>(Be Prepared / सतर्क रहें)",
   },
   {
     color: "rgb(255, 0, 0)",
-    text: "🔴 RED (लाल) – WARNING<br>(Take Action / तुरंत कार्रवाई करें)",
+    text: "RED (लाल) – WARNING<br>(Take Action / तुरंत कार्रवाई करें)",
   },
 ];
 
@@ -169,6 +169,7 @@ let selectedDistricts = [],
     .fill(null)
     .map(() => ({})),
   weeklyData = weeklyForecastData, // Default to Forecast
+  currentReviewMode = null, // Default to null (no specific review mode active)
   districtPhenomenaMap = weeklyData[0],
   phenomenaMarkersLayer,
   isAudioEnabled = false,
@@ -416,10 +417,18 @@ function attachHandlers() {
     handleMapUpdate("warning");
   document.getElementById("clearMapSelection").onclick = clearDistrictSelection;
   document.getElementById("downloadMap").onclick = downloadMapImage;
-  document.getElementById("download7Days").onclick = downloadAllMaps;
-  document.getElementById("download7DaysPDF").onclick = download7DaysPDF;
+  document.getElementById("downloadSmartImages").onclick = downloadSmartImages;
+  document.getElementById("downloadSmartPDF").onclick = downloadSmartPDF;
   document.getElementById("toggleStreetView").onchange = (e) => {
     toggleTiles(e.target.checked);
+  };
+  document.getElementById("toggleAnimations").onchange = (e) => {
+    const mapDiv = document.getElementById("map");
+    if (e.target.checked) {
+      mapDiv.classList.remove("static-icons");
+    } else {
+      mapDiv.classList.add("static-icons");
+    }
   };
   document.getElementById("toggleSatelliteView").onchange = (e) => {
     toggleSatellite(e.target.checked);
@@ -510,7 +519,7 @@ function attachHandlers() {
       } else if (!modeWarning.checked) {
         modeForecast.checked = true; // Enforce one always on
       }
-      switchMode("forecast");
+      setReviewMode("forecast");
       updateMapStyle();
       updateLegend();
     });
@@ -521,10 +530,25 @@ function attachHandlers() {
       } else if (!modeForecast.checked) {
         modeWarning.checked = true; // Enforce one always on
       }
-      switchMode("warning");
+      setReviewMode("warning");
       updateMapStyle();
       updateLegend();
     });
+  }
+
+  // Clear Forecast & Warning Button
+  const btnClearFW = document.getElementById("btnClearFW");
+  if (btnClearFW) btnClearFW.onclick = clearForecastWarningData;
+
+  // Show Update Button Handler
+  const btnShowUpdate = document.getElementById("btnShowUpdate");
+  if (btnShowUpdate) {
+    btnShowUpdate.onclick = () => {
+      const options = document.getElementById("hiddenUpdateOptions");
+      if (options)
+        options.style.display =
+          options.style.display === "none" ? "flex" : "none";
+    };
   }
 
   document
@@ -621,14 +645,67 @@ function clearDistrictSelection() {
   updateMultipleSelection();
 }
 
-function switchMode(mode) {
-  if (mode === "forecast") {
-    weeklyData = weeklyForecastData;
+function setReviewMode(mode) {
+  const btnF = document.getElementById("btnReviewForecast");
+  const btnW = document.getElementById("btnReviewWarning");
+  const modeForecast = document.getElementById("modeForecast");
+  const modeWarning = document.getElementById("modeWarning");
+  const headerText = document.getElementById("mapHeaderText");
+
+  // Toggle logic: if clicking the already active mode, deselect it
+  if (currentReviewMode === mode) {
+    currentReviewMode = null;
+    // Reset buttons
+    if (btnF) {
+      btnF.style.background = ""; // Reset to default CSS
+      btnF.style.color = "#333";
+    }
+    if (btnW) {
+      btnW.style.background = ""; // Reset to default CSS
+      btnW.style.color = "#333";
+    }
+
+    // Revert to the data selected in the control panel
+    if (modeForecast && modeForecast.checked) {
+      weeklyData = weeklyForecastData;
+    } else {
+      weeklyData = weeklyWarningData;
+    }
+    // Hide header text
+    if (headerText) headerText.style.display = "none";
   } else {
-    weeklyData = weeklyWarningData;
+    currentReviewMode = mode;
+    if (mode === "forecast") {
+      weeklyData = weeklyForecastData;
+      if (btnF) {
+        btnF.style.background = "#17a2b8";
+        btnF.style.color = "white";
+      }
+      if (btnW) {
+        btnW.style.background = "";
+        btnW.style.color = "#333";
+      }
+    } else {
+      weeklyData = weeklyWarningData;
+      if (btnF) {
+        btnF.style.background = "";
+        btnF.style.color = "#333";
+      }
+      if (btnW) {
+        btnW.style.background = "#28a745";
+        btnW.style.color = "white";
+      }
+    }
+    // Show header text
+    if (headerText) headerText.style.display = "block";
   }
+
   // Update current day view based on new mode data
   districtPhenomenaMap = weeklyData[currentDay - 1];
+
+  updateMapHeaderText();
+  updateMapStyle();
+  updateLegend();
 }
 
 function togglePhenom(id) {
@@ -779,6 +856,7 @@ function exportToPDF() {
 }
 function downloadMapImage() {
   const node = document.getElementById("map");
+  node.classList.add("static-icons"); // Freeze animations
   // Use dom-to-image to capture the map div
   domtoimage
     .toPng(node, {
@@ -796,52 +874,91 @@ function downloadMapImage() {
     .catch(function (error) {
       console.error("Map download failed:", error);
       alert("मैप इमेज डाउनलोड करने में त्रुटि हुई।");
+    })
+    .finally(function () {
+      node.classList.remove("static-icons"); // Unfreeze
     });
 }
 async function download7DaysPDF() {
+  // Deprecated in favor of downloadSmartPDF
+  downloadSmartPDF();
+  // Deprecated in favor of downloadSmartPDF
+  downloadSmartPDF();
+}
+
+async function downloadSmartPDF() {
+  const chkForecast = document.getElementById("chkDlForecast").checked;
+  const chkWarning = document.getElementById("chkDlWarning").checked;
+
+  if (!chkForecast && !chkWarning) {
+    alert("Please select at least one type (Forecast or Warning) to download.");
+    return;
+  }
+
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF({ orientation: "landscape" });
   const originalDay = currentDay;
-  const overlay = document.getElementById("loadingOverlay");
+  const originalReviewMode = currentReviewMode;
+  const originalWeeklyData = weeklyData;
 
+  const overlay = document.getElementById("loadingOverlay");
   if (overlay) {
     overlay.style.display = "flex";
-    overlay.querySelector("p").innerText = "Generating 7 Days PDF...";
+    overlay.querySelector("p").innerText = "Generating Smart PDF...";
   }
 
   try {
-    for (let i = 1; i <= 7; i++) {
-      switchDay(i);
-      // Wait for map update and render
-      await new Promise((r) => setTimeout(r, 800));
+    const processType = async (type, dataArray) => {
+      // Set context for rendering
+      currentReviewMode = type;
+      weeklyData = dataArray;
 
-      const node = document.getElementById("map");
-      const canvas = await domtoimage.toPng(node, {
-        width: node.offsetWidth,
-        height: node.offsetHeight,
-        bgcolor: "#ffffff",
-      });
+      const groups = getDayGroups(dataArray);
 
-      if (i > 1) doc.addPage();
+      for (const group of groups) {
+        // Set day to start of group (header logic will handle the range text)
+        currentDay = group.start;
+        districtPhenomenaMap = weeklyData[currentDay - 1];
 
-      const imgProps = doc.getImageProperties(canvas);
-      const pdfWidth = doc.internal.pageSize.getWidth();
-      const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+        // Update Map UI
+        updateMapDateHeader();
+        updateMapHeaderText();
+        updateMapStyle();
+        updateLegend();
 
-      doc.addImage(canvas, "PNG", 0, 0, pdfWidth, pdfHeight);
+        // Wait for render
+        await new Promise((r) => setTimeout(r, 800));
 
-      // Check if day is empty
-      const dayData = weeklyData[i - 1];
-      const isEmpty = !dayData || Object.keys(dayData).length === 0;
+        const node = document.getElementById("map");
+        node.classList.add("static-icons"); // Freeze animations
+        const canvas = await domtoimage.toPng(node, {
+          width: node.offsetWidth,
+          height: node.offsetHeight,
+          bgcolor: "#ffffff",
+        });
 
-      if (isEmpty) {
-        doc.setFontSize(14);
-        doc.setTextColor(100);
-        doc.text("No Warning / कोई चेतावनी नहीं", 10, 10);
+        const groups = getDayGroups(dataArray);
+        // Add page (if not first page)
+        if (doc.internal.pages.length > 1) doc.addPage();
+
+        const imgProps = doc.getImageProperties(canvas);
+        const pdfWidth = doc.internal.pageSize.getWidth();
+        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+        doc.addImage(canvas, "PNG", 0, 0, pdfWidth, pdfHeight);
+        node.classList.remove("static-icons"); // Unfreeze
       }
+    };
+
+    if (chkForecast) {
+      await processType("forecast", weeklyForecastData);
     }
+    if (chkWarning) {
+      await processType("warning", weeklyWarningData);
+    }
+
     doc.save(
-      `Bihar_Weather_Forecast_7Days_${
+      `Bihar_Weather_Smart_Report_${
         new Date().toISOString().split("T")[0]
       }.pdf`,
     );
@@ -849,7 +966,18 @@ async function download7DaysPDF() {
     console.error("PDF Generation Error:", e);
     alert("PDF generate karne me truti hui.");
   } finally {
-    switchDay(originalDay);
+    // Restore state
+    currentDay = originalDay;
+    currentReviewMode = originalReviewMode;
+    weeklyData = originalWeeklyData;
+    districtPhenomenaMap = weeklyData[currentDay - 1];
+
+    // Refresh UI
+    updateMapDateHeader();
+    updateMapHeaderText();
+    updateMapStyle();
+    updateLegend();
+
     if (overlay) {
       overlay.style.display = "none";
       overlay.querySelector("p").innerText =
@@ -857,43 +985,108 @@ async function download7DaysPDF() {
     }
   }
 }
-async function downloadAllMaps() {
+
+async function downloadSmartImages() {
+  const chkForecast = document.getElementById("chkDlForecast").checked;
+  const chkWarning = document.getElementById("chkDlWarning").checked;
+
+  if (!chkForecast && !chkWarning) {
+    alert("Please select at least one type (Forecast or Warning) to download.");
+    return;
+  }
+
   const originalDay = currentDay;
+  const originalReviewMode = currentReviewMode;
+  const originalWeeklyData = weeklyData;
+
   const today = new Date().toISOString().split("T")[0];
   const overlay = document.getElementById("loadingOverlay");
 
   if (overlay) {
     overlay.style.display = "flex";
-    overlay.querySelector("p").innerText = "Downloading 7 Days Maps...";
+    overlay.querySelector("p").innerText = "Downloading Smart Images...";
   }
 
-  for (let i = 1; i <= 7; i++) {
-    switchDay(i);
-    // Wait for map update and render
-    await new Promise((r) => setTimeout(r, 800));
+  try {
+    const processType = async (type, dataArray) => {
+      currentReviewMode = type;
+      weeklyData = dataArray;
+      const groups = getDayGroups(dataArray);
 
-    const node = document.getElementById("map");
-    try {
-      const dataUrl = await domtoimage.toPng(node, {
-        width: node.offsetWidth,
-        height: node.offsetHeight,
-      });
-      const link = document.createElement("a");
-      link.download = `${today}-Day-${i}.png`;
-      link.href = dataUrl;
-      link.click();
-    } catch (e) {
-      console.error(`Error downloading Day ${i}:`, e);
+      for (const group of groups) {
+        currentDay = group.start;
+        districtPhenomenaMap = weeklyData[currentDay - 1];
+
+        updateMapDateHeader();
+        updateMapHeaderText();
+        updateMapStyle();
+        updateLegend();
+
+        await new Promise((r) => setTimeout(r, 800));
+
+        const node = document.getElementById("map");
+        node.classList.add("static-icons"); // Freeze animations
+        const dataUrl = await domtoimage.toPng(node, {
+          width: node.offsetWidth,
+          height: node.offsetHeight,
+        });
+        node.classList.remove("static-icons"); // Unfreeze
+
+        const link = document.createElement("a");
+        const rangeStr =
+          group.start === group.end
+            ? `Day-${group.start}`
+            : `Day-${group.start}-to-${group.end}`;
+        link.download = `${today}-${type}-${rangeStr}.png`;
+        link.href = dataUrl;
+        link.click();
+      }
+    };
+
+    if (chkForecast) await processType("forecast", weeklyForecastData);
+    if (chkWarning) await processType("warning", weeklyWarningData);
+  } catch (e) {
+    console.error("Image Download Error:", e);
+  } finally {
+    // Restore state
+    currentDay = originalDay;
+    currentReviewMode = originalReviewMode;
+    weeklyData = originalWeeklyData;
+    districtPhenomenaMap = weeklyData[currentDay - 1];
+
+    updateMapDateHeader();
+    updateMapHeaderText();
+    updateMapStyle();
+    updateLegend();
+
+    if (overlay) {
+      overlay.style.display = "none";
+      overlay.querySelector("p").innerText =
+        "पूर्वानुमान तैयार किया जा रहा है... / Generating Forecast...";
     }
   }
-
-  switchDay(originalDay);
-  if (overlay) {
-    overlay.style.display = "none";
-    overlay.querySelector("p").innerText =
-      "पूर्वानुमान तैयार किया जा रहा है... / Generating Forecast...";
-  }
 }
+
+function getDayGroups(dataArray) {
+  const groups = [];
+  let i = 0;
+  while (i < 7) {
+    let start = i + 1;
+    let end = i + 1;
+    while (end < 7 && areDaysEqual(dataArray[end - 1], dataArray[end])) {
+      end++;
+    }
+    groups.push({ start, end });
+    i = end;
+  }
+  return groups;
+}
+
+function downloadAllMaps() {
+  // Deprecated in favor of downloadSmartImages
+  downloadSmartImages();
+}
+
 function copyToClipboard() {
   const txt = document.getElementById("forecastContent").innerText;
   if (!txt || txt.includes("कोई जिला चुने")) {
@@ -1113,6 +1306,44 @@ function clearSelection() {
   updateLegend();
 }
 
+function clearForecastWarningData() {
+  if (!confirm("Are you sure you want to clear all Forecast and Warning data?"))
+    return;
+
+  weeklyForecastData = Array(7)
+    .fill(null)
+    .map(() => ({}));
+  weeklyWarningData = Array(7)
+    .fill(null)
+    .map(() => ({}));
+
+  if (!confirm("Are you sure you want to clear all Forecast and Warning data?"))
+    return;
+
+  weeklyForecastData = Array(7)
+    .fill(null)
+    .map(() => ({}));
+  weeklyWarningData = Array(7)
+    .fill(null)
+    .map(() => ({}));
+
+  // Reset current working data based on active checkboxes
+  const modeForecast = document.getElementById("modeForecast");
+  weeklyData =
+    modeForecast && modeForecast.checked
+      ? weeklyForecastData
+      : weeklyWarningData;
+  weeklyData =
+    modeForecast && modeForecast.checked
+      ? weeklyForecastData
+      : weeklyWarningData;
+  districtPhenomenaMap = weeklyData[currentDay - 1];
+
+  saveData();
+  updateMapStyle();
+  alert("Forecast and Warning data cleared.");
+}
+
 function resetUI() {
   selectedDistricts = [];
   selectedPhenomena = [];
@@ -1158,11 +1389,13 @@ function handleMapUpdate(mode) {
   const modeForecast = document.getElementById("modeForecast");
   const modeWarning = document.getElementById("modeWarning");
   if (mode === "forecast") {
-    modeForecast.checked = true;
-    modeWarning.checked = false;
+    if (modeForecast) modeForecast.checked = true;
+    if (modeWarning) modeWarning.checked = false;
+    weeklyData = weeklyForecastData; // Ensure we are updating the right data
   } else {
-    modeForecast.checked = false;
-    modeWarning.checked = true;
+    if (modeForecast) modeForecast.checked = false;
+    if (modeWarning) modeWarning.checked = true;
+    weeklyData = weeklyWarningData; // Ensure we are updating the right data
   }
   updateMapWithPhenomena();
 }
@@ -1461,7 +1694,16 @@ let map, geojsonLayer, tileLayer, satelliteLayer, hybridLayer, mapDateControl;
 
 function initMap() {
   // Initialize Leaflet Map
-  map = L.map("map").setView([25.6, 85.6], 7); // Center on Bihar
+  // Default zoom disabled as requested
+  map = L.map("map", {
+    center: [25.6, 85.6],
+    zoom: 7,
+    zoomControl: false, // We will add it if enabled, or use custom
+    scrollWheelZoom: false,
+    doubleClickZoom: false,
+    dragging: false,
+    boxZoom: false,
+  });
 
   // Base Layers
   tileLayer = L.tileLayer(
@@ -1497,21 +1739,29 @@ function initMap() {
     return div;
   };
   legend.addTo(map);
-  updateLegend();
 
-  // Add Date Control
-  const DateControl = L.Control.extend({
-    onAdd: function (map) {
-      const div = L.DomUtil.create("div", "map-date-control");
-      div.id = "mapDateDisplay";
-      div.innerHTML = "Loading Date...";
-      return div;
-    },
-    onRemove: function (map) {},
-  });
-  mapDateControl = new DateControl({ position: "topright" });
-  mapDateControl.addTo(map);
-  updateMapDateHeader(); // Initial set
+  // Add Static Overlays (Logos & Arrow)
+  const overlays = L.control({ position: "topleft" });
+  overlays.onAdd = function () {
+    const div = L.DomUtil.create("div", "map-overlays-container");
+    div.innerHTML = `
+        <div style="position:absolute; top:10px; left:10px; z-index:1000; display:flex; flex-direction:column; align-items:center;">
+            <img src="assets/logo.png" class="map-logo-left" style="height:70px; margin-left: 10px;">
+            <div style="text-align:center; margin-top:5px;">
+                <div class="map-logo-text" style="margin-top:0; font-size:14px; background:rgba(255,255,255,0.8); padding:2px 5px; border-radius:4px;">मौसम विज्ञान केंद्र, पटना</div>
+                <div id="mapDateOverlay" class="map-date-text" style="margin-top:2px; font-weight:bold; color:#000; background:rgba(255,255,255,0.8); padding:2px 5px; border-radius:4px; font-size:12px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">Loading...</div>
+            </div>
+        </div>
+        <div style="position:absolute; top:10px; right:10px; z-index:1000; display:flex; gap:10px; align-items:center;">
+            <img src="assets/IMD_150_Year_Logo.png" style="height:70px;">
+            <img src="assets/North_Arrow.png" style="height:60px;">
+        </div>
+      `;
+    return div;
+  };
+  overlays.addTo(map);
+  updateMapDateHeader(); // Set initial date in new overlay
+  updateLegend();
 
   // Layer Control (Hidden by default, toggled via UI buttons if needed, or we can add standard control)
   // We are using custom buttons for toggling, but let's add standard control for Satellite
@@ -1622,6 +1872,24 @@ function initMap() {
     });
 }
 
+function toggleMapZoom(enable) {
+  if (enable) {
+    map.dragging.enable();
+    map.touchZoom.enable();
+    map.doubleClickZoom.enable();
+    map.scrollWheelZoom.enable();
+    map.boxZoom.enable();
+    if (map.zoomControl) map.addControl(map.zoomControl);
+  } else {
+    map.dragging.disable();
+    map.touchZoom.disable();
+    map.doubleClickZoom.disable();
+    map.scrollWheelZoom.disable();
+    map.boxZoom.disable();
+    map.fitBounds(geojsonLayer.getBounds());
+  }
+}
+
 function toggleTiles(show) {
   if (show) {
     // Turn on Street, Turn off Satellite & Hybrid
@@ -1678,6 +1946,14 @@ function updateMapStyle(skipMarkers = false) {
     phenomenaMarkersLayer.clearLayers();
   }
 
+  // If no review mode is active, we only show the current selection highlight, not the saved weather data
+  const showWeatherData = currentReviewMode !== null;
+
+  // If we are not showing weather data, we shouldn't show the legend either (or show empty)
+  if (!showWeatherData) {
+    /* Logic handled in updateLegend mostly, but map needs to be clean */
+  }
+
   geojsonLayer.eachLayer((layer) => {
     const oid = String(layer.feature.properties.OBJECTID);
 
@@ -1685,8 +1961,14 @@ function updateMapStyle(skipMarkers = false) {
     let phenomColor = null;
     let assignedPhenomenaList = [];
 
-    const distData = districtPhenomenaMap[oid];
-    if (distData && distData.phenomena && distData.phenomena.size > 0) {
+    const distData = showWeatherData ? districtPhenomenaMap[oid] : null;
+
+    if (
+      showWeatherData &&
+      distData &&
+      distData.phenomena &&
+      distData.phenomena.size > 0
+    ) {
       // Find highest priority color based on phenDefs order
       for (const pDef of phenDefs) {
         if (distData.phenomena.has(pDef.id)) {
@@ -1697,7 +1979,8 @@ function updateMapStyle(skipMarkers = false) {
     }
 
     // Marker and Text Logic
-    if (!skipMarkers) {
+    // Only show markers if we are showing weather data
+    if (!skipMarkers && showWeatherData) {
       if (assignedPhenomenaList.length > 0) {
         layer.feature.properties.phenomenaText = assignedPhenomenaList
           .map((p) => p.hindi)
@@ -1753,7 +2036,11 @@ function updateMapStyle(skipMarkers = false) {
       }
     }
 
-    if (distData && (distData.phenomena.size > 0 || distData.color)) {
+    if (
+      showWeatherData &&
+      distData &&
+      (distData.phenomena.size > 0 || distData.color)
+    ) {
       // Use stored color if available, else fallback to phenom color
       layer.setStyle({
         fillColor: distData.color || phenomColor || "#667eea",
@@ -1790,7 +2077,10 @@ function updateLegend() {
   const legendDiv = document.querySelector(".info.legend");
   const showLegend = document.getElementById("toggleLegend")?.checked;
 
-  if (!legendDiv) return;
+  if (!legendDiv || currentReviewMode === null) {
+    if (legendDiv) legendDiv.style.display = "none";
+    return;
+  }
 
   if (!showLegend) {
     legendDiv.style.display = "none";
@@ -1855,7 +2145,6 @@ function updateLegend() {
     warningLegendItems.forEach((item) => {
       legendDiv.innerHTML += `
         <div style="display:flex; align-items:center; margin-bottom:6px; line-height:1.2;">
-          <span style="width:20px; height:20px; background:${item.color}; margin-right:8px; flex-shrink:0;"></span>
           <span style="font-size:0.9em;">${item.text}</span>
         </div>`;
     });
@@ -2031,33 +2320,155 @@ function switchDay(day) {
   }
 
   // Update UI tabs
-  document.querySelectorAll(".day-tab").forEach((btn, idx) => {
-    const d = idx + 1;
-    if (d > 7) return; // Skip copy buttons
-    if (activeDays.has(d)) btn.classList.add("active");
-    else btn.classList.remove("active");
-  });
+  // Fix: Target specific day buttons instead of relying on index
+  for (let i = 1; i <= 7; i++) {
+    const btn = document.querySelector(`button[onclick="switchDay(${i})"]`);
+    if (btn) {
+      if (activeDays.has(i)) btn.classList.add("active");
+      else btn.classList.remove("active");
+    }
+  }
 
   updateMapDateHeader();
+  updateMapHeaderText(); // Update the specific text
   updateMapStyle();
   updateLegend();
 }
 
 function updateMapDateHeader() {
-  const el = document.getElementById("mapDateDisplay");
+  const el = document.getElementById("mapDateOverlay");
   if (el) {
     const date = new Date();
-    const targetDate = new Date();
-    targetDate.setDate(date.getDate() + (currentDay - 1));
+    // If reviewing a specific day, we might want to show that day's date,
+    // but request says "Date: 23-01-2026" (Current Date usually, or selected day date).
+    // Assuming selected day date based on context of "Day 1", "Day 2" selection.
+    date.setDate(date.getDate() + (currentDay - 1));
 
     const options = { day: "2-digit", month: "2-digit", year: "numeric" };
-    const todayStr = date
-      .toLocaleDateString("en-IN", options)
-      .replace(/\//g, "-");
-    const targetDateStr = targetDate
+    const dateStr = date
       .toLocaleDateString("en-IN", options)
       .replace(/\//g, "-");
 
-    el.innerHTML = `Date: ${todayStr} | Day ${currentDay}: ${targetDateStr}`;
+    el.innerHTML = `Date: ${dateStr}`;
   }
 }
+
+// Helper to compare two day data objects for equality
+function areDaysEqual(d1, d2) {
+  if (!d1 || !d2) return false;
+  const keys1 = Object.keys(d1);
+  const keys2 = Object.keys(d2);
+  if (keys1.length !== keys2.length) return false;
+
+  for (const key of keys1) {
+    const val1 = d1[key];
+    const val2 = d2[key];
+    if (!val2) return false;
+    if (val1.color !== val2.color) return false;
+    if (val1.phenomena.size !== val2.phenomena.size) return false;
+    const p1 = Array.from(val1.phenomena).sort();
+    const p2 = Array.from(val2.phenomena).sort();
+    if (JSON.stringify(p1) !== JSON.stringify(p2)) return false;
+  }
+  return true;
+}
+
+function updateMapHeaderText() {
+  const el = document.getElementById("mapHeaderText");
+  if (!el) return;
+
+  // Only update text if visible (active review mode)
+  if (currentReviewMode === null) {
+    el.style.display = "none";
+    return;
+  } else {
+    el.style.display = "block";
+  }
+
+  // Calculate Continuous Range
+  let startDay = currentDay;
+  let endDay = currentDay;
+
+  // Check backwards
+  while (
+    startDay > 1 &&
+    areDaysEqual(weeklyData[startDay - 1 - 1], weeklyData[startDay - 1])
+  ) {
+    startDay--;
+  }
+  // Check forwards
+  while (
+    endDay < 7 &&
+    areDaysEqual(weeklyData[endDay - 1], weeklyData[endDay])
+  ) {
+    endDay++;
+  }
+
+  const date = new Date();
+  // Start Date for Range Start
+  const startDate = new Date(date);
+  startDate.setDate(date.getDate() + (startDay - 1));
+
+  // End Date for Range End
+  const endDate = new Date(date);
+  endDate.setDate(date.getDate() + endDay); // +1 day logic is handled by using endDay directly (since currentDay is 0-based index + 1)
+  // Wait, logic check:
+  // Day 1: Date + 0. Valid till Date + 1.
+  // If Range is Day 1 to Day 1: Start = Date+0, End = Date+1.
+  // If Range is Day 1 to Day 2: Start = Date+0, End = Date+2.
+  // So endDate calculation:
+  // endDate.setDate(date.getDate() + endDay);
+  // Correct.
+
+  const options = { day: "2-digit", month: "2-digit", year: "numeric" };
+  const startStr = startDate
+    .toLocaleDateString("en-IN", options)
+    .replace(/\//g, ".");
+  const endStr = endDate
+    .toLocaleDateString("en-IN", options)
+    .replace(/\//g, ".");
+
+  const modeText =
+    currentReviewMode === "forecast"
+      ? "वर्षा का पूर्वानुमान"
+      : "मौसम की चेतावनी";
+  const modeColor = currentReviewMode === "forecast" ? "#0056b3" : "#c0392b"; // Blue / Red
+
+  let dayText = "";
+  if (startDay === endDay) {
+    dayText = `दिन - ${startDay}`;
+  } else {
+    dayText = `दिन ${startDay} से दिन - ${endDay}`;
+  }
+
+  // Logic for text: Day 1
+  // (23.01.2025 के 0830 IST से 24.01.2025 के 0830 IST तक मान्य)
+
+  el.innerHTML = `
+        <div>
+            <div style="text-align:center; color:${modeColor}; font-weight:bold; font-size:1.2em; margin-bottom:5px; white-space:nowrap;">
+                ${modeText} ${dayText} के लिए
+            </div>
+            <div style="text-align:center; font-size:1em; color:#333;">
+                (${startStr} के 0830 IST से ${endStr} के 0830 IST तक मान्य)
+            </div>
+        </div>
+    `;
+}
+
+// Ensure Review Buttons are inactive on load
+document.addEventListener("DOMContentLoaded", () => {
+  const btnF = document.getElementById("btnReviewForecast");
+  const btnW = document.getElementById("btnReviewWarning");
+  if (btnF) {
+    btnF.style.background = "";
+    btnF.style.color = "#333";
+  }
+  if (btnW) {
+    btnW.style.background = "";
+    btnW.style.color = "#333";
+  }
+  currentReviewMode = null;
+  const headerText = document.getElementById("mapHeaderText");
+  if (headerText) headerText.style.display = "none";
+});

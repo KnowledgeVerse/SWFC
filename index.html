@@ -145,6 +145,15 @@
           <div class="map-controls">
             <div class="map-controls-left">
               <label class="checkbox-container small-checkbox">
+                <input
+                  type="checkbox"
+                  id="toggleMapZoom"
+                  onchange="toggleMapZoom(this.checked)"
+                />
+                <span class="checkmark"></span>
+                Enable Zoom
+              </label>
+              <label class="checkbox-container small-checkbox">
                 <input type="checkbox" id="toggleStreetView" checked />
                 <span class="checkmark"></span>
                 Street View
@@ -179,27 +188,64 @@
               <button id="clearMapSelection" class="btn-secondary small-btn">
                 Clear All
               </button>
-              <button
-                id="downloadMap"
-                class="btn-secondary small-btn"
-                style="background: #27ae60"
+
+              <!-- Download Section -->
+              <div
+                class="download-section"
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  gap: 5px;
+                  border: 1px solid #ccc;
+                  padding: 5px;
+                  border-radius: 5px;
+                  background: #f9f9f9;
+                "
               >
-                <i class="fas fa-download"></i> Map
-              </button>
-              <button
-                id="download7Days"
-                class="btn-secondary small-btn"
-                style="background: #8e44ad"
-              >
-                <i class="fas fa-images"></i> All Map
-              </button>
-              <button
-                id="download7DaysPDF"
-                class="btn-secondary small-btn special-feature"
-                style="background: #e74c3c"
-              >
-                <i class="fas fa-file-pdf"></i> 7 Days PDF
-              </button>
+                <div
+                  style="
+                    display: flex;
+                    gap: 10px;
+                    font-size: 13px;
+                    font-weight: bold;
+                  "
+                >
+                  <label style="margin-bottom: 0; cursor: pointer"
+                    ><input type="checkbox" id="chkDlForecast" checked />
+                    Forecast</label
+                  >
+                  <label style="margin-bottom: 0; cursor: pointer"
+                    ><input type="checkbox" id="chkDlWarning" checked />
+                    Warning</label
+                  >
+                </div>
+                <div style="display: flex; gap: 5px">
+                  <button
+                    id="downloadMap"
+                    class="btn-secondary small-btn"
+                    style="background: #27ae60"
+                    title="Download Current View"
+                  >
+                    <i class="fas fa-camera"></i> Snap
+                  </button>
+                  <button
+                    id="downloadSmartImages"
+                    class="btn-secondary small-btn"
+                    style="background: #8e44ad"
+                    title="Download Grouped Images"
+                  >
+                    <i class="fas fa-images"></i> Images
+                  </button>
+                  <button
+                    id="downloadSmartPDF"
+                    class="btn-secondary small-btn special-feature"
+                    style="background: #e74c3c"
+                    title="Download Grouped PDF"
+                  >
+                    <i class="fas fa-file-pdf"></i> PDF
+                  </button>
+                </div>
+              </div>
             </div>
             <div class="map-sub-regions">
               <label
@@ -301,8 +347,69 @@
                 /><span class="checkmark"></span>SE
               </label>
             </div>
+
+            <!-- Show Update Controls -->
+            <div
+              class="update-controls-container"
+              style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                margin-left: 15px;
+                border-left: 1px solid #ccc;
+                padding-left: 15px;
+              "
+            >
+              <label
+                class="checkbox-container small-checkbox"
+                style="margin-bottom: 0; margin-right: 10px"
+              >
+                <input type="checkbox" id="toggleAnimations" checked />
+                <span class="checkmark"></span>
+                Animation
+              </label>
+              <button
+                id="btnClearFW"
+                class="btn-secondary small-btn"
+                style="background: #c0392b; color: white"
+              >
+                Clear Forecast & Warning
+              </button>
+              <button
+                id="btnShowUpdate"
+                class="btn-secondary small-btn"
+                style="background: #34495e; color: white"
+              >
+                Show Update
+              </button>
+              <div id="hiddenUpdateOptions" style="display: none; gap: 5px">
+                <button
+                  id="btnReviewForecast"
+                  class="btn-secondary small-btn"
+                  onclick="setReviewMode('forecast')"
+                >
+                  Forecast
+                </button>
+                <button
+                  id="btnReviewWarning"
+                  class="btn-secondary small-btn"
+                  onclick="setReviewMode('warning')"
+                >
+                  Warning
+                </button>
+              </div>
+            </div>
           </div>
-          <div id="map"></div>
+
+          <div id="map" class="map-frame">
+            <!-- Map Header Text (Moved inside map for download) -->
+            <div
+              id="mapHeaderText"
+              class="map-header-text"
+              style="display: none"
+            ></div>
+            <!-- Overlays will be added via CSS/JS or Leaflet Controls -->
+          </div>
         </div>
 
         <div class="control-panel">

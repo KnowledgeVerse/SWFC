@@ -354,12 +354,84 @@ main {
   border-color: #667eea;
 }
 
+.map-frame {
+  position: relative;
+  border: 4px solid #2c3e50;
+  border-radius: 4px;
+  overflow: hidden;
+}
+
 #map {
   height: 75vh;
   min-height: 650px;
-  border-radius: 10px;
   background-color: #f8f9fa; /* Background for map when tiles are off */
-  border: 4px solid #2c3e50; /* Thicker border for rectangle fix */
+  z-index: 1;
+}
+
+/* Map Overlays */
+.map-overlays-container {
+  pointer-events: none; /* Allow clicking through to map */
+  width: 100%;
+  height: 100%;
+  position: absolute;
+  top: 0;
+  left: 0;
+}
+.map-logo-text {
+  font-size: 12px;
+  font-weight: bold;
+  color: #000;
+  background: rgba(255, 255, 255, 0.8);
+  padding: 2px 5px;
+  border-radius: 4px;
+  margin-top: 2px;
+  text-align: nowrap;
+  box-shadow: 0 1px 3px rgba(0, 0, 0, 0.2);
+  z-index: 1002;
+}
+
+.map-header-text {
+  position: absolute;
+  top: 10px;
+  left: 50%;
+  transform: translateX(-50%);
+  z-index: 1000;
+  background: rgba(255, 255, 255, 0.95);
+  padding: 10px;
+  border: 2px solid #2c3e50;
+  border-radius: 8px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.2);
+  min-width: 300px;
+}
+
+/* North Arrow Container (Rectangle Grid) */
+.north-arrow-container {
+  position: absolute;
+  top: 10px;
+  right: 10px;
+  z-index: 1000;
+  display: flex;
+  gap: 10px;
+  align-items: center;
+  background: rgba(255, 255, 255, 0.9);
+  border: 2px solid #2c3e50;
+  padding: 5px 10px;
+  border-radius: 4px;
+  box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+}
+
+/* Static Icons for Download (Freeze Animations) */
+.static-icons .phenom-anim-thunderstorm,
+.static-icons .phenom-anim-gustywind,
+.static-icons .phenom-anim-heatwave,
+.static-icons .phenom-anim-hailstorm,
+.static-icons .phenom-anim-heavyrain,
+.static-icons .phenom-anim-densefog,
+.static-icons .phenom-anim-coldday,
+.static-icons .phenom-anim-warmnight {
+  animation: none !important;
+  opacity: 1 !important;
+  filter: none !important;
 }
 
 .forecast-output {
@@ -450,7 +522,9 @@ footer h3 {
 .social-links a {
   color: #667eea;
   font-size: 32px;
-  transition: transform 0.3s, color 0.3s;
+  transition:
+    transform 0.3s,
+    color 0.3s;
 }
 
 .social-links a:hover {
@@ -650,8 +724,13 @@ footer h3 {
 }
 
 @keyframes modal-glow-blink {
-  0%, 100% { opacity: 1; }
-  50% { opacity: 0.4; }
+  0%,
+  100% {
+    opacity: 1;
+  }
+  50% {
+    opacity: 0.4;
+  }
 }
 
 .main-footer .btn-secondary:hover {
@@ -787,7 +866,9 @@ body.dark-mode .loading-overlay {
   border-radius: 50%;
   filter: blur(30px);
   animation: sun-pulse 8s infinite alternate;
-  transition: opacity 1s ease, transform 1s ease;
+  transition:
+    opacity 1s ease,
+    transform 1s ease;
 }
 
 .cloud {
@@ -1153,20 +1234,6 @@ body.dark-mode .star {
   gap: 2px;
 }
 
-/* Map Date Control */
-.map-date-control {
-  background: rgba(255, 255, 255, 0.95);
-  padding: 8px 15px;
-  border-radius: 8px;
-  box-shadow: 0 0 15px rgba(0, 0, 0, 0.2);
-  font-weight: 800;
-  font-size: 18px;
-  color: #2c3e50;
-  border: 2px solid #667eea;
-  text-align: center;
-  min-width: 200px;
-}
-
 /* Special Features Visibility */
 .special-feature {
   display: none !important;
@@ -1206,7 +1273,9 @@ body.logged-in .special-feature {
 /* Green Ring for Active Session */
 .user-logo.active-session {
   border: 3px solid #2ecc71;
-  box-shadow: 0 0 10px #2ecc71, 0 0 5px #27ae60 inset;
+  box-shadow:
+    0 0 10px #2ecc71,
+    0 0 5px #27ae60 inset;
 }
 
 .user-dropdown {
@@ -1733,7 +1802,10 @@ body.dark-mode .color-selection-panel {
   font-size: 11px;
   font-weight: 700;
   color: #2c3e50;
-  text-shadow: 1px 1px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff,
+  text-shadow:
+    1px 1px 0 #fff,
+    -1px -1px 0 #fff,
+    1px -1px 0 #fff,
     -1px 1px 0 #fff;
 }
 .leaflet-tooltip-pane.labels-hidden .map-label {
@@ -1933,6 +2005,7 @@ body.dark-mode .color-selection-panel {
 }
 .glass-slider {
   -webkit-appearance: none;
+  appearance: none;
   width: 100%;
   height: 6px;
   background: rgba(0, 0, 0, 0.1);
@@ -2001,6 +2074,7 @@ body.dark-mode .color-selection-panel {
 
 .glass-slider-compact {
   -webkit-appearance: none;
+  appearance: none;
   width: 80px;
   height: 4px;
   background: rgba(0, 0, 0, 0.1);
@@ -2138,9 +2212,19 @@ body.dark-mode .color-selection-panel {
 
 /* Audio Playing Animation */
 @keyframes sound-wave-pulse {
-  0% { transform: scale(1); opacity: 0.8; }
-  50% { transform: scale(1.2); opacity: 1; text-shadow: 0 0 8px rgba(231, 76, 60, 0.6); }
-  100% { transform: scale(1); opacity: 0.8; }
+  0% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
+  50% {
+    transform: scale(1.2);
+    opacity: 1;
+    text-shadow: 0 0 8px rgba(231, 76, 60, 0.6);
+  }
+  100% {
+    transform: scale(1);
+    opacity: 0.8;
+  }
 }
 
 .audio-playing-icon {
@@ -2191,4 +2275,10 @@ body.dark-mode #slideHeader {
   background: rgba(45, 52, 54, 0.8);
   color: #ecf0f1;
 }
+
+.live-controls-top {
+  display: flex;
+  justify-content: center;
+  gap: 5px;
+  margin-bottom: 10px;
 }
