@@ -132,28 +132,36 @@
             <button class="day-tab" onclick="switchDay(6)">Day 6</button>
             <button class="day-tab" onclick="switchDay(7)">Day 7</button>
             <label
-              class="checkbox-container small-checkbox"
+              class="day-tab"
               style="
                 margin-left: 10px;
-                background: #fff;
-                padding: 5px 10px;
-                border-radius: 15px;
-                border: 1px solid #ddd;
-                display: flex;
+                display: inline-flex;
                 align-items: center;
-                height: 36px;
+                height: auto;
+                padding: 2px 12px;
               "
             >
-              <input type="checkbox" id="multiDaySelectToggle" />
-              <i
-                class="fas fa-list-check"
-                style="margin-right: 5px; color: #555"
-              ></i>
+              <input
+                type="checkbox"
+                id="multiDaySelectToggle"
+                style="display: none"
+                onchange="
+                  this.parentElement.classList.toggle('active', this.checked)
+                "
+              />
+              <i class="fas fa-list-check" style="margin-right: 6px"></i>
               <span
-                class="checkmark"
-                style="position: relative; top: 0; left: 0; margin-right: 5px"
-              ></span>
-              Multi-Select
+                style="
+                  display: flex;
+                  flex-direction: column;
+                  line-height: 1;
+                  font-size: 14px;
+                  text-align: left;
+                "
+              >
+                <span>Multi-</span>
+                <span>Select</span>
+              </span>
             </label>
             <button
               id="copyDayData"
@@ -187,8 +195,9 @@
               <div
                 style="
                   display: flex;
-                  gap: 10px;
-                  font-size: 13px;
+                  flex-direction: column;
+                  gap: 2px;
+                  font-size: 11px;
                   font-weight: bold;
                 "
               >
@@ -215,7 +224,7 @@
                   <input type="checkbox" id="chkDlWarning" checked /> Warning
                 </label>
               </div>
-              <div style="height: 20px; width: 1px; background: #ccc"></div>
+              <div style="height: 30px; width: 1px; background: #ccc"></div>
               <div style="display: flex; gap: 5px">
                 <button
                   id="downloadMap"

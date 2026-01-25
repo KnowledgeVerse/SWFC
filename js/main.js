@@ -935,7 +935,7 @@ async function downloadSmartPDF() {
   }
 
   const { jsPDF } = window.jspdf;
-  const doc = new jsPDF({ orientation: "landscape" });
+  let doc = null;
   const originalDay = currentDay;
   const originalReviewMode = currentReviewMode;
   const originalWeeklyData = weeklyData;
@@ -970,21 +970,29 @@ async function downloadSmartPDF() {
 
         const node = document.getElementById("map");
         node.classList.add("static-icons"); // Freeze animations
-        const canvas = await domtoimage.toPng(node, {
+
+        const width = node.offsetWidth;
+        const height = node.offsetHeight;
+
+        const dataUrl = await domtoimage.toPng(node, {
           width: node.offsetWidth,
           height: node.offsetHeight,
           bgcolor: "#ffffff",
         });
 
-        const groups = getDayGroups(dataArray);
-        // Add page (if not first page)
-        if (doc.internal.pages.length > 1) doc.addPage();
+        if (!doc) {
+          // Initialize PDF with the dimensions of the first image (in pixels)
+          doc = new jsPDF({
+            orientation: width > height ? "l" : "p",
+            unit: "px",
+            format: [width, height],
+          });
+        } else {
+          // Add new page with dimensions of the current image
+          doc.addPage([width, height], width > height ? "l" : "p");
+        }
 
-        const imgProps = doc.getImageProperties(canvas);
-        const pdfWidth = doc.internal.pageSize.getWidth();
-        const pdfHeight = (imgProps.height * pdfWidth) / imgProps.width;
-
-        doc.addImage(canvas, "PNG", 0, 0, pdfWidth, pdfHeight);
+        doc.addImage(dataUrl, "PNG", 0, 0, width, height);
         node.classList.remove("static-icons"); // Unfreeze
       }
     };
@@ -996,11 +1004,13 @@ async function downloadSmartPDF() {
       await processType("warning", weeklyWarningData);
     }
 
-    doc.save(
-      `Bihar_Weather_Smart_Report_${
-        new Date().toISOString().split("T")[0]
-      }.pdf`,
-    );
+    if (doc) {
+      doc.save(
+        `Bihar_Weather_Smart_Report_${
+          new Date().toISOString().split("T")[0]
+        }.pdf`,
+      );
+    }
   } catch (e) {
     console.error("PDF Generation Error:", e);
     alert("PDF generate karne me truti hui.");
