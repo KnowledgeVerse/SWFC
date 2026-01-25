@@ -559,6 +559,17 @@ function attachHandlers() {
     btnToggleDrag.onclick = toggleLayoutEditMode;
   }
 
+  const bgBtn = document.getElementById("bgChangeBtn");
+  if (bgBtn) {
+    bgBtn.onclick = () => document.getElementById("bgColorInput").click();
+  }
+
+  // Load saved map background
+  const savedMapBg = localStorage.getItem("bihar_map_bg");
+  if (savedMapBg) {
+    updateMapBackground(savedMapBg);
+  }
+
   document
     .getElementById("toggleLegend")
     .addEventListener("change", updateLegend);
@@ -2638,3 +2649,16 @@ function loadLayoutPositions() {
     console.error("Error loading layout", e);
   }
 }
+
+function changeBodyBackground(color) {
+  document.body.style.background = color;
+  document.body.style.animation = "none"; // Disable gradient animation
+}
+window.changeBodyBackground = changeBodyBackground;
+
+function updateMapBackground(color) {
+  const mapDiv = document.getElementById("map");
+  if (mapDiv) mapDiv.style.background = color;
+  localStorage.setItem("bihar_map_bg", color);
+}
+window.updateMapBackground = updateMapBackground;

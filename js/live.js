@@ -185,6 +185,9 @@ document.addEventListener("DOMContentLoaded", () => {
       const v = JSON.parse(e.newValue);
       if (map) map.setView(v.center, v.zoom);
     }
+    if (e.key === "bihar_map_bg") {
+      if (map) document.getElementById("map").style.background = e.newValue;
+    }
   });
 
   if (localStorage.getItem("darkMode") === "true") {
@@ -322,6 +325,12 @@ function initMap() {
     boxZoom: false,
     touchZoom: false,
   }).setView(center, zoom);
+
+  // Apply saved map background
+  const savedMapBg = localStorage.getItem("bihar_map_bg");
+  if (savedMapBg) {
+    document.getElementById("map").style.background = savedMapBg;
+  }
 
   streetLayer = L.tileLayer(
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
