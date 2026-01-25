@@ -1721,6 +1721,17 @@ function initMap() {
     boxZoom: false,
   });
 
+  // Sync Map View with Live Preview
+  map.on("moveend", () => {
+    localStorage.setItem(
+      "bihar_map_view",
+      JSON.stringify({
+        center: map.getCenter(),
+        zoom: map.getZoom(),
+      }),
+    );
+  });
+
   // Base Layers
   tileLayer = L.tileLayer(
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",

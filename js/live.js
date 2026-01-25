@@ -181,6 +181,10 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.key === "bihar_map_layout") {
       loadLayoutPositions();
     }
+    if (e.key === "bihar_map_view") {
+      const v = JSON.parse(e.newValue);
+      if (map) map.setView(v.center, v.zoom);
+    }
   });
 
   if (localStorage.getItem("darkMode") === "true") {
@@ -196,31 +200,51 @@ function initLiveDisplay() {
   style.innerHTML = `
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Noto Sans Devanagari", sans-serif; background: #f4f7f6; }
     #liveRoot { width: 100%; height: 100%; display: flex; flex-direction: column; }
-    .live-header { position: fixed; top: 0; left: 0; width: 100%; height: 90px; background: rgba(255,255,255,0.95); z-index: 2000; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-bottom: 1px solid #ddd; }
-    .header-content { text-align: center; }
-    .header-content h1 { margin: 0; color: #2c3e50; font-size: 1.8em; }
+    .live-header { position: fixed; top: 0; left: 0; width: 100%; height: auto; min-height: 110px; background: rgba(255,255,255,0.65); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border-bottom: 1px solid rgba(255,255,255,0.5); padding: 10px 0; }
+    .header-top-row { width: 100%; display: flex; justify-content: center; align-items: center; position: relative; margin-bottom: 10px; }
+    .header-content { text-align: center; text-shadow: 0 1px 1px rgba(255,255,255,0.8); }
+    .header-content h1 { margin: 0; color: #2c3e50; font-size: 1.8em; font-weight: 800; }
     #map { width: 100%; height: 100%; border-radius: 15px; z-index: 1; }
-    .display-content-area { margin-top: 100px; flex: 1; width: 98%; margin-left: 1%; height: calc(100% - 110px); position: relative; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); background: white; border: 4px solid #2c3e50; }
-    .live-controls-top { position: absolute; top: 10px; right: 20px; display: flex; gap: 5px; }
+    .display-content-area { margin-top: 140px; flex: 1; width: 95%; max-width: 1400px; margin-left: auto; margin-right: auto; height: calc(100% - 160px); position: relative; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); background: white; border: 4px solid #2c3e50; }
+    .live-controls-row { display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto; justify-content: center; align-items: center; width: 100%; padding: 0 20px; white-space: nowrap; scrollbar-width: thin; }
     .live-controls-bottom { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; gap: 15px; align-items: center; background: rgba(255,255,255,0.95); padding: 10px 25px; border-radius: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
     .control-btn { border: none; background: none; cursor: pointer; font-size: 1.4em; color: #2c3e50; transition: 0.2s; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; }
     .control-btn:hover { background: rgba(0,0,0,0.05); color: #667eea; transform: scale(1.1); }
     .layer-btn { padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; background: white; font-size: 0.9em; font-weight: 600; color: #555; }
     .layer-btn.active { background: #667eea; color: white; border-color: #667eea; }
     .speed-control { display: flex; align-items: center; gap: 8px; font-size: 0.9em; font-weight: bold; color: #2c3e50; border-left: 1px solid #ccc; padding-left: 15px; margin-left: 5px; }
+    
+    /* Animated Layout Edit Button */
+    .btn-animated {
+        background: linear-gradient(45deg, #ff357a, #fff172, #ff357a);
+        background-size: 200% 200%;
+        animation: gradientAnim 3s ease infinite;
+        color: white;
+        border: none;
+        font-weight: bold;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        display: flex;
+        align-items: center;
+        gap: 5px;
+    }
+    @keyframes gradientAnim {
+        0% { background-position: 0% 50%; }
+        50% { background-position: 100% 50%; }
+        100% { background-position: 0% 50%; }
+    }
   `;
   document.head.appendChild(style);
 
   root.innerHTML = `
     <header class="live-header">
-        <img src="assets/logo.png" style="height: 70px; position: absolute; left: 20px;">
-        <div class="header-content">
-            <h1 id="liveTitle">बिहार मौसम पूर्वानुमान प्रणाली</h1>
-            <div style="font-size: 0.9em; color: #7f8c8d;">Live Preview Mode</div>
+        <div class="header-top-row">
+            <img src="assets/logo.png" style="height: 65px; position: absolute; left: 20px;">
+            <div class="header-content">
+                <h1 id="liveTitle">बिहार मौसम पूर्वानुमान प्रणाली</h1>
+            </div>
         </div>
         
-        <div class="live-controls-top">
-            <button id="btnToggleDrag" class="layer-btn" style="display:none; background: #8e44ad; color: white;" onclick="toggleLayoutEditMode()">Enable Layout Edit</button>
+        <div class="live-controls-row">
             <button class="layer-btn" onclick="window.location.href='index.html'" title="Home"><i class="fas fa-home"></i></button>
             <button class="layer-btn" onclick="window.open('display.html', '_blank')" title="Display Mode"><i class="fas fa-tv"></i></button>
             <button class="layer-btn active" onclick="setLayer('street')" id="btnStreet">Street</button>
@@ -234,12 +258,13 @@ function initLiveDisplay() {
                 Zoom
             </label>
             <button class="layer-btn" onclick="toggleLanguage()" id="btnLang" title="Language">${currentLang.toUpperCase()}</button>
+            <button id="btnToggleDrag" class="layer-btn btn-animated" style="display:none;" onclick="toggleLayoutEditMode()"><i class="fas fa-arrows-alt"></i> Enable Layout Edit</button>
         </div>
     </header>
         <div class="display-content-area">
             <div id="map"></div>
             <!-- Header inside Map Grid -->
-            <div id="slideHeader" style="position: absolute; top: 60px; left: 50%; transform: translateX(-50%); z-index: 1000; text-align: center; font-size: 1.2em; font-weight: bold; color: #2c3e50; padding: 5px 20px; background: rgba(255,255,255,0.9); border: 2px solid #2c3e50; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); min-width: 300px;">Loading...</div>
+            <div id="slideHeader" style="position: absolute; top: 60px; left: 50%; transform: translateX(-50%); z-index: 1000; text-align: center; font-size: 1.2em; font-weight: bold; color: #2c3e50; padding: 5px 20px; background: rgba(255,255,255,0.9); border: 2px solid #2c3e50; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); min-width: 300px; pointer-events: auto;">Loading...</div>
             
             <div class="live-controls-bottom">
                 <button class="control-btn" onclick="prevSlide()" title="Previous"><i class="fas fa-step-backward"></i></button>
@@ -274,11 +299,21 @@ function initLiveDisplay() {
 
   if (localStorage.getItem("admin_logged_in") === "true") {
     const btn = document.getElementById("btnToggleDrag");
-    if (btn) btn.style.display = "inline-block";
+    if (btn) btn.style.display = "flex";
   }
 }
 
 function initMap() {
+  // Check for saved view
+  const savedView = localStorage.getItem("bihar_map_view");
+  let center = [25.6, 85.6];
+  let zoom = 7;
+  if (savedView) {
+    const v = JSON.parse(savedView);
+    center = v.center;
+    zoom = v.zoom;
+  }
+
   map = L.map("map", {
     zoomControl: false, // Custom zoom control via toggle
     scrollWheelZoom: false,
@@ -286,7 +321,7 @@ function initMap() {
     dragging: false,
     boxZoom: false,
     touchZoom: false,
-  }).setView([25.6, 85.6], 7);
+  }).setView(center, zoom);
 
   streetLayer = L.tileLayer(
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
@@ -968,17 +1003,37 @@ function toggleLayoutEditMode() {
 
   if (isLayoutEditMode) {
     btn.innerText = "Save Layout";
-    btn.style.background = "#27ae60";
+    btn.style.background = "#27ae60"; // Green for save state
     alert(
       "Layout Edit Mode Enabled.\n- Drag elements to reposition.\n- Use Mouse Wheel to resize elements.",
     );
+
+    // Fix slideHeader positioning for editing (convert centered to absolute pixels)
+    // This prevents the element from jumping when scaling/dragging removes the transform centering
+    const header = document.getElementById("slideHeader");
+    if (
+      header &&
+      (header.style.transform.includes("translateX") ||
+        header.style.left === "50%")
+    ) {
+      const rect = header.getBoundingClientRect();
+      const parent = header.offsetParent || document.body;
+      const parentRect = parent.getBoundingClientRect();
+
+      header.style.left = rect.left - parentRect.left + "px";
+      header.style.top = rect.top - parentRect.top + "px";
+      header.style.transform = "scale(1)";
+      header.setAttribute("data-scale", "1");
+      header.style.right = "auto";
+    }
+
     enableDrag("overlayLeft");
     enableDrag("overlayRight");
     enableDrag("mapLegend");
-    // enableDrag("slideHeader"); // Optional: enable dragging for slide header too
+    enableDrag("slideHeader");
   } else {
-    btn.innerText = "Enable Layout Edit";
-    btn.style.background = "#8e44ad";
+    btn.innerHTML = '<i class="fas fa-arrows-alt"></i> Enable Layout Edit';
+    btn.style.background = ""; // Restore CSS gradient
     saveLayoutPositions();
     alert("Layout Saved.");
   }
@@ -1039,7 +1094,7 @@ function enableDrag(selector) {
 
 function saveLayoutPositions() {
   const layout = {};
-  const ids = ["overlayLeft", "overlayRight", "mapLegend"];
+  const ids = ["overlayLeft", "overlayRight", "mapLegend", "slideHeader"];
   ids.forEach((id) => {
     const el = document.getElementById(id);
     if (el) {
