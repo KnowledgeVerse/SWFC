@@ -1280,6 +1280,11 @@ body.dark-mode .star {
   align-items: center;
   gap: 2px;
 }
+/* Ensure SVGs in markers inherit color and size */
+.map-phenom-marker svg {
+  width: 1em;
+  height: 1em;
+}
 
 /* Special Features Visibility */
 .special-feature {

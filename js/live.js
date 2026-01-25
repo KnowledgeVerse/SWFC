@@ -204,11 +204,10 @@ function initLiveDisplay() {
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Noto Sans Devanagari", sans-serif; background: #f4f7f6; }
     #liveRoot { width: 100%; height: 100%; display: flex; flex-direction: column; }
     .live-header { position: fixed; top: 0; left: 0; width: 100%; height: auto; min-height: 110px; background: rgba(255,255,255,0.65); backdrop-filter: blur(15px); -webkit-backdrop-filter: blur(15px); z-index: 2000; display: flex; flex-direction: column; align-items: center; justify-content: center; box-shadow: 0 4px 20px rgba(0,0,0,0.1); border-bottom: 1px solid rgba(255,255,255,0.5); padding: 10px 0; }
-    .header-top-row { width: 100%; display: flex; justify-content: center; align-items: center; position: relative; margin-bottom: 10px; }
-    .header-content { text-align: center; text-shadow: 0 1px 1px rgba(255,255,255,0.8); }
+    .header-content { text-align: center; text-shadow: 0 1px 1px rgba(255,255,255,0.8); margin-bottom: 8px; }
     .header-content h1 { margin: 0; color: #2c3e50; font-size: 1.8em; font-weight: 800; }
     #map { width: 100%; height: 100%; border-radius: 15px; z-index: 1; }
-    .display-content-area { margin-top: 140px; flex: 1; width: 95%; max-width: 1400px; margin-left: auto; margin-right: auto; height: calc(100% - 160px); position: relative; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); background: white; border: 4px solid #2c3e50; }
+    .display-content-area { margin-top: 120px; flex: 1; width: 99%; max-width: 100%; margin-left: auto; margin-right: auto; height: calc(100% - 130px); position: relative; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); background: white; border: 4px solid #2c3e50; }
     .live-controls-row { display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto; justify-content: center; align-items: center; width: 100%; padding: 0 20px; white-space: nowrap; scrollbar-width: thin; }
     .live-controls-bottom { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; gap: 15px; align-items: center; background: rgba(255,255,255,0.95); padding: 10px 25px; border-radius: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
     .control-btn { border: none; background: none; cursor: pointer; font-size: 1.4em; color: #2c3e50; transition: 0.2s; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; }
@@ -240,11 +239,9 @@ function initLiveDisplay() {
 
   root.innerHTML = `
     <header class="live-header">
-        <div class="header-top-row">
-            <img src="assets/logo.png" style="height: 65px; position: absolute; left: 20px;">
-            <div class="header-content">
-                <h1 id="liveTitle">बिहार मौसम पूर्वानुमान प्रणाली</h1>
-            </div>
+        <img src="assets/logo.png" style="height: 70px; position: absolute; top: 20px; left: 20px;">
+        <div class="header-content">
+            <h1 id="liveTitle">बिहार मौसम पूर्वानुमान प्रणाली</h1>
         </div>
         
         <div class="live-controls-row">

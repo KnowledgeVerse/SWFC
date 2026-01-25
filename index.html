@@ -40,69 +40,80 @@
         <img src="assets/logo.png" class="gov-logo" alt="Government Logo" />
 
         <div
-          class="header-actions"
+          class="header-center-container"
           style="
-            position: absolute;
-            top: 20px;
-            right: 20px;
             display: flex;
-            gap: 10px;
+            flex-direction: column;
             align-items: center;
+            width: 100%;
+            z-index: 10;
           "
         >
-          <button
-            id="openLivePreview"
-            class="btn-display-anim system-live-btn"
-            title="Live Map Preview (7 Days)"
+          <h1>बिहार मौसम पूर्वानुमान प्रणाली</h1>
+          <h2 style="display: none">Bihar Weather Forecast System</h2>
+
+          <div
+            class="header-actions"
+            style="
+              display: flex;
+              gap: 10px;
+              align-items: center;
+              margin-top: 5px;
+            "
           >
-            <i class="fas fa-tower-broadcast"></i>
-          </button>
-          <button
-            id="openDisplayHeader"
-            class="btn-display-anim"
-            title="Live Display Mode"
-          >
-            <i class="fas fa-tv"></i>
-            <span class="btn-ripple"></span>
-          </button>
-          <button
-            id="bgChangeBtn"
-            class="btn-secondary"
-            title="Change Background Color"
-          >
-            <i class="fas fa-palette"></i>
-          </button>
-          <input
-            type="color"
-            id="bgColorInput"
-            style="display: none"
-            onchange="changeBodyBackground(this.value)"
-          />
-          <button id="darkModeToggle" class="btn-secondary" title="Dark Mode">
-            <i class="fas fa-moon"></i>
-          </button>
-          <button
-            id="langToggle"
-            class="btn-secondary"
-            title="Switch Language (HI/EN)"
-          >
-            HI
-          </button>
-          <!-- User Logo / Sign In Trigger -->
-          <div class="user-profile-container">
-            <img
-              src="logo/logo.png"
-              id="userLogoBtn"
-              class="user-logo"
-              title="Click to Sign In / Menu"
+            <button
+              id="openLivePreview"
+              class="btn-display-anim system-live-btn"
+              title="Live Map Preview (7 Days)"
+            >
+              <i class="fas fa-tower-broadcast"></i>
+            </button>
+            <button
+              id="openDisplayHeader"
+              class="btn-display-anim"
+              title="Live Display Mode"
+            >
+              <i class="fas fa-tv"></i>
+              <span class="btn-ripple"></span>
+            </button>
+            <button
+              id="bgChangeBtn"
+              class="btn-secondary"
+              title="Change Background Color"
+            >
+              <i class="fas fa-palette"></i>
+            </button>
+            <input
+              type="color"
+              id="bgColorInput"
+              style="display: none"
+              onchange="changeBodyBackground(this.value)"
             />
-            <div id="userDropdown" class="user-dropdown">
-              <!-- Menu items injected by JS -->
+            <button id="darkModeToggle" class="btn-secondary" title="Dark Mode">
+              <i class="fas fa-moon"></i>
+            </button>
+            <button
+              id="langToggle"
+              class="btn-secondary"
+              title="Switch Language (HI/EN)"
+            >
+              HI
+            </button>
+            <!-- User Logo / Sign In Trigger -->
+            <div class="user-profile-container">
+              <img
+                src="logo/logo.png"
+                id="userLogoBtn"
+                class="user-logo"
+                title="Click to Sign In / Menu"
+              />
+              <div id="userDropdown" class="user-dropdown">
+                <!-- Menu items injected by JS -->
+              </div>
             </div>
           </div>
         </div>
-        <h1>बिहार मौसम पूर्वानुमान प्रणाली</h1>
-        <h2 style="display: none">Bihar Weather Forecast System</h2>
+
         <div class="header-info">
           <div id="currentDateTime" class="info-box"></div>
           <div id="currentTemp" class="info-box">Loading...</div>
@@ -134,6 +145,10 @@
               "
             >
               <input type="checkbox" id="multiDaySelectToggle" />
+              <i
+                class="fas fa-list-check"
+                style="margin-right: 5px; color: #555"
+              ></i>
               <span
                 class="checkmark"
                 style="position: relative; top: 0; left: 0; margin-right: 5px"
@@ -143,17 +158,91 @@
             <button
               id="copyDayData"
               class="day-tab special-feature"
-              style="background: #e67e22; color: white; border-color: #e67e22"
+              style="display: none"
             >
               <i class="fas fa-copy"></i> Copy to All
             </button>
             <button
               id="copyDayDataSelect"
               class="day-tab special-feature"
-              style="background: #d35400; color: white; border-color: #d35400"
+              style="display: none"
             >
               <i class="fas fa-clone"></i> Copy to Select
             </button>
+
+            <!-- Download Section (Moved here) -->
+            <div
+              class="download-section"
+              style="
+                display: flex;
+                align-items: center;
+                gap: 10px;
+                border: 1px solid #ccc;
+                padding: 5px 10px;
+                border-radius: 20px;
+                background: #fff;
+                margin-left: auto;
+              "
+            >
+              <div
+                style="
+                  display: flex;
+                  gap: 10px;
+                  font-size: 13px;
+                  font-weight: bold;
+                "
+              >
+                <label
+                  style="
+                    margin-bottom: 0;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                  "
+                >
+                  <input type="checkbox" id="chkDlForecast" checked /> Forecast
+                </label>
+                <label
+                  style="
+                    margin-bottom: 0;
+                    cursor: pointer;
+                    display: flex;
+                    align-items: center;
+                    gap: 4px;
+                  "
+                >
+                  <input type="checkbox" id="chkDlWarning" checked /> Warning
+                </label>
+              </div>
+              <div style="height: 20px; width: 1px; background: #ccc"></div>
+              <div style="display: flex; gap: 5px">
+                <button
+                  id="downloadMap"
+                  class="btn-secondary small-btn"
+                  style="background: #27ae60"
+                  title="Download Current View"
+                >
+                  <i class="fas fa-camera"></i> Snap
+                </button>
+                <button
+                  id="downloadSmartImages"
+                  class="btn-secondary small-btn"
+                  style="background: #8e44ad"
+                  title="Download Grouped Images"
+                >
+                  <i class="fas fa-images"></i> Images
+                </button>
+                <button
+                  id="downloadSmartPDF"
+                  class="btn-secondary small-btn special-feature"
+                  style="background: #e74c3c"
+                  title="Download Grouped PDF"
+                >
+                  <i class="fas fa-file-pdf"></i> PDF
+                </button>
+              </div>
+            </div>
           </div>
           <div class="map-controls">
             <div class="map-controls-left">
@@ -189,6 +278,19 @@
                 <input type="checkbox" id="toggleLegend" checked />
                 <i class="fas fa-list-ul"></i> Legend
               </label>
+              <label
+                class="icon-toggle-label"
+                id="lblLayoutEdit"
+                title="Enable Layout Edit"
+                style="display: none"
+              >
+                <input
+                  type="checkbox"
+                  id="chkLayoutEdit"
+                  onchange="toggleLayoutEditMode(this.checked)"
+                />
+                <i class="fas fa-arrows-alt"></i> Layout Edit
+              </label>
               <button
                 id="fitMapBounds"
                 class="btn-secondary small-btn"
@@ -213,64 +315,6 @@
                 style="display: none"
                 onchange="updateMapBackground(this.value)"
               />
-
-              <!-- Download Section -->
-              <div
-                class="download-section"
-                style="
-                  display: flex;
-                  flex-direction: column;
-                  gap: 5px;
-                  border: 1px solid #ccc;
-                  padding: 5px;
-                  border-radius: 5px;
-                  background: #f9f9f9;
-                "
-              >
-                <div
-                  style="
-                    display: flex;
-                    gap: 10px;
-                    font-size: 13px;
-                    font-weight: bold;
-                  "
-                >
-                  <label style="margin-bottom: 0; cursor: pointer"
-                    ><input type="checkbox" id="chkDlForecast" checked />
-                    Forecast</label
-                  >
-                  <label style="margin-bottom: 0; cursor: pointer"
-                    ><input type="checkbox" id="chkDlWarning" checked />
-                    Warning</label
-                  >
-                </div>
-                <div style="display: flex; gap: 5px">
-                  <button
-                    id="downloadMap"
-                    class="btn-secondary small-btn"
-                    style="background: #27ae60"
-                    title="Download Current View"
-                  >
-                    <i class="fas fa-camera"></i> Snap
-                  </button>
-                  <button
-                    id="downloadSmartImages"
-                    class="btn-secondary small-btn"
-                    style="background: #8e44ad"
-                    title="Download Grouped Images"
-                  >
-                    <i class="fas fa-images"></i> Images
-                  </button>
-                  <button
-                    id="downloadSmartPDF"
-                    class="btn-secondary small-btn special-feature"
-                    style="background: #e74c3c"
-                    title="Download Grouped PDF"
-                  >
-                    <i class="fas fa-file-pdf"></i> PDF
-                  </button>
-                </div>
-              </div>
             </div>
             <div class="map-sub-regions">
               <label
@@ -398,13 +442,6 @@
                 style="background: #34495e; color: white"
               >
                 Show Update
-              </button>
-              <button
-                id="btnToggleDrag"
-                class="btn-secondary small-btn"
-                style="display: none; background: #8e44ad; color: white"
-              >
-                Enable Layout Edit
               </button>
               <div id="hiddenUpdateOptions" style="display: none; gap: 5px">
                 <button

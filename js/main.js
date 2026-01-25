@@ -315,6 +315,26 @@ const phenDefs = [
   },
 ];
 
+// ---------- SVG Icons for Export Compatibility ----------
+const phenomenonSvgs = {
+  thunderstorm:
+    '<svg viewBox="0 0 512 512" fill="currentColor" width="1em" height="1em"><path d="M296 464h-56V338.78l68.74-75.48a32 32 0 0 0-4.28-46.66C296.7 210.8 286.33 208 271.46 208H240V112c0-8.84-7.16-16-16-16h-16c-8.84 0-16 7.16-16 16v104h-31.46c-14.87 0-25.24 2.8-33 8.64a32 32 0 0 0-4.28 46.66l68.74 75.48V464zM400 32H112C50.14 32 0 82.14 0 144v224c0 61.86 50.14 112 112 112h288c61.86 0 112-50.14 112-112V144c0-61.86-50.14-112-112-112zM112 448c-44.11 0-80-35.89-80-80V144c0-44.11 35.89-80 80-80h288c44.11 0 80 35.89 80 80v224c0 44.11-35.89 80-80 80H112z"/></svg>', // Bolt/Cloud approx
+  gustywind:
+    '<svg viewBox="0 0 512 512" fill="currentColor" width="1em" height="1em"><path d="M480 288c0-53-43-96-96-96h-64v-32h64c70.7 0 128 57.3 128 128s-57.3 128-128 128H176c-8.8 0-16-7.2-16-16s7.2-16 16-16h208c53 0 96-43 96-96zM128 32C57.3 32 0 89.3 0 160s57.3 128 128 128h256c8.8 0 16-7.2 16-16s-7.2-16-16-16H128c-53 0-96-43-96-96s43-96 96-96h288c8.8 0 16-7.2 16-16s-7.2-16-16-16H128zm0 384c-53 0-96 43-96 96s43 96 96 96h112c8.8 0 16-7.2 16-16s-7.2-16-16-16H128c-35.3 0-64-28.7-64-64s28.7-64 64-64h160c8.8 0 16-7.2 16-16s-7.2-16-16-16H128z"/></svg>',
+  heatwave:
+    '<svg viewBox="0 0 384 512" fill="currentColor" width="1em" height="1em"><path d="M192 0C139 0 96 43 96 96V256c0 11.8-1.3 23.4-3.9 34.6C60.9 308.6 32 348.2 32 392c0 66.3 53.7 120 120 120s120-53.7 120-120c0-43.8-28.9-83.4-60.1-101.4-2.6-11.2-3.9-22.8-3.9-34.6V96c0-53-43-96-96-96zM64 96c0-70.7 57.3-128 128-128s128 57.3 128 128v160c0 17.7 14.3 32 32 32s32-14.3 32-32V96C384 43 341 0 288 0H96C43 0 0 43 0 96v160c0 17.7 14.3 32 32 32s32-14.3 32-32V96z"/></svg>', // Thermometer approx
+  hailstorm:
+    '<svg viewBox="0 0 512 512" fill="currentColor" width="1em" height="1em"><path d="M144 208c-44.2 0-80 35.8-80 80s35.8 80 80 80 80-35.8 80-80-35.8-80-80-80zm256-32c-61.9 0-112 50.1-112 112s50.1 112 112 112 112-50.1 112-112-50.1-112-112-112zM256 32C114.6 32 0 146.6 0 288c0 92.6 49.3 174.2 123.2 219.8 8.1 5 18.7 2.5 23.7-5.6 5-8.1 2.5-18.7-5.6-23.7C79.2 439.6 32 368.5 32 288c0-123.7 100.3-224 224-224s224 100.3 224 224c0 80.5-47.2 151.6-109.3 190.5-8.1 5-10.6 15.6-5.6 23.7 5 8.1 15.6 10.6 23.7 5.6C462.7 462.2 512 380.6 512 288 512 146.6 397.4 32 256 32z"/></svg>', // Cloud/Dots approx
+  heavyrain:
+    '<svg viewBox="0 0 512 512" fill="currentColor" width="1em" height="1em"><path d="M96 320c-53 0-96-43-96-96s43-96 96-96h16c0-70.7 57.3-128 128-128s128 57.3 128 128h16c53 0 96 43 96 96s-43 96-96 96H96zm32 64c-17.7 0-32 14.3-32 32v64c0 17.7 14.3 32 32 32s32-14.3 32-32v-64c0-17.7-14.3-32-32-32zm128 0c-17.7 0-32 14.3-32 32v64c0 17.7 14.3 32 32 32s32-14.3 32-32v-64c0-17.7-14.3-32-32-32zm128 0c-17.7 0-32 14.3-32 32v64c0 17.7 14.3 32 32 32s32-14.3 32-32v-64c0-17.7-14.3-32-32-32z"/></svg>',
+  densefog:
+    '<svg viewBox="0 0 512 512" fill="currentColor" width="1em" height="1em"><path d="M464 256H48c-26.5 0-48 21.5-48 48s21.5 48 48 48h416c26.5 0 48-21.5 48-48s-21.5-48-48-48zm0 112H48c-26.5 0-48 21.5-48 48s21.5 48 48 48h416c26.5 0 48-21.5 48-48s-21.5-48-48-48zM80 144h352c26.5 0 48-21.5 48-48s-21.5-48-48-48H80c-26.5 0-48 21.5-48 48s21.5 48 48 48z"/></svg>',
+  coldday:
+    '<svg viewBox="0 0 448 512" fill="currentColor" width="1em" height="1em"><path d="M448 256c0-106-86-192-192-192S64 150 64 256s86 192 192 192 192-86 192-192zm-192 96c-53 0-96-43-96-96s43-96 96-96 96 43 96 96-43 96-96 96z"/></svg>', // Snowflake approx
+  warmnight:
+    '<svg viewBox="0 0 384 512" fill="currentColor" width="1em" height="1em"><path d="M192 0C139 0 96 43 96 96V256c0 11.8-1.3 23.4-3.9 34.6C60.9 308.6 32 348.2 32 392c0 66.3 53.7 120 120 120s120-53.7 120-120c0-43.8-28.9-83.4-60.1-101.4-2.6-11.2-3.9-22.8-3.9-34.6V96c0-53-43-96-96-96zM64 96c0-70.7 57.3-128 128-128s128 57.3 128 128v160c0 17.7 14.3 32 32 32s32-14.3 32-32V96C384 43 341 0 288 0H96C43 0 0 43 0 96v160c0 17.7 14.3 32 32 32s32-14.3 32-32V96z"/></svg>',
+};
+
 // ---------- Init ----------
 document.addEventListener("DOMContentLoaded", () => {
   buildRegionalGrid();
@@ -341,8 +361,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Check login persistence
   if (localStorage.getItem("admin_logged_in") === "true") {
     document.body.classList.add("logged-in");
-    const btn = document.getElementById("btnToggleDrag");
-    if (btn) btn.style.display = "inline-block";
+    const lbl = document.getElementById("lblLayoutEdit");
+    if (lbl) lbl.style.display = "inline-flex";
   }
 });
 
@@ -1612,8 +1632,8 @@ function submitLogin() {
     localStorage.setItem("admin_logged_in", "true");
     document.getElementById("userLogoBtn").classList.add("active-session");
     closeLoginModal();
-    const btn = document.getElementById("btnToggleDrag");
-    if (btn) btn.style.display = "inline-block";
+    const lbl = document.getElementById("lblLayoutEdit");
+    if (lbl) lbl.style.display = "inline-flex";
     alert("Login Successful! Welcome Admin.");
   } else {
     // Fail
@@ -1626,10 +1646,10 @@ function performLogout() {
   localStorage.removeItem("admin_logged_in");
   document.getElementById("userLogoBtn").classList.remove("active-session");
   document.getElementById("userDropdown").style.display = "none";
-  const btn = document.getElementById("btnToggleDrag");
-  if (btn) {
-    btn.style.display = "none";
-    if (isLayoutEditMode) toggleLayoutEditMode();
+  const lbl = document.getElementById("lblLayoutEdit");
+  if (lbl) {
+    lbl.style.display = "none";
+    if (isLayoutEditMode) toggleLayoutEditMode(false);
   }
   alert("Logged Out Successfully.");
 }
@@ -2039,8 +2059,11 @@ function updateMapStyle(skipMarkers = false) {
         const iconSize = assignedPhenomenaList.length > 1 ? "18px" : "32px";
 
         assignedPhenomenaList.forEach((p) => {
-          iconsHtml += `<div style="font-size: ${iconSize}; color: ${phenColors[p.id]}; text-shadow: 0 0 3px #fff; margin: 1px;">
-                            <i class="fas ${p.icon} phenom-anim-${p.id}"></i>
+          // Use SVG instead of FontAwesome <i> tag for better export compatibility
+          const svgIcon =
+            phenomenonSvgs[p.id] || `<i class="fas ${p.icon}"></i>`;
+          iconsHtml += `<div class="phenom-anim-${p.id}" style="font-size: ${iconSize}; color: ${phenColors[p.id]}; text-shadow: 0 0 3px #fff; margin: 1px; display:flex; align-items:center; justify-content:center;">
+                            ${svgIcon}
                           </div>`;
         });
 
@@ -2159,10 +2182,11 @@ function updateLegend() {
     phenDefs.forEach((p) => {
       if (activePhenomena.has(p.id)) {
         const color = phenColors[p.id];
+        const svgIcon = phenomenonSvgs[p.id] || `<i class="fas ${p.icon}"></i>`;
         legendDiv.innerHTML += `
           <div style="display:flex; align-items:center; margin-bottom:6px;">
-            <div style="width:35px; text-align:center; margin-right:8px;">
-                <i class="fas ${p.icon}" style="color:${color}; font-size:24px;"></i>
+            <div style="width:35px; text-align:center; margin-right:8px; font-size:24px; color:${color}; display:flex; justify-content:center;">
+                ${svgIcon}
             </div>
             <div style="line-height:1.2;">
                 <span style="font-weight:bold;">${p.english}</span><br>
@@ -2268,8 +2292,8 @@ function updateDateTime() {
   }
 
   document.getElementById("currentDateTime").innerHTML =
-    `<div><i class="fas ${icon}" style="margin-right:8px; ${iconStyle}"></i>${dateStr}</div>
-     <div>${timeStr}</div>`;
+    `<div style="text-align:center"><i class="fas ${icon}" style="margin-right:8px; ${iconStyle}"></i>${dateStr}</div>
+     <div style="text-align:center">${timeStr}</div>`;
 }
 
 function fetchTemperature() {
@@ -2526,13 +2550,12 @@ document.addEventListener("DOMContentLoaded", () => {
   if (headerText) headerText.style.display = "none";
 });
 
-function toggleLayoutEditMode() {
-  isLayoutEditMode = !isLayoutEditMode;
-  const btn = document.getElementById("btnToggleDrag");
+function toggleLayoutEditMode(isChecked) {
+  isLayoutEditMode = isChecked;
+  const chk = document.getElementById("chkLayoutEdit");
+  if (chk) chk.checked = isLayoutEditMode;
 
   if (isLayoutEditMode) {
-    btn.innerText = "Save Layout";
-    btn.style.background = "#27ae60";
     alert(
       "Layout Edit Mode Enabled.\n- Drag elements to reposition.\n- Use Mouse Wheel to resize elements.",
     );
@@ -2541,8 +2564,6 @@ function toggleLayoutEditMode() {
     enableDrag("mapLegend");
     enableDrag("mapHeaderText");
   } else {
-    btn.innerText = "Enable Layout Edit";
-    btn.style.background = "#8e44ad";
     saveLayoutPositions();
     alert("Layout Saved.");
   }
