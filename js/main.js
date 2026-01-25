@@ -139,20 +139,20 @@ const forecastLegendItems = [
 
 const warningLegendItems = [
   {
-    color: "rgb(0, 153, 0)",
-    text: "GREEN (हरा) – NO WARNING<br>(No Action / कोई चेतावनी नहीं)",
-  },
-  {
-    color: "rgb(255, 255, 0)",
-    text: "YELLOW (पीला) – WATCH<br>(Be Updated / अपडेट रहें)",
+    color: "rgb(255, 0, 0)",
+    text: "RED (लाल) – WARNING<br>(Take Action / तुरंत कार्रवाई करें)",
   },
   {
     color: "rgb(255, 192, 0)",
     text: "ORANGE (नारंगी) – ALERT<br>(Be Prepared / सतर्क रहें)",
   },
   {
-    color: "rgb(255, 0, 0)",
-    text: "RED (लाल) – WARNING<br>(Take Action / तुरंत कार्रवाई करें)",
+    color: "rgb(255, 255, 0)",
+    text: "YELLOW (पीला) – WATCH<br>(Be Updated / अपडेट रहें)",
+  },
+  {
+    color: "rgb(0, 153, 0)",
+    text: "GREEN (हरा) – NO WARNING<br>(No Action / कोई चेतावनी नहीं)",
   },
 ];
 
@@ -174,6 +174,7 @@ let selectedDistricts = [],
   phenomenaMarkersLayer,
   isAudioEnabled = false,
   currentAudio = new Audio();
+let isLayoutEditMode = false;
 
 let currentLang = localStorage.getItem("lang") || "hi";
 
@@ -340,6 +341,8 @@ document.addEventListener("DOMContentLoaded", () => {
   // Check login persistence
   if (localStorage.getItem("admin_logged_in") === "true") {
     document.body.classList.add("logged-in");
+    const btn = document.getElementById("btnToggleDrag");
+    if (btn) btn.style.display = "inline-block";
   }
 });
 
@@ -549,6 +552,11 @@ function attachHandlers() {
         options.style.display =
           options.style.display === "none" ? "flex" : "none";
     };
+  }
+
+  const btnToggleDrag = document.getElementById("btnToggleDrag");
+  if (btnToggleDrag) {
+    btnToggleDrag.onclick = toggleLayoutEditMode;
   }
 
   document
@@ -1593,6 +1601,8 @@ function submitLogin() {
     localStorage.setItem("admin_logged_in", "true");
     document.getElementById("userLogoBtn").classList.add("active-session");
     closeLoginModal();
+    const btn = document.getElementById("btnToggleDrag");
+    if (btn) btn.style.display = "inline-block";
     alert("Login Successful! Welcome Admin.");
   } else {
     // Fail
@@ -1605,6 +1615,11 @@ function performLogout() {
   localStorage.removeItem("admin_logged_in");
   document.getElementById("userLogoBtn").classList.remove("active-session");
   document.getElementById("userDropdown").style.display = "none";
+  const btn = document.getElementById("btnToggleDrag");
+  if (btn) {
+    btn.style.display = "none";
+    if (isLayoutEditMode) toggleLayoutEditMode();
+  }
   alert("Logged Out Successfully.");
 }
 
@@ -1691,6 +1706,7 @@ window.onclick = function (event) {
 
 // ---------- Map & Shapefile ----------
 let map, geojsonLayer, tileLayer, satelliteLayer, hybridLayer, mapDateControl;
+let zoomControl = null;
 
 function initMap() {
   // Initialize Leaflet Map
@@ -1732,36 +1748,39 @@ function initMap() {
 
   phenomenaMarkersLayer = L.layerGroup().addTo(map);
 
-  // Add Legend
-  const legend = L.control({ position: "bottomright" });
-  legend.onAdd = function () {
-    const div = L.DomUtil.create("div", "info legend");
-    return div;
-  };
-  legend.addTo(map);
-
   // Add Static Overlays (Logos & Arrow)
-  const overlays = L.control({ position: "topleft" });
-  overlays.onAdd = function () {
-    const div = L.DomUtil.create("div", "map-overlays-container");
-    div.innerHTML = `
-        <div style="position:absolute; top:10px; left:10px; z-index:1000; display:flex; flex-direction:column; align-items:center;">
-            <img src="assets/logo.png" class="map-logo-left" style="height:70px; margin-left: 10px;">
-            <div style="text-align:center; margin-top:5px;">
-                <div class="map-logo-text" style="margin-top:0; font-size:14px; background:rgba(255,255,255,0.8); padding:2px 5px; border-radius:4px;">मौसम विज्ञान केंद्र, पटना</div>
-                <div id="mapDateOverlay" class="map-date-text" style="margin-top:2px; font-weight:bold; color:#000; background:rgba(255,255,255,0.8); padding:2px 5px; border-radius:4px; font-size:12px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);">Loading...</div>
-            </div>
-        </div>
-        <div style="position:absolute; top:10px; right:10px; z-index:1000; display:flex; gap:10px; align-items:center;">
-            <img src="assets/IMD_150_Year_Logo.png" style="height:70px;">
-            <img src="assets/North_Arrow.png" style="height:60px;">
-        </div>
-      `;
-    return div;
-  };
-  overlays.addTo(map);
+  const mapContainer = map.getContainer();
+  const overlaysContainer = L.DomUtil.create(
+    "div",
+    "map-overlays-container",
+    mapContainer,
+  );
+  overlaysContainer.style.position = "absolute";
+  overlaysContainer.style.top = "0";
+  overlaysContainer.style.left = "0";
+  overlaysContainer.style.width = "100%";
+  overlaysContainer.style.height = "100%";
+  overlaysContainer.style.pointerEvents = "none";
+  overlaysContainer.style.zIndex = "1000";
+
+  overlaysContainer.innerHTML = `
+      <div id="overlayLeft" style="position:absolute; top:10px; left:10px; z-index:1001; display:flex; flex-direction:column; align-items:center; pointer-events:auto;">
+          <img src="assets/logo.png" class="map-logo-left" style="height:70px; margin-left: 10px;">
+          <div style="text-align:center; margin-top:5px; display:flex; flex-direction:column; align-items:center;">
+              <div class="map-logo-text" style="margin-top:0; font-size:14px; background:rgba(255,255,255,0.8); padding:2px 5px; border-radius:4px; white-space:nowrap;">मौसम विज्ञान केंद्र, पटना</div>
+              <div id="mapDateOverlay" class="map-date-text" style="margin-top:2px; font-weight:bold; color:#000; background:rgba(255,255,255,0.8); padding:2px 5px; border-radius:4px; font-size:12px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); white-space:nowrap;">Loading...</div>
+          </div>
+      </div>
+      <div id="overlayRight" style="position:absolute; top:10px; right:10px; z-index:1001; display:flex; gap:10px; align-items:center; pointer-events:auto;">
+          <img src="assets/IMD_150_Year_Logo.png" style="height:70px;">
+          <img src="assets/North_Arrow.png" style="height:60px;">
+      </div>
+      <div id="mapLegend" class="info legend" style="position:absolute; bottom:30px; right:10px; z-index:1001; pointer-events:auto; display:none;"></div>
+  `;
+
   updateMapDateHeader(); // Set initial date in new overlay
   updateLegend();
+  loadLayoutPositions();
 
   // Layer Control (Hidden by default, toggled via UI buttons if needed, or we can add standard control)
   // We are using custom buttons for toggling, but let's add standard control for Satellite
@@ -1879,14 +1898,20 @@ function toggleMapZoom(enable) {
     map.doubleClickZoom.enable();
     map.scrollWheelZoom.enable();
     map.boxZoom.enable();
-    if (map.zoomControl) map.addControl(map.zoomControl);
+    if (!zoomControl) {
+      zoomControl = L.control.zoom({ position: "bottomright" }).addTo(map);
+    }
   } else {
     map.dragging.disable();
     map.touchZoom.disable();
     map.doubleClickZoom.disable();
     map.scrollWheelZoom.disable();
     map.boxZoom.disable();
-    map.fitBounds(geojsonLayer.getBounds());
+    if (zoomControl) {
+      map.removeControl(zoomControl);
+      zoomControl = null;
+    }
+    if (geojsonLayer) map.fitBounds(geojsonLayer.getBounds());
   }
 }
 
@@ -2074,7 +2099,7 @@ function updateMapStyle(skipMarkers = false) {
 }
 
 function updateLegend() {
-  const legendDiv = document.querySelector(".info.legend");
+  const legendDiv = document.getElementById("mapLegend");
   const showLegend = document.getElementById("toggleLegend")?.checked;
 
   if (!legendDiv || currentReviewMode === null) {
@@ -2127,10 +2152,15 @@ function updateLegend() {
   }
 
   // 2. Render Forecast OR Warning based on mode
-  const modeForecast = document.getElementById("modeForecast");
-  const modeWarning = document.getElementById("modeWarning");
+  let showForecast = true;
+  if (currentReviewMode) {
+    showForecast = currentReviewMode === "forecast";
+  } else {
+    const modeForecast = document.getElementById("modeForecast");
+    if (modeForecast) showForecast = modeForecast.checked;
+  }
 
-  if (modeForecast && modeForecast.checked) {
+  if (showForecast) {
     legendDiv.innerHTML += `<div style="margin: 10px 0 5px 0; font-weight:bold; border-bottom:1px solid #ccc;">Forecast: Distribution</div>`;
     forecastLegendItems.forEach((item) => {
       const borderStyle = item.border ? `border:${item.border};` : "";
@@ -2140,11 +2170,12 @@ function updateLegend() {
           <span style="font-size:0.9em;">${item.text}</span>
         </div>`;
     });
-  } else if (modeWarning && modeWarning.checked) {
+  } else {
     legendDiv.innerHTML += `<div style="margin: 10px 0 5px 0; font-weight:bold; border-bottom:1px solid #ccc;">Warning</div>`;
     warningLegendItems.forEach((item) => {
       legendDiv.innerHTML += `
-        <div style="display:flex; align-items:center; margin-bottom:6px; line-height:1.2;">
+        <div style="display:flex; align-items:center; margin-bottom:6px; line-height:1.2; text-align:left;">
+          <span style="width:20px; height:20px; background:${item.color}; border:1px solid #999; margin-right:8px; flex-shrink:0;"></span>
           <span style="font-size:0.9em;">${item.text}</span>
         </div>`;
     });
@@ -2472,3 +2503,127 @@ document.addEventListener("DOMContentLoaded", () => {
   const headerText = document.getElementById("mapHeaderText");
   if (headerText) headerText.style.display = "none";
 });
+
+function toggleLayoutEditMode() {
+  isLayoutEditMode = !isLayoutEditMode;
+  const btn = document.getElementById("btnToggleDrag");
+
+  if (isLayoutEditMode) {
+    btn.innerText = "Save Layout";
+    btn.style.background = "#27ae60";
+    alert(
+      "Layout Edit Mode Enabled.\n- Drag elements to reposition.\n- Use Mouse Wheel to resize elements.",
+    );
+    enableDrag("overlayLeft");
+    enableDrag("overlayRight");
+    enableDrag("mapLegend");
+    enableDrag("mapHeaderText");
+  } else {
+    btn.innerText = "Enable Layout Edit";
+    btn.style.background = "#8e44ad";
+    saveLayoutPositions();
+    alert("Layout Saved.");
+  }
+}
+
+function enableDrag(selector) {
+  const el = selector.startsWith(".")
+    ? document.querySelector(selector)
+    : document.getElementById(selector);
+  if (!el) return;
+
+  el.style.cursor = isLayoutEditMode ? "move" : "default";
+
+  el.onmousedown = function (e) {
+    if (!isLayoutEditMode) return;
+    e.preventDefault();
+
+    let startX = e.clientX;
+    let startY = e.clientY;
+
+    // Convert right/bottom to left/top for consistent dragging
+    if (el.style.right && el.style.right !== "auto") {
+      el.style.left = el.offsetLeft + "px";
+      el.style.right = "auto";
+    }
+    if (el.style.bottom && el.style.bottom !== "auto") {
+      el.style.top = el.offsetTop + "px";
+      el.style.bottom = "auto";
+    }
+
+    document.onmousemove = function (e) {
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      el.style.top = el.offsetTop + dy + "px";
+      el.style.left = el.offsetLeft + dx + "px";
+      startX = e.clientX;
+      startY = e.clientY;
+    };
+
+    document.onmouseup = function () {
+      document.onmousemove = null;
+      document.onmouseup = null;
+    };
+  };
+
+  // Enable resizing via mouse wheel
+  el.onwheel = function (e) {
+    if (!isLayoutEditMode) return;
+    e.preventDefault();
+    let scale = parseFloat(el.getAttribute("data-scale")) || 1;
+    if (e.deltaY < 0) scale += 0.1;
+    else scale -= 0.1;
+    scale = Math.min(Math.max(0.5, scale), 3); // Limit scale between 0.5x and 3x
+    el.style.transform = `scale(${scale})`;
+    el.setAttribute("data-scale", scale.toFixed(2));
+  };
+}
+
+function saveLayoutPositions() {
+  const layout = {};
+  const ids = ["overlayLeft", "overlayRight", "mapLegend", "mapHeaderText"];
+  ids.forEach((id) => {
+    const el = id.startsWith(".")
+      ? document.querySelector(id)
+      : document.getElementById(id);
+    if (el) {
+      layout[id] = {
+        top: el.style.top,
+        left: el.style.left,
+        right: el.style.right,
+        bottom: el.style.bottom,
+        position: el.style.position,
+        zIndex: el.style.zIndex,
+        scale: el.getAttribute("data-scale"),
+      };
+    }
+  });
+  localStorage.setItem("bihar_map_layout", JSON.stringify(layout));
+}
+
+function loadLayoutPositions() {
+  const raw = localStorage.getItem("bihar_map_layout");
+  if (!raw) return;
+  try {
+    const layout = JSON.parse(raw);
+    for (const [id, style] of Object.entries(layout)) {
+      const el = id.startsWith(".")
+        ? document.querySelector(id)
+        : document.getElementById(id);
+      if (el) {
+        if (style.top) el.style.top = style.top;
+        if (style.left) el.style.left = style.left;
+        if (style.right) el.style.right = style.right;
+        if (style.bottom) el.style.bottom = style.bottom;
+        if (style.position) el.style.position = style.position;
+        if (style.zIndex) el.style.zIndex = style.zIndex;
+        if (style.scale) {
+          el.style.transform = `scale(${style.scale})`;
+          el.setAttribute("data-scale", style.scale);
+        }
+      }
+    }
+  } catch (e) {
+    console.error("Error loading layout", e);
+  }
+}

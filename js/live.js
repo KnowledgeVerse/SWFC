@@ -118,20 +118,20 @@ const forecastLegendItems = [
 
 const warningLegendItems = [
   {
-    color: "rgb(0, 153, 0)",
-    text: "GREEN (हरा) – NO WARNING<br>(No Action / कोई चेतावनी नहीं)",
-  },
-  {
-    color: "rgb(255, 255, 0)",
-    text: "YELLOW (पीला) – WATCH<br>(Be Updated / अपडेट रहें)",
+    color: "rgb(255, 0, 0)",
+    text: "RED (लाल) – WARNING<br>(Take Action / तुरंत कार्रवाई करें)",
   },
   {
     color: "rgb(255, 192, 0)",
     text: "ORANGE (नारंगी) – ALERT<br>(Be Prepared / सतर्क रहें)",
   },
   {
-    color: "rgb(255, 0, 0)",
-    text: "RED (लाल) – WARNING<br>(Take Action / तुरंत कार्रवाई करें)",
+    color: "rgb(255, 255, 0)",
+    text: "YELLOW (पीला) – WATCH<br>(Be Updated / अपडेट रहें)",
+  },
+  {
+    color: "rgb(0, 153, 0)",
+    text: "GREEN (हरा) – NO WARNING<br>(No Action / कोई चेतावनी नहीं)",
   },
 ];
 
@@ -154,6 +154,8 @@ let isLegendVisible = true;
 let isSoundEnabled = false;
 let currentAudio = new Audio();
 let currentLang = localStorage.getItem("lang") || "hi";
+let isLayoutEditMode = false;
+let zoomControl = null;
 
 const uiTranslations = {
   hi: {
@@ -176,6 +178,9 @@ document.addEventListener("DOMContentLoaded", () => {
     if (e.key === "bihar_weather_data") {
       loadData();
     }
+    if (e.key === "bihar_map_layout") {
+      loadLayoutPositions();
+    }
   });
 
   if (localStorage.getItem("darkMode") === "true") {
@@ -189,12 +194,14 @@ function initLiveDisplay() {
   // Inject CSS
   const style = document.createElement("style");
   style.innerHTML = `
-    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: sans-serif; }
-    #liveRoot { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
-    .glass-main-panel { width: 95%; height: 95%; padding: 15px; }
+    html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Noto Sans Devanagari", sans-serif; background: #f4f7f6; }
+    #liveRoot { width: 100%; height: 100%; display: flex; flex-direction: column; }
+    .live-header { position: fixed; top: 0; left: 0; width: 100%; height: 90px; background: rgba(255,255,255,0.95); z-index: 2000; display: flex; align-items: center; justify-content: center; box-shadow: 0 2px 10px rgba(0,0,0,0.1); border-bottom: 1px solid #ddd; }
+    .header-content { text-align: center; }
+    .header-content h1 { margin: 0; color: #2c3e50; font-size: 1.8em; }
     #map { width: 100%; height: 100%; border-radius: 15px; z-index: 1; }
-    .display-content-area { flex: 1; width: 100%; position: relative; margin-top: 5px; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); }
-    .live-controls-top { display: flex; justify-content: center; gap: 5px; background: rgba(255,255,255,0.5); padding: 5px; border-radius: 8px; margin-bottom: 10px; }
+    .display-content-area { margin-top: 100px; flex: 1; width: 98%; margin-left: 1%; height: calc(100% - 110px); position: relative; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); background: white; border: 4px solid #2c3e50; }
+    .live-controls-top { position: absolute; top: 10px; right: 20px; display: flex; gap: 5px; }
     .live-controls-bottom { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; gap: 15px; align-items: center; background: rgba(255,255,255,0.95); padding: 10px 25px; border-radius: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
     .control-btn { border: none; background: none; cursor: pointer; font-size: 1.4em; color: #2c3e50; transition: 0.2s; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; }
     .control-btn:hover { background: rgba(0,0,0,0.05); color: #667eea; transform: scale(1.1); }
@@ -205,12 +212,15 @@ function initLiveDisplay() {
   document.head.appendChild(style);
 
   root.innerHTML = `
-    <div class="glass-main-panel">
-        <div class="glass-header-glow">
-            <h1 id="liveTitle">बिहार मौसम पूर्वानुमान - लाइव पूर्वावलोकन</h1>
+    <header class="live-header">
+        <img src="assets/logo.png" style="height: 70px; position: absolute; left: 20px;">
+        <div class="header-content">
+            <h1 id="liveTitle">बिहार मौसम पूर्वानुमान प्रणाली</h1>
+            <div style="font-size: 0.9em; color: #7f8c8d;">Live Preview Mode</div>
         </div>
         
         <div class="live-controls-top">
+            <button id="btnToggleDrag" class="layer-btn" style="display:none; background: #8e44ad; color: white;" onclick="toggleLayoutEditMode()">Enable Layout Edit</button>
             <button class="layer-btn" onclick="window.location.href='index.html'" title="Home"><i class="fas fa-home"></i></button>
             <button class="layer-btn" onclick="window.open('display.html', '_blank')" title="Display Mode"><i class="fas fa-tv"></i></button>
             <button class="layer-btn active" onclick="setLayer('street')" id="btnStreet">Street</button>
@@ -225,7 +235,7 @@ function initLiveDisplay() {
             </label>
             <button class="layer-btn" onclick="toggleLanguage()" id="btnLang" title="Language">${currentLang.toUpperCase()}</button>
         </div>
-
+    </header>
         <div class="display-content-area">
             <div id="map"></div>
             <!-- Header inside Map Grid -->
@@ -246,7 +256,6 @@ function initLiveDisplay() {
                 </div>
             </div>
         </div>
-    </div>
   `;
 
   // Add hover listeners to pause slideshow
@@ -262,6 +271,11 @@ function initLiveDisplay() {
 
   initMap();
   updateLanguageUI();
+
+  if (localStorage.getItem("admin_logged_in") === "true") {
+    const btn = document.getElementById("btnToggleDrag");
+    if (btn) btn.style.display = "inline-block";
+  }
 }
 
 function initMap() {
@@ -300,34 +314,39 @@ function initMap() {
   );
 
   streetLayer.addTo(map);
-
-  // Add Legend Control
-  const legend = L.control({ position: "bottomright" });
-  legend.onAdd = function () {
-    return L.DomUtil.create("div", "info legend");
-  };
-  legend.addTo(map);
+  phenomenaMarkersLayer = L.layerGroup().addTo(map);
 
   // Add Static Overlays (Logos & Arrow)
-  const overlays = L.control({ position: "topleft" });
-  overlays.onAdd = function () {
-    const div = L.DomUtil.create("div", "map-overlays-container");
-    div.innerHTML = `
-        <div style="position:absolute; top:10px; left:10px; z-index:1000; display:flex; flex-direction:column; align-items:center;">
-            <img src="assets/logo.png" class="map-logo-left" style="height:70px; margin-left: 10px;">
-            <div style="text-align:center; margin-top:5px;">
-                <div class="map-logo-text" style="margin-top:0; font-size:14px; background:rgba(255,255,255,0.8); padding:2px 5px; border-radius:4px;">मौसम विज्ञान केंद्र, पटना</div>
-                <div id="liveMapDateOverlay" style="margin-top:2px; font-weight:bold; color:#000; background:rgba(255,255,255,0.8); padding:2px 5px; border-radius:4px; font-size:12px; box-shadow: 0 1px 3px rgba(0,0,0,0.2);"></div>
-            </div>
-        </div>
-        <div style="position:absolute; top:10px; right:10px; z-index:1000; display:flex; gap:10px; align-items:center;">
-            <img src="assets/IMD_150_Year_Logo.png" style="height:70px;">
-            <img src="assets/North_Arrow.png" style="height:60px;">
-        </div>
-      `;
-    return div;
-  };
-  overlays.addTo(map);
+  const mapContainer = map.getContainer();
+  const overlaysContainer = L.DomUtil.create(
+    "div",
+    "map-overlays-container",
+    mapContainer,
+  );
+  overlaysContainer.style.position = "absolute";
+  overlaysContainer.style.top = "0";
+  overlaysContainer.style.left = "0";
+  overlaysContainer.style.width = "100%";
+  overlaysContainer.style.height = "100%";
+  overlaysContainer.style.pointerEvents = "none";
+  overlaysContainer.style.zIndex = "1000";
+
+  overlaysContainer.innerHTML = `
+      <div id="overlayLeft" style="position:absolute; top:10px; left:10px; z-index:1001; display:flex; flex-direction:column; align-items:center; pointer-events:auto;">
+          <img src="assets/logo.png" class="map-logo-left" style="height:70px; margin-left: 10px;">
+          <div style="text-align:center; margin-top:5px; display:flex; flex-direction:column; align-items:center;">
+              <div class="map-logo-text" style="margin-top:0; font-size:14px; background:rgba(255,255,255,0.8); padding:2px 5px; border-radius:4px; white-space:nowrap;">मौसम विज्ञान केंद्र, पटना</div>
+              <div id="liveMapDateOverlay" style="margin-top:2px; font-weight:bold; color:#000; background:rgba(255,255,255,0.8); padding:2px 5px; border-radius:4px; font-size:12px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); white-space:nowrap;"></div>
+          </div>
+      </div>
+      <div id="overlayRight" style="position:absolute; top:10px; right:10px; z-index:1001; display:flex; gap:10px; align-items:center; pointer-events:auto;">
+          <img src="assets/IMD_150_Year_Logo.png" style="height:70px;">
+          <img src="assets/North_Arrow.png" style="height:60px;">
+      </div>
+      <div id="mapLegend" class="info legend" style="position:absolute; bottom:30px; right:10px; z-index:1001; pointer-events:auto; display:none;"></div>
+  `;
+
+  loadLayoutPositions();
   // Load Shapefile
   const basePath = "data/Bihar_Districts_Shapefile/Bihar";
   Promise.all([
@@ -346,7 +365,7 @@ function initMap() {
   ])
     .then(([shpBuffer, dbfBuffer, prjStr]) => {
       const geojson = shp.combine([
-        shp.parseShp(shpBuffer, prjStr),
+        shp.parseShp(shpBuffer, prjStr || undefined),
         shp.parseDbf(dbfBuffer),
       ]);
       geojsonLayer = L.geoJSON(geojson, {
@@ -390,7 +409,7 @@ function initMap() {
     })
     .catch((err) => {
       console.error("Map loading failed:", err);
-      alert("Map loading failed. Please check console.");
+      alert("Map loading failed: " + err.message);
     });
 }
 
@@ -401,12 +420,19 @@ function toggleMapZoom(enable) {
     map.doubleClickZoom.enable();
     map.scrollWheelZoom.enable();
     map.boxZoom.enable();
+    if (!zoomControl) {
+      zoomControl = L.control.zoom({ position: "bottomright" }).addTo(map);
+    }
   } else {
     map.dragging.disable();
     map.touchZoom.disable();
     map.doubleClickZoom.disable();
     map.scrollWheelZoom.disable();
     map.boxZoom.disable();
+    if (zoomControl) {
+      map.removeControl(zoomControl);
+      zoomControl = null;
+    }
     fitMapBounds();
   }
 }
@@ -642,7 +668,7 @@ function updateMapStyle() {
 }
 
 function updateLegend(dayPhenomena, type) {
-  const legendDiv = document.querySelector(".info.legend");
+  const legendDiv = document.getElementById("mapLegend");
   if (!legendDiv) return;
 
   if (!isLegendVisible) {
@@ -678,7 +704,8 @@ function updateLegend(dayPhenomena, type) {
     legendDiv.innerHTML += `<div style="margin: 10px 0 5px 0; font-weight:bold; border-bottom:1px solid #ccc;">Warning</div>`;
     warningLegendItems.forEach((item) => {
       legendDiv.innerHTML += `
-          <div style="display:flex; align-items:center; margin-bottom:6px; line-height:1.2;">
+          <div style="display:flex; align-items:center; margin-bottom:6px; line-height:1.2; text-align:left;">
+            <span style="width:20px; height:20px; background:${item.color}; border:1px solid #999; margin-right:8px; flex-shrink:0;"></span>
             <span style="font-size:0.9em;">${item.text}</span>
           </div>`;
     });
@@ -911,3 +938,121 @@ document.addEventListener("fullscreenchange", () => {
     btn.title = isFull ? "Exit Full Screen" : "Full Screen";
   }
 });
+
+function loadLayoutPositions() {
+  const raw = localStorage.getItem("bihar_map_layout");
+  if (!raw) return;
+  try {
+    const layout = JSON.parse(raw);
+    for (const [id, style] of Object.entries(layout)) {
+      const el = id.startsWith(".")
+        ? document.querySelector(id)
+        : document.getElementById(id);
+      if (el) {
+        if (style.top) el.style.top = style.top;
+        if (style.left) el.style.left = style.left;
+        if (style.right) el.style.right = style.right;
+        if (style.bottom) el.style.bottom = style.bottom;
+        if (style.position) el.style.position = style.position;
+        if (style.zIndex) el.style.zIndex = style.zIndex;
+      }
+    }
+  } catch (e) {
+    console.error("Error loading layout", e);
+  }
+}
+
+function toggleLayoutEditMode() {
+  isLayoutEditMode = !isLayoutEditMode;
+  const btn = document.getElementById("btnToggleDrag");
+
+  if (isLayoutEditMode) {
+    btn.innerText = "Save Layout";
+    btn.style.background = "#27ae60";
+    alert(
+      "Layout Edit Mode Enabled.\n- Drag elements to reposition.\n- Use Mouse Wheel to resize elements.",
+    );
+    enableDrag("overlayLeft");
+    enableDrag("overlayRight");
+    enableDrag("mapLegend");
+    // enableDrag("slideHeader"); // Optional: enable dragging for slide header too
+  } else {
+    btn.innerText = "Enable Layout Edit";
+    btn.style.background = "#8e44ad";
+    saveLayoutPositions();
+    alert("Layout Saved.");
+  }
+}
+window.toggleLayoutEditMode = toggleLayoutEditMode;
+
+function enableDrag(selector) {
+  const el = selector.startsWith(".")
+    ? document.querySelector(selector)
+    : document.getElementById(selector);
+  if (!el) return;
+
+  el.style.cursor = isLayoutEditMode ? "move" : "default";
+
+  el.onmousedown = function (e) {
+    if (!isLayoutEditMode) return;
+    e.preventDefault();
+
+    let startX = e.clientX;
+    let startY = e.clientY;
+
+    if (el.style.right && el.style.right !== "auto") {
+      el.style.left = el.offsetLeft + "px";
+      el.style.right = "auto";
+    }
+    if (el.style.bottom && el.style.bottom !== "auto") {
+      el.style.top = el.offsetTop + "px";
+      el.style.bottom = "auto";
+    }
+
+    document.onmousemove = function (e) {
+      const dx = e.clientX - startX;
+      const dy = e.clientY - startY;
+      el.style.top = el.offsetTop + dy + "px";
+      el.style.left = el.offsetLeft + dx + "px";
+      startX = e.clientX;
+      startY = e.clientY;
+    };
+
+    document.onmouseup = function () {
+      document.onmousemove = null;
+      document.onmouseup = null;
+    };
+  };
+
+  // Enable resizing via mouse wheel
+  el.onwheel = function (e) {
+    if (!isLayoutEditMode) return;
+    e.preventDefault();
+    let scale = parseFloat(el.getAttribute("data-scale")) || 1;
+    if (e.deltaY < 0) scale += 0.1;
+    else scale -= 0.1;
+    scale = Math.min(Math.max(0.5, scale), 3);
+    el.style.transform = `scale(${scale})`;
+    el.setAttribute("data-scale", scale.toFixed(2));
+  };
+}
+
+function saveLayoutPositions() {
+  const layout = {};
+  const ids = ["overlayLeft", "overlayRight", "mapLegend"];
+  ids.forEach((id) => {
+    const el = document.getElementById(id);
+    if (el) {
+      layout[id] = {
+        top: el.style.top,
+        left: el.style.left,
+        right: el.style.right,
+        bottom: el.style.bottom,
+        position: el.style.position,
+        zIndex: el.style.zIndex,
+        scale: el.getAttribute("data-scale"),
+      };
+    }
+  });
+  localStorage.setItem("bihar_map_layout", JSON.stringify(layout));
+}
