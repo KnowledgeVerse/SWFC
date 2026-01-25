@@ -156,6 +156,18 @@ let currentAudio = new Audio();
 let currentLang = localStorage.getItem("lang") || "hi";
 let isLayoutEditMode = false;
 let zoomControl = null;
+let mapEffectConfig = {
+  enabled: false,
+  mode: "manual",
+  manualEffect: "thunderstorm",
+};
+let weatherEffectState = {
+  animationFrame: null,
+  ctx: null,
+  drops: [],
+  width: 0,
+  height: 0,
+};
 
 const uiTranslations = {
   hi: {
@@ -187,6 +199,9 @@ document.addEventListener("DOMContentLoaded", () => {
     }
     if (e.key === "bihar_map_bg") {
       if (map) document.getElementById("map").style.background = e.newValue;
+    }
+    if (e.key === "bihar_map_effect_config") {
+      loadMapEffectConfig();
     }
   });
 
@@ -263,6 +278,9 @@ function initLiveDisplay() {
     </header>
         <div class="display-content-area">
             <div id="map"></div>
+            <canvas id="weatherCanvas"></canvas>
+            <div id="weatherLightning"></div>
+            <div id="weatherFog"></div>
             <!-- Header inside Map Grid -->
             <div id="slideHeader" style="position: absolute; top: 60px; left: 50%; transform: translateX(-50%); z-index: 1000; text-align: center; font-size: 1.2em; font-weight: bold; color: #2c3e50; padding: 5px 20px; background: rgba(255,255,255,0.9); border: 2px solid #2c3e50; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); min-width: 300px; pointer-events: auto;">Loading...</div>
             
@@ -301,6 +319,8 @@ function initLiveDisplay() {
     const btn = document.getElementById("btnToggleDrag");
     if (btn) btn.style.display = "flex";
   }
+  initWeatherCanvas();
+  loadMapEffectConfig();
 }
 
 function initMap() {
@@ -598,6 +618,7 @@ function render() {
   updateMapStyle();
   playWeatherSound(dayPhenomena);
   updateLegend(dayPhenomena, slide.type);
+  applyMapEffect();
 }
 
 function updateSlideHeader(slide) {
@@ -1116,4 +1137,144 @@ function saveLayoutPositions() {
     }
   });
   localStorage.setItem("bihar_map_layout", JSON.stringify(layout));
+}
+
+function loadMapEffectConfig() {
+  const saved = localStorage.getItem("bihar_map_effect_config");
+  if (saved) {
+    mapEffectConfig = JSON.parse(saved);
+    // If we are not in a render loop yet, apply might be called by render later
+    // But if manual mode, we should apply now
+    if (mapEffectConfig.mode === "manual") {
+      applyMapEffect(new Set());
+    }
+  }
+}
+
+function initWeatherCanvas() {
+  const canvas = document.getElementById("weatherCanvas");
+  if (!canvas) return;
+  weatherEffectState.ctx = canvas.getContext("2d");
+
+  const resize = () => {
+    const parent = canvas.parentElement;
+    if (parent) {
+      canvas.width = parent.offsetWidth;
+      canvas.height = parent.offsetHeight;
+      weatherEffectState.width = canvas.width;
+      weatherEffectState.height = canvas.height;
+    }
+  };
+  window.addEventListener("resize", resize);
+  resize();
+
+  // Init drops
+  weatherEffectState.drops = [];
+  for (let i = 0; i < 200; i++) {
+    weatherEffectState.drops.push({
+      x: Math.random() * weatherEffectState.width,
+      y: Math.random() * weatherEffectState.height,
+      l: Math.random() * 20 + 10,
+      s: Math.random() * 4 + 2,
+    });
+  }
+}
+
+function animateRain() {
+  const ctx = weatherEffectState.ctx;
+  const w = weatherEffectState.width;
+  const h = weatherEffectState.height;
+
+  if (!ctx) return;
+
+  ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = "rgba(255,255,255,0.6)";
+  ctx.lineWidth = 1.5;
+  ctx.lineCap = "round";
+
+  weatherEffectState.drops.forEach((d) => {
+    ctx.beginPath();
+    ctx.moveTo(d.x, d.y);
+    ctx.lineTo(d.x, d.y + d.l);
+    ctx.stroke();
+
+    d.y += d.s;
+    if (d.y > h) {
+      d.y = -20;
+      d.x = Math.random() * w;
+    }
+  });
+
+  weatherEffectState.animationFrame = requestAnimationFrame(animateRain);
+}
+
+function animateWind() {
+  const ctx = weatherEffectState.ctx;
+  const w = weatherEffectState.width;
+  const h = weatherEffectState.height;
+
+  if (!ctx) return;
+
+  ctx.clearRect(0, 0, w, h);
+  ctx.strokeStyle = "rgba(255, 255, 255, 0.2)";
+  ctx.lineWidth = 2;
+  ctx.lineCap = "round";
+
+  weatherEffectState.drops.forEach((d) => {
+    ctx.beginPath();
+    ctx.moveTo(d.x, d.y);
+    ctx.lineTo(d.x + d.l * 5, d.y + d.l * 0.5);
+    ctx.stroke();
+
+    d.x += d.s * 5;
+    d.y += d.s * 0.5;
+
+    if (d.x > w) {
+      d.x = -200;
+      d.y = Math.random() * h;
+    }
+  });
+
+  weatherEffectState.animationFrame = requestAnimationFrame(animateWind);
+}
+
+function applyMapEffect() {
+  const canvas = document.getElementById("weatherCanvas");
+  const lightning = document.getElementById("weatherLightning");
+  const fog = document.getElementById("weatherFog");
+
+  // Reset
+  if (weatherEffectState.animationFrame)
+    cancelAnimationFrame(weatherEffectState.animationFrame);
+  if (canvas) {
+    canvas.classList.remove("active");
+    if (weatherEffectState.ctx)
+      weatherEffectState.ctx.clearRect(
+        0,
+        0,
+        weatherEffectState.width,
+        weatherEffectState.height,
+      );
+  }
+  if (lightning) lightning.classList.remove("active");
+  if (fog) fog.classList.remove("active");
+
+  if (!mapEffectConfig.enabled) return;
+
+  const effect = mapEffectConfig.manualEffect;
+
+  if (effect === "thunderstorm" || effect === "heavyrain") {
+    if (canvas) canvas.classList.add("active");
+    animateRain();
+  }
+  if (effect === "gustywind") {
+    if (canvas) canvas.classList.add("active");
+    animateWind();
+  }
+  if (effect === "thunderstorm") {
+    if (lightning) lightning.classList.add("active");
+  }
+  if (effect === "densefog") {
+    if (fog) fog.classList.add("active");
+  }
 }

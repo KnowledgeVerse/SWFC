@@ -287,6 +287,71 @@
                 <input type="checkbox" id="toggleLegend" checked />
                 <i class="fas fa-list-ul"></i> Legend
               </label>
+
+              <!-- Weather Effect Controls -->
+              <div
+                style="
+                  display: flex;
+                  align-items: center;
+                  gap: 5px;
+                  border: 1px solid #ccc;
+                  padding: 3px 8px;
+                  border-radius: 20px;
+                  background: #fff;
+                "
+              >
+                <label
+                  class="icon-toggle-label"
+                  title="Toggle Weather Animation"
+                  style="border: none; box-shadow: none; padding: 0"
+                >
+                  <input
+                    type="checkbox"
+                    id="toggleMapEffect"
+                    onchange="toggleMapEffect(this.checked)"
+                  />
+                  <i class="fas fa-wand-magic-sparkles"></i>
+                </label>
+                <select
+                  id="mapEffectSelect"
+                  onchange="handleEffectChange()"
+                  style="
+                    border: none;
+                    background: transparent;
+                    font-size: 12px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    outline: none;
+                    max-width: 100px;
+                  "
+                >
+                  <option value="thunderstorm">Thunderstorm</option>
+                  <option value="heavyrain">Heavy Rain</option>
+                  <option value="gustywind">Gusty Wind</option>
+                  <option value="densefog">Dense Fog</option>
+                </select>
+                <div
+                  style="
+                    width: 1px;
+                    height: 15px;
+                    background: #ccc;
+                    margin: 0 5px;
+                  "
+                ></div>
+                <label
+                  class="icon-toggle-label"
+                  title="Clean Map Background"
+                  style="border: none; box-shadow: none; padding: 0"
+                >
+                  <input
+                    type="checkbox"
+                    id="toggleCleanMap"
+                    onchange="toggleCleanMap(this.checked)"
+                  />
+                  <i class="fas fa-eraser"></i>
+                </label>
+              </div>
+
               <label
                 class="icon-toggle-label"
                 id="lblLayoutEdit"
@@ -478,7 +543,10 @@
               class="map-header-text"
               style="display: none"
             ></div>
-            <!-- Overlays will be added via CSS/JS or Leaflet Controls -->
+            <!-- Weather Effects -->
+            <canvas id="weatherCanvas"></canvas>
+            <div id="weatherLightning"></div>
+            <div id="weatherFog"></div>
           </div>
         </div>
 
