@@ -78,6 +78,20 @@ function initTempDisplay() {
     }
     .t-val { font-size: 16px; font-weight: 900; margin: 0; text-shadow: 2px 2px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff; }
     .t-diff { font-size: 12px; font-weight: 800; margin-top: 0; text-shadow: 2px 2px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff; }
+    
+    /* Stats Panels */
+    .stats-container { position: absolute; top: 90px; right: 10px; z-index: 1001; display: flex; flex-direction: column; gap: 8px; pointer-events: auto; }
+    .stats-box { background: rgba(255,255,255,0.95); border-radius: 6px; padding: 8px 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); width: 210px; font-size: 12px; border-left: 5px solid #333; transition: transform 0.2s; }
+    .stats-box:hover { transform: translateX(-5px); }
+    .stats-header { font-weight: 800; border-bottom: 1px solid #ddd; margin-bottom: 5px; padding-bottom: 3px; text-transform: uppercase; font-size: 11px; color: #444; display: flex; justify-content: space-between; align-items: center; }
+    .stats-row { display: flex; justify-content: space-between; margin-bottom: 3px; align-items: center; }
+    .stats-label { color: #555; font-weight: 600; }
+    .stats-val { font-weight: 800; font-size: 13px; color: #000; }
+    
+    /* Theme Colors for Stats */
+    .theme-current { border-left-color: #f39c12; }
+    .theme-max { border-left-color: #c0392b; }
+    .theme-min { border-left-color: #3498db; }
   `;
   document.head.appendChild(style);
 
@@ -185,6 +199,7 @@ function initMap() {
           <img src="assets/IMD_150_Year_Logo.png" style="height:70px;">
           <img src="assets/North_Arrow.png" style="height:60px;">
       </div>
+      <div id="statsOverlay" class="stats-container"></div>
   `;
 
   updateDateOverlay();
@@ -282,6 +297,19 @@ function fetchTemperatures() {
 
   Promise.all(requests).then(() => {
     updateMapStyle();
+
+    // Calculate and Update Stats
+    const currentVals = [];
+    const maxVals = [];
+    const minVals = [];
+    Object.values(districtTemps).forEach((d) => {
+      if (d.current !== undefined && d.current !== null)
+        currentVals.push(d.current);
+      if (d.max !== undefined && d.max !== null) maxVals.push(d.max);
+      if (d.min !== undefined && d.min !== null) minVals.push(d.min);
+    });
+    updateStatsUI(currentVals, maxVals, minVals);
+
     if (header) header.innerText = "Live Temperature (Updated)";
     updateDateOverlay();
   });
@@ -477,6 +505,58 @@ function updateTempLegend(min, max) {
             <span>${max !== undefined ? max.toFixed(1) : "High"}</span>
         </div>
     `;
+}
+
+function calculateStats(arr) {
+  if (!arr || arr.length === 0) return { max: "N/A", min: "N/A", mean: "N/A" };
+  let min = Infinity,
+    max = -Infinity,
+    sum = 0;
+  arr.forEach((v) => {
+    if (v < min) min = v;
+    if (v > max) max = v;
+    sum += v;
+  });
+  return {
+    max: max.toFixed(1),
+    min: min.toFixed(1),
+    mean: (sum / arr.length).toFixed(1),
+  };
+}
+
+function updateStatsUI(currentArr, maxArr, minArr) {
+  const container = document.getElementById("statsOverlay");
+  if (!container) return;
+
+  const sCurr = calculateStats(currentArr);
+  const sMax = calculateStats(maxArr);
+  const sMin = calculateStats(minArr);
+
+  const createPanel = (title, stats, themeClass, icon) => `
+        <div class="stats-box ${themeClass}">
+            <div class="stats-header">
+                <span>${title}</span>
+                <i class="fas ${icon}"></i>
+            </div>
+            <div class="stats-row">
+                <span class="stats-label">Highest:</span>
+                <span class="stats-val">${stats.max}°C</span>
+            </div>
+            <div class="stats-row">
+                <span class="stats-label">Lowest:</span>
+                <span class="stats-val">${stats.min}°C</span>
+            </div>
+            <div class="stats-row">
+                <span class="stats-label">Average:</span>
+                <span class="stats-val">${stats.mean}°C</span>
+            </div>
+        </div>
+    `;
+
+  container.innerHTML =
+    createPanel("Current Temp", sCurr, "theme-current", "fa-clock") +
+    createPanel("Maximum Temp", sMax, "theme-max", "fa-temperature-high") +
+    createPanel("Minimum Temp", sMin, "theme-min", "fa-temperature-low");
 }
 
 function refreshData() {
