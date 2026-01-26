@@ -76,6 +76,7 @@ function initTempDisplay() {
         padding: 0;
         min-width: auto;
     }
+    .t-name { font-size: 11px; font-weight: 700; color: #2c3e50; text-shadow: 2px 2px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff; margin-bottom: 1px; font-family: 'Verdana', sans-serif; text-transform: uppercase; letter-spacing: 0.5px; }
     .t-val { font-size: 16px; font-weight: 900; margin: 0; text-shadow: 2px 2px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff; }
     .t-diff { font-size: 12px; font-weight: 800; margin-top: 0; text-shadow: 2px 2px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff; }
     
@@ -234,13 +235,7 @@ function initMap() {
           fillOpacity: 0.3,
         },
         onEachFeature: (feature, layer) => {
-          if (feature.properties && feature.properties.D_NAME) {
-            layer.bindTooltip(feature.properties.D_NAME, {
-              permanent: true,
-              direction: "center",
-              className: "map-label",
-            });
-          }
+          // Tooltip removed to prevent overlap with custom marker
         },
       }).addTo(map);
       map.fitBounds(geojsonLayer.getBounds());
@@ -413,9 +408,11 @@ function updateMapStyle() {
 
       // Marker
       const center = layer.getBounds().getCenter();
+      const districtName = layer.feature.properties.D_NAME;
 
       const iconHtml = `
         <div class="temp-block">
+            <div class="t-name">${districtName}</div>
             <div class="t-val" style="color:#000">${displayVal}°C</div>
             <div class="t-diff" style="color:${diffColor}">${diffText}</div>
         </div>`;
