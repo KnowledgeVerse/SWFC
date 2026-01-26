@@ -26,6 +26,7 @@ const intensityLines = {
   ],
   coldday: ["शीत दिवस होने की संभावना है।"],
   warmnight: ["गर्म रात्रि की संभावना है ।"],
+  dry: ["मौसम शुष्क रहने की संभावना है।"],
 };
 
 const intensityLinesEn = {
@@ -52,6 +53,7 @@ const intensityLinesEn = {
   densefog: ["Dense fog likely.", "Very dense fog likely."],
   coldday: ["Cold day likely."],
   warmnight: ["Warm night likely."],
+  dry: ["Weather likely to remain dry."],
 };
 
 // ---------- Phenomena colour-map ----------
@@ -64,6 +66,7 @@ const phenColors = {
   densefog: "#6c757d", // Grey
   coldday: "#20c997", // Teal
   warmnight: "#e83e8c", // Pink
+  dry: "#ffffff", // White
 };
 
 // ---------- Audio Assets ----------
@@ -113,6 +116,7 @@ const warningDropdownOptions = [
 // Combine options for the Color Selection dropdown
 const combinedColorOptions = [
   { value: "default", text: "Select Color...", color: null },
+  { value: "#ffffff", text: "Dry (White) – शुष्क", color: "#ffffff" },
   ...forecastDropdownOptions
     .filter((o) => o.value !== 0)
     .map((o) => ({ ...o, text: "Forecast: " + o.text })),
@@ -325,6 +329,13 @@ const phenDefs = [
     icon: "fa-temperature-high",
     sub: ["गर्म रात्रि की संभावना है ।"],
   },
+  {
+    id: "dry",
+    hindi: "शुष्क मौसम",
+    english: "Dry Weather",
+    icon: "fa-sun",
+    sub: ["मौसम शुष्क रहने की संभावना है।"],
+  },
 ];
 
 // ---------- SVG Icons for Export Compatibility ----------
@@ -345,6 +356,7 @@ const phenomenonSvgs = {
     '<svg viewBox="0 0 448 512" fill="currentColor" width="1em" height="1em"><path d="M448 256c0-106-86-192-192-192S64 150 64 256s86 192 192 192 192-86 192-192zm-192 96c-53 0-96-43-96-96s43-96 96-96 96 43 96 96-43 96-96 96z"/></svg>', // Snowflake approx
   warmnight:
     '<svg viewBox="0 0 384 512" fill="currentColor" width="1em" height="1em"><path d="M192 0C139 0 96 43 96 96V256c0 11.8-1.3 23.4-3.9 34.6C60.9 308.6 32 348.2 32 392c0 66.3 53.7 120 120 120s120-53.7 120-120c0-43.8-28.9-83.4-60.1-101.4-2.6-11.2-3.9-22.8-3.9-34.6V96c0-53-43-96-96-96zM64 96c0-70.7 57.3-128 128-128s128 57.3 128 128v160c0 17.7 14.3 32 32 32s32-14.3 32-32V96C384 43 341 0 288 0H96C43 0 0 43 0 96v160c0 17.7 14.3 32 32 32s32-14.3 32-32V96z"/></svg>',
+  dry: '<svg viewBox="0 0 512 512" fill="currentColor" width="1em" height="1em"><path d="M256 160c-52.9 0-96 43.1-96 96s43.1 96 96 96 96-43.1 96-96-43.1-96-96-96zm246.4 80.5l-94.7-47.3 33.5-100.4c4.5-13.6-8.4-26.5-21.9-21.9l-100.4 33.5-47.4-94.8c-6.4-12.8-24.6-12.8-31 0l-47.3 94.7L92.7 70.8c-13.6-4.5-26.5 8.4-21.9 21.9l33.5 100.4-94.7 47.4c-12.8 6.4-12.8 24.6 0 31l94.7 47.3-33.5 100.5c-4.5 13.6 8.4 26.5 21.9 21.9l100.4-33.5 47.3 94.7c6.4 12.8 24.6 12.8 31 0l47.3-94.7 100.4 33.5c13.6 4.5 26.5-8.4 21.9-21.9l-33.5-100.4 94.7-47.3c13-6.5 13-24.7.2-31.1zm-155.9 106c-49.9 49.9-131.1 49.9-181 0-49.9-49.9-49.9-131.1 0-181 49.9-49.9 131.1-49.9 181 0 49.9 49.9 49.9 131.1 0 181z"/></svg>',
 };
 
 // ---------- Init ----------
@@ -364,10 +376,6 @@ document.addEventListener("DOMContentLoaded", () => {
   initMap();
   validateDistrictCoverage();
   loadSavedData(); // Load data on startup
-  updateDateTime();
-  setInterval(updateDateTime, 1000);
-  fetchTemperature();
-  setInterval(fetchTemperature, 900000); // 15 minutes
   initVisitorCounter();
 
   // Check login persistence
@@ -2300,52 +2308,6 @@ function validateDistrictCoverage() {
       `Configuration Error:\nThe following districts are not assigned to any regional group:\n${names}`,
     );
   }
-}
-
-function updateDateTime() {
-  const now = new Date();
-
-  const dateOptions = {
-    weekday: "long",
-    year: "numeric",
-    month: "long",
-    day: "numeric",
-  };
-  const timeOptions = { hour: "2-digit", minute: "2-digit", second: "2-digit" };
-
-  const dateStr = now.toLocaleDateString("hi-IN", dateOptions);
-  const timeStr = now.toLocaleTimeString("hi-IN", timeOptions);
-
-  const h = now.getHours();
-  let icon = "fa-moon";
-  let iconStyle = "";
-
-  if (h >= 6 && h < 18) {
-    icon = "fa-sun";
-    iconStyle = "color: #e67e22;"; // Orange for sun
-  }
-
-  document.getElementById("currentDateTime").innerHTML =
-    `<div style="text-align:center"><i class="fas ${icon}" style="margin-right:8px; ${iconStyle}"></i>${dateStr}</div>
-     <div style="text-align:center">${timeStr}</div>`;
-}
-
-function fetchTemperature() {
-  // Patna coordinates (Capital of Bihar)
-  const lat = 25.61;
-  const lon = 85.14;
-  fetch(
-    `https://api.open-meteo.com/v1/forecast?latitude=${lat}&longitude=${lon}&current_weather=true`,
-  )
-    .then((response) => response.json())
-    .then((data) => {
-      if (data.current_weather) {
-        const temp = data.current_weather.temperature;
-        document.getElementById("currentTemp").innerHTML =
-          `<i class="fas fa-temperature-high" style="margin-right:8px; color:#e74c3c;"></i>Patna: ${temp}°C`;
-      }
-    })
-    .catch((err) => console.error("Weather fetch error:", err));
 }
 
 function initVisitorCounter() {

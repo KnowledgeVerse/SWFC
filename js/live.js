@@ -249,6 +249,21 @@ function initLiveDisplay() {
         50% { background-position: 100% 50%; }
         100% { background-position: 0% 50%; }
     }
+    
+    /* Tricolor Gradient Background */
+    .tricolor-glow {
+        background: linear-gradient(90deg, #FF9933, #FFFFFF, #138808, #FF9933);
+        background-size: 200% auto;
+        animation: tricolorMove 3s linear infinite;
+        color: #000080;
+        padding: 5px 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
+        display: inline-block;
+    }
+    @keyframes tricolorMove {
+        to { background-position: 200% center; }
+    }
   `;
   document.head.appendChild(style);
 
@@ -256,7 +271,7 @@ function initLiveDisplay() {
     <header class="live-header">
         <img src="assets/logo.png" style="height: 70px; position: absolute; top: 20px; left: 20px;">
         <div class="header-content">
-            <h1 id="liveTitle">बिहार मौसम पूर्वानुमान प्रणाली</h1>
+            <h1 id="liveTitle" class="tricolor-glow">बिहार मौसम पूर्वानुमान प्रणाली</h1>
         </div>
         
         <div class="live-controls-row">
