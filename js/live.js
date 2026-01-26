@@ -282,7 +282,7 @@ function initLiveDisplay() {
             <div id="weatherLightning"></div>
             <div id="weatherFog"></div>
             <!-- Header inside Map Grid -->
-            <div id="slideHeader" style="position: absolute; top: 60px; left: 50%; transform: translateX(-50%); z-index: 1000; text-align: center; font-size: 1.2em; font-weight: bold; color: #2c3e50; padding: 5px 20px; background: rgba(255,255,255,0.9); border: 2px solid #2c3e50; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); min-width: 300px; pointer-events: auto;">Loading...</div>
+            <div id="slideHeader" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; text-align: center; font-size: 1.2em; font-weight: bold; color: #2c3e50; padding: 5px 20px; background: rgba(255,255,255,0.9); border: 2px solid #2c3e50; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); min-width: 300px; pointer-events: auto;">Loading...</div>
             
             <div class="live-controls-bottom">
                 <button class="control-btn" onclick="prevSlide()" title="Previous"><i class="fas fa-step-backward"></i></button>
@@ -400,11 +400,11 @@ function initMap() {
               <div id="liveMapDateOverlay" style="margin-top:2px; font-weight:bold; color:#000; background:rgba(255,255,255,0.8); padding:2px 5px; border-radius:4px; font-size:12px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); white-space:nowrap;"></div>
           </div>
       </div>
-      <div id="overlayRight" style="position:absolute; top:10px; right:10px; z-index:1001; display:flex; gap:10px; align-items:center; pointer-events:auto;">
+      <div id="overlayTopRight" style="position:absolute; top:10px; right:10px; z-index:1001; display:flex; gap:10px; align-items:center; pointer-events:auto;">
           <img src="assets/IMD_150_Year_Logo.png" style="height:70px;">
           <img src="assets/North_Arrow.png" style="height:60px;">
       </div>
-      <div id="mapLegend" class="info legend" style="position:absolute; bottom:30px; right:10px; z-index:1001; pointer-events:auto; display:none;"></div>
+      <div id="overlayLegend" class="info legend" style="position:absolute; bottom:20px; right:10px; z-index:1001; pointer-events:auto; display:none;"></div>
   `;
 
   loadLayoutPositions();
@@ -730,7 +730,7 @@ function updateMapStyle() {
 }
 
 function updateLegend(dayPhenomena, type) {
-  const legendDiv = document.getElementById("mapLegend");
+  const legendDiv = document.getElementById("overlayLegend");
   if (!legendDiv) return;
 
   if (!isLegendVisible) {
@@ -1121,7 +1121,12 @@ function enableDrag(selector) {
 
 function saveLayoutPositions() {
   const layout = {};
-  const ids = ["overlayLeft", "overlayRight", "mapLegend", "slideHeader"];
+  const ids = [
+    "overlayLeft",
+    "overlayTopRight",
+    "overlayLegend",
+    "slideHeader",
+  ];
   ids.forEach((id) => {
     const el = document.getElementById(id);
     if (el) {
