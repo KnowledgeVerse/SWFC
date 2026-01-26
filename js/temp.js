@@ -64,18 +64,20 @@ function initTempDisplay() {
         to { background-position: 200% center; }
     }
     
-    .temp-marker {
+    .temp-block {
+        background: transparent;
+        border: none;
+        box-shadow: none;
         display: flex;
         flex-direction: column;
         align-items: center;
         justify-content: center;
         text-align: center;
-        font-weight: bold;
-        color: #333;
-        text-shadow: 0 0 3px #fff;
+        padding: 0;
+        min-width: auto;
     }
-    .temp-val { font-size: 16px; background: rgba(255,255,255,0.7); padding: 2px 5px; border-radius: 4px; }
-    .temp-diff { font-size: 12px; margin-top: 2px; font-weight: 800; background: rgba(255,255,255,0.8); padding: 0 4px; border-radius: 3px; }
+    .t-val { font-size: 16px; font-weight: 900; margin: 0; text-shadow: 2px 2px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff; }
+    .t-diff { font-size: 12px; font-weight: 800; margin-top: 0; text-shadow: 2px 2px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff; }
   `;
   document.head.appendChild(style);
 
@@ -95,6 +97,9 @@ function initTempDisplay() {
             <button class="layer-btn active" onclick="setLayer('street')" id="btnStreet">Street</button>
             <button class="layer-btn" onclick="setLayer('satellite')" id="btnSat">Satellite</button>
             <button class="layer-btn" onclick="setLayer('hybrid')" id="btnHybrid">Hybrid</button>
+            <button class="layer-btn" onclick="setLayer('clean')" id="btnClean">Clean</button>
+            <button class="layer-btn" onclick="document.getElementById('mapBgInput').click()" title="Change Map Background"><i class="fas fa-palette"></i></button>
+            <input type="color" id="mapBgInput" style="display:none" onchange="updateMapBackground(this.value)">
             <button class="layer-btn" onclick="toggleDarkMode()" id="btnDarkMode" title="Dark Mode"><i class="fas fa-moon"></i></button>
             <label class="layer-btn" style="display:flex; align-items:center; gap:5px; cursor:pointer;">
                 <input type="checkbox" id="toggleLiveZoom" onchange="toggleMapZoom(this.checked)">
@@ -304,26 +309,72 @@ function updateMapStyle() {
   if (!geojsonLayer) return;
   phenomenaMarkersLayer.clearLayers();
 
+  // 1. Calculate Dynamic Range (Min/Max) for the current mode
+  let minVal = Infinity;
+  let maxVal = -Infinity;
+  const validOids = [];
+
+  geojsonLayer.eachLayer((layer) => {
+    const oid = String(layer.feature.properties.OBJECTID);
+    const data = districtTemps[oid];
+    if (data) {
+      const val =
+        tempMode === "max"
+          ? data.max
+          : tempMode === "min"
+            ? data.min
+            : data.current;
+      if (val < minVal) minVal = val;
+      if (val > maxVal) maxVal = val;
+      validOids.push(oid);
+    }
+  });
+
+  // Handle case with no data
+  if (minVal === Infinity) {
+    minVal = 0;
+    maxVal = 40;
+  }
+  // Ensure distinct min/max for gradient generation if all values are same
+  if (minVal === maxVal) {
+    minVal -= 1;
+    maxVal += 1;
+  }
+
+  // Update Legend with new dynamic range
+  updateTempLegend(minVal, maxVal);
+
   geojsonLayer.eachLayer((layer) => {
     const oid = String(layer.feature.properties.OBJECTID);
     const data = districtTemps[oid];
 
     if (data) {
-      let displayVal, displayDiff;
+      let displayVal,
+        diffText,
+        diffColor = "#000";
 
       if (tempMode === "max") {
         displayVal = data.max;
-        displayDiff = data.maxDiff;
+        const sign = data.maxDiff > 0 ? "+" : "";
+        diffText = `Δ Yest: ${sign}${data.maxDiff.toFixed(1)}°`;
+        if (data.maxDiff > 0)
+          diffColor = "#0000ff"; // Blue
+        else if (data.maxDiff < 0) diffColor = "#ff0000"; // Red
       } else if (tempMode === "min") {
         displayVal = data.min;
-        displayDiff = data.minDiff;
+        const sign = data.minDiff > 0 ? "+" : "";
+        diffText = `Δ Yest: ${sign}${data.minDiff.toFixed(1)}°`;
+        if (data.minDiff > 0)
+          diffColor = "#0000ff"; // Blue
+        else if (data.minDiff < 0) diffColor = "#ff0000"; // Red
       } else {
         displayVal = data.current;
-        displayDiff = null; // No diff for current vs yesterday current easily available
+        // For current, show Diurnal Range (Max - Min) or H/L
+        diffText = `H: ${data.max}° L: ${data.min}°`;
       }
 
       // Color coding
-      const color = getTempColor(displayVal);
+      const color = getColorForValue(displayVal, minVal, maxVal, tempMode);
 
       layer.setStyle({
         fillColor: color,
@@ -335,25 +386,16 @@ function updateMapStyle() {
       // Marker
       const center = layer.getBounds().getCenter();
 
-      let diffHtml = "";
-      if (displayDiff !== null && displayDiff !== undefined) {
-        const sign = displayDiff > 0 ? "+" : "";
-        // User Request: Negative -> Red, Positive -> Blue
-        const diffColor =
-          displayDiff < 0 ? "#e74c3c" : displayDiff > 0 ? "#007bff" : "#555";
-        diffHtml = `<div class="temp-diff" style="color:${diffColor}">(${sign}${displayDiff.toFixed(1)})</div>`;
-      }
-
       const iconHtml = `
-        <div class="temp-marker">
-            <div class="temp-val" style="border: 2px solid ${color}">${displayVal}°C</div>
-            ${diffHtml}
+        <div class="temp-block">
+            <div class="t-val" style="color:#000">${displayVal}°C</div>
+            <div class="t-diff" style="color:${diffColor}">${diffText}</div>
         </div>`;
 
       const icon = L.divIcon({
         html: iconHtml,
         className: "",
-        iconSize: [60, 50],
+        iconSize: [100, 60],
         iconAnchor: [25, 40],
       });
 
@@ -362,28 +404,77 @@ function updateMapStyle() {
   });
 }
 
-function getTempColor(t) {
-  if (t < 10) return "#3498db"; // Blue (Cold)
-  if (t < 20) return "#2ecc71"; // Green (Pleasant)
-  if (t < 30) return "#f1c40f"; // Yellow (Warm)
-  if (t < 40) return "#e67e22"; // Orange (Hot)
-  return "#e74c3c"; // Red (Very Hot)
+function getColorForValue(val, min, max, mode) {
+  // Define palettes
+  const palettes = {
+    current: ["#2ecc71", "#f1c40f", "#e67e22", "#e74c3c"], // Green -> Yellow -> Orange -> Red
+    min: ["#3498db", "#00bcd4", "#2ecc71"], // Blue -> Cyan -> Green
+    max: ["#f1c40f", "#e67e22", "#c0392b"], // Yellow -> Orange -> Dark Red
+  };
+
+  const colors = palettes[mode] || palettes.current;
+
+  // Normalize value to 0-1 range
+  let t = (val - min) / (max - min);
+  t = Math.max(0, Math.min(1, t)); // Clamp
+
+  // Map t to color segments
+  const segments = colors.length - 1;
+  const segmentLength = 1 / segments;
+  const segmentIndex = Math.floor(t / segmentLength);
+
+  // Handle exact max value case
+  if (segmentIndex >= segments) return colors[colors.length - 1];
+
+  const startColor = colors[segmentIndex];
+  const endColor = colors[segmentIndex + 1];
+  const localT = (t - segmentIndex * segmentLength) / segmentLength;
+
+  return interpolateColor(startColor, endColor, localT);
 }
 
-function updateTempLegend() {
+function interpolateColor(c1, c2, factor) {
+  // Simple hex interpolation
+  const r1 = parseInt(c1.substring(1, 3), 16);
+  const g1 = parseInt(c1.substring(3, 5), 16);
+  const b1 = parseInt(c1.substring(5, 7), 16);
+
+  const r2 = parseInt(c2.substring(1, 3), 16);
+  const g2 = parseInt(c2.substring(3, 5), 16);
+  const b2 = parseInt(c2.substring(5, 7), 16);
+
+  const r = Math.round(r1 + factor * (r2 - r1));
+  const g = Math.round(g1 + factor * (g2 - g1));
+  const b = Math.round(b1 + factor * (b2 - b1));
+
+  return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
+}
+
+function updateTempLegend(min, max) {
   const div = document.getElementById("tempLegend");
   if (!div) return;
+
+  const titles = {
+    current: "Current Temperature (°C)",
+    min: "Minimum Temperature (°C)",
+    max: "Maximum Temperature (°C)",
+  };
+
+  const palettes = {
+    current: "linear-gradient(to right, #2ecc71, #f1c40f, #e67e22, #e74c3c)",
+    min: "linear-gradient(to right, #3498db, #00bcd4, #2ecc71)",
+    max: "linear-gradient(to right, #f1c40f, #e67e22, #c0392b)",
+  };
+
+  const bg = palettes[tempMode] || palettes.current;
+  const title = titles[tempMode] || titles.current;
+
   div.innerHTML = `
-        <div style="font-weight:bold; margin-bottom:5px; border-bottom:1px solid #ccc;">Temperature Scale</div>
-        <div style="display:flex; align-items:center; margin-bottom:3px;"><span style="width:15px; height:15px; background:#3498db; margin-right:8px;"></span> < 10°C (Cold)</div>
-        <div style="display:flex; align-items:center; margin-bottom:3px;"><span style="width:15px; height:15px; background:#2ecc71; margin-right:8px;"></span> 10°C - 20°C</div>
-        <div style="display:flex; align-items:center; margin-bottom:3px;"><span style="width:15px; height:15px; background:#f1c40f; margin-right:8px;"></span> 20°C - 30°C</div>
-        <div style="display:flex; align-items:center; margin-bottom:3px;"><span style="width:15px; height:15px; background:#e67e22; margin-right:8px;"></span> 30°C - 40°C</div>
-        <div style="display:flex; align-items:center; margin-bottom:3px;"><span style="width:15px; height:15px; background:#e74c3c; margin-right:8px;"></span> > 40°C (Hot)</div>
-        <div style="margin-top:8px; font-size:0.9em; border-top:1px solid #eee; padding-top:5px;">
-            <strong>Change from Yesterday:</strong><br>
-            <span style="color:#e74c3c; font-weight:bold;">Red</span> = Negative (-)<br>
-            <span style="color:#007bff; font-weight:bold;">Blue</span> = Positive (+)
+        <div style="font-weight:bold; margin-bottom:5px; font-size:12px; border-bottom:1px solid #ccc; padding-bottom:3px;">${title}</div>
+        <div style="height:15px; width:100%; background:${bg}; border-radius:3px; margin-bottom:5px;"></div>
+        <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:bold; color:#333;">
+            <span>${min !== undefined ? min.toFixed(1) : "Low"}</span>
+            <span>${max !== undefined ? max.toFixed(1) : "High"}</span>
         </div>
     `;
 }
@@ -429,6 +520,12 @@ function toggleMapZoom(enable) {
   }
 }
 
+function updateMapBackground(color) {
+  const mapDiv = document.getElementById("map");
+  if (mapDiv) mapDiv.style.background = color;
+}
+window.updateMapBackground = updateMapBackground;
+
 function setLayer(type) {
   if (map.hasLayer(streetLayer)) map.removeLayer(streetLayer);
   if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
@@ -447,6 +544,9 @@ function setLayer(type) {
   } else if (type === "hybrid") {
     map.addLayer(hybridLayer);
     document.getElementById("btnHybrid").classList.add("active");
+  } else if (type === "clean") {
+    // No layer added
+    document.getElementById("btnClean").classList.add("active");
   }
 }
 window.setLayer = setLayer;
