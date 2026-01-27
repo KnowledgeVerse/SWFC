@@ -425,13 +425,24 @@ function buildPhenomenaPanel() {
     const name = currentLang === "hi" ? d.hindi : d.english;
     const lines =
       currentLang === "hi" ? intensityLines[d.id] : intensityLinesEn[d.id];
+
+    let hideIconHtml = "";
+    if (d.id === "dry") {
+      const isChecked =
+        localStorage.getItem("bihar_hide_dry_icon") === "true" ? "checked" : "";
+      hideIconHtml = `<label style="margin-left:auto; font-size:0.9em; display:flex; align-items:center; cursor:pointer; white-space:nowrap;">
+                        <input type="checkbox" id="hideIcon-${d.id}" ${isChecked} onchange="localStorage.setItem('bihar_hide_dry_icon', this.checked); updateMapStyle()" style="margin-right:4px;"> 
+                        Hide Icon
+                      </label>`;
+    }
+
     row.innerHTML = `
       <input class="main-check same-size" type="checkbox" value="${d.id}" onchange="togglePhenom('${d.id}')">
       <div class="phenom-icon"><img src="${d.image}" class="phenom-anim-${d.id}" style="width: 100%; height: 100%; object-fit: contain;"></div>
       <label><strong>${name}</strong></label>
       <select class="sub-select intensity-select same-size" id="intensity-${d.id}">
         ${lines.map((s, i) => `<option value="${i}">${s}</option>`).join("")}
-      </select>`;
+      </select>${hideIconHtml}`;
     box.appendChild(row);
   });
 }
@@ -2091,6 +2102,10 @@ function updateMapStyle(skipMarkers = false) {
       for (const pDef of phenDefs) {
         if (distData.phenomena.has(pDef.id)) {
           if (!phenomColor) phenomColor = phenColors[pDef.id];
+
+          const hideCb = document.getElementById(`hideIcon-${pDef.id}`);
+          if (hideCb && hideCb.checked) continue;
+
           assignedPhenomenaList.push(pDef);
         }
       }

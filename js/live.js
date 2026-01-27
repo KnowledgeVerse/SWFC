@@ -712,10 +712,12 @@ function updateMapStyle() {
     let assignedPhenomenaList = [];
 
     const distData = districtPhenomenaMap[oid];
+    const hideDry = localStorage.getItem("bihar_hide_dry_icon") === "true";
     if (distData && distData.phenomena && distData.phenomena.size > 0) {
       for (const pDef of phenDefs) {
         if (distData.phenomena.has(pDef.id)) {
           if (!phenomColor) phenomColor = phenColors[pDef.id];
+          if (pDef.id === "dry" && hideDry) continue;
           assignedPhenomenaList.push(pDef);
         }
       }
