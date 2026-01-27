@@ -11,14 +11,54 @@ const phenColors = {
 };
 
 const phenDefs = [
-  { id: "thunderstorm", hindi: "मेघगर्जन/वज्रपात", icon: "fa-cloud-bolt" },
-  { id: "gustywind", hindi: "तेज़ हवा", icon: "fa-wind" },
-  { id: "heatwave", hindi: "लू (उष्ण लहर)", icon: "fa-fire" },
-  { id: "hailstorm", hindi: "ओलावृष्टि", icon: "fa-cloud-meatball" },
-  { id: "heavyrain", hindi: "भारी वर्षा", icon: "fa-cloud-showers-heavy" },
-  { id: "densefog", hindi: "घना कोहरा", icon: "fa-smog" },
-  { id: "coldday", hindi: "शीत दिवस", icon: "fa-snowflake" },
-  { id: "warmnight", hindi: "गर्म रात्रि", icon: "fa-temperature-high" },
+  {
+    id: "thunderstorm",
+    hindi: "मेघगर्जन/वज्रपात",
+    icon: "fa-cloud-bolt",
+    image: "assets/weather-icons/thunderstorm.png",
+  },
+  {
+    id: "gustywind",
+    hindi: "तेज़ हवा",
+    icon: "fa-wind",
+    image: "assets/weather-icons/gustywind.png",
+  },
+  {
+    id: "heatwave",
+    hindi: "लू (उष्ण लहर)",
+    icon: "fa-fire",
+    image: "assets/weather-icons/heatwave.png",
+  },
+  {
+    id: "hailstorm",
+    hindi: "ओलावृष्टि",
+    icon: "fa-cloud-meatball",
+    image: "assets/weather-icons/hailstorm.png",
+  },
+  {
+    id: "heavyrain",
+    hindi: "भारी वर्षा",
+    icon: "fa-cloud-showers-heavy",
+    image: "assets/weather-icons/heavyrain.png",
+  },
+  {
+    id: "densefog",
+    hindi: "घना कोहरा",
+    icon: "fa-smog",
+    image: "assets/weather-icons/densefog.png",
+  },
+  {
+    id: "coldday",
+    hindi: "शीत दिवस",
+    icon: "fa-snowflake",
+    image: "assets/weather-icons/coldday.png",
+  },
+  {
+    id: "warmnight",
+    hindi: "गर्म रात्रि",
+    icon: "fa-temperature-high",
+    image: "assets/weather-icons/warmnight.png",
+  },
 ];
 
 const weatherSounds = {
@@ -425,10 +465,8 @@ function updateMapStyle() {
 
     if (assignedPhenomenaList.length > 0) {
       const primary = assignedPhenomenaList[0];
-      const iconHtml = `<div style="font-size: 32px; color: ${
-        phenColors[primary.id]
-      }; text-shadow: 0 0 3px #fff;">
-                            <i class="fas ${primary.icon}"></i>
+      const iconHtml = `<div style="width: 32px; height: 32px; display:flex; align-items:center; justify-content:center;">
+                            <img src="${primary.image}" style="width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 2px #fff);">
                           </div>`;
       const icon = L.divIcon({
         html: iconHtml,

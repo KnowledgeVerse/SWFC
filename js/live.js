@@ -16,43 +16,56 @@ const phenDefs = [
     hindi: "मेघगर्जन/वज्रपात",
     english: "Thunderstorm/Lightning",
     icon: "fa-cloud-bolt",
+    image: "assets/weather-icons/thunderstorm.png",
   },
   {
     id: "gustywind",
     hindi: "तेज़ हवा",
     english: "Gusty Wind",
     icon: "fa-wind",
+    image: "assets/weather-icons/gustywind.png",
   },
   {
     id: "heatwave",
     hindi: "लू (उष्ण लहर)",
     english: "Heat Wave",
     icon: "fa-fire",
+    image: "assets/weather-icons/heatwave.png",
   },
   {
     id: "hailstorm",
     hindi: "ओलावृष्टि",
     english: "Hailstorm",
     icon: "fa-cloud-meatball",
+    image: "assets/weather-icons/hailstorm.png",
   },
   {
     id: "heavyrain",
     hindi: "भारी वर्षा",
     english: "Heavy Rainfall",
     icon: "fa-cloud-showers-heavy",
+    image: "assets/weather-icons/heavyrain.png",
   },
-  { id: "densefog", hindi: "घना कोहरा", english: "Dense Fog", icon: "fa-smog" },
+  {
+    id: "densefog",
+    hindi: "घना कोहरा",
+    english: "Dense Fog",
+    icon: "fa-smog",
+    image: "assets/weather-icons/densefog.png",
+  },
   {
     id: "coldday",
     hindi: "शीत दिवस",
     english: "Cold Day",
     icon: "fa-snowflake",
+    image: "assets/weather-icons/coldday.png",
   },
   {
     id: "warmnight",
     hindi: "गर्म रात्रि",
     english: "Warm Night",
     icon: "fa-temperature-high",
+    image: "assets/weather-icons/warmnight.png",
   },
 ];
 
@@ -713,8 +726,8 @@ function updateMapStyle() {
       const iconSize = assignedPhenomenaList.length > 1 ? "18px" : "32px";
 
       assignedPhenomenaList.forEach((p) => {
-        iconsHtml += `<div style="font-size: ${iconSize}; color: ${phenColors[p.id]}; text-shadow: 0 0 3px #fff; margin: 1px;">
-                          <i class="fas ${p.icon} phenom-anim-${p.id}"></i>
+        iconsHtml += `<div style="width: ${iconSize}; height: ${iconSize}; margin: 1px; display:flex; align-items:center; justify-content:center;">
+                          <img src="${p.image}" class="phenom-anim-${p.id}" style="width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 2px #fff);">
                         </div>`;
       });
 
@@ -761,11 +774,10 @@ function updateLegend(dayPhenomena, type) {
     // Sort by phenDefs order
     phenDefs.forEach((p) => {
       if (dayPhenomena.has(p.id)) {
-        const color = phenColors[p.id];
         legendDiv.innerHTML += `
           <div style="display:flex; align-items:center; margin-bottom:6px;">
-            <div style="width:35px; text-align:center; margin-right:8px;">
-                <i class="fas ${p.icon}" style="color:${color}; font-size:24px;"></i>
+            <div style="width:35px; height:35px; text-align:center; margin-right:8px; display:flex; justify-content:center; align-items:center;">
+                <img src="${p.image}" style="max-width: 100%; max-height: 100%;">
             </div>
             <div style="line-height:1.2;">
                 <span style="font-weight:bold;">${p.english}</span><br>

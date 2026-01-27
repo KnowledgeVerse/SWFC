@@ -260,6 +260,7 @@ const phenDefs = [
     hindi: "मेघगर्जन/वज्रपात",
     english: "Thunderstorm/Lightning",
     icon: "fa-cloud-bolt",
+    image: "assets/weather-icons/thunderstorm.png",
     sub: [
       "हल्के से मध्यम दर्जे की मेघ गर्जन तथा वज्रपात के साथ वर्षा जारी रहने की संभावना है।",
       "मध्यम दर्जे की मेघ गर्जन, वज्रपात के साथ वर्षा होने की प्रबल संभावना है।",
@@ -274,6 +275,7 @@ const phenDefs = [
     hindi: "तेज़ हवा",
     english: "Gusty Wind",
     icon: "fa-wind",
+    image: "assets/weather-icons/gustywind.png",
     sub: [
       "तेज़ हवा (हवा की गति 30-40 कि. मी. प्रति घंटे तक) रहने की संभावना है।",
       "तेज़ हवा (हवा की गति 40-50 कि. मी. प्रति घंटे तक) रहने की संभावना है।",
@@ -285,6 +287,7 @@ const phenDefs = [
     hindi: "लू (उष्ण लहर)",
     english: "Heat Wave",
     icon: "fa-fire",
+    image: "assets/weather-icons/heatwave.png",
     sub: [
       "लू (उष्ण लहर ) की संभावना है ।",
       "उष्ण दिवस होने की संभावना है।",
@@ -296,6 +299,7 @@ const phenDefs = [
     hindi: "ओलावृष्टि",
     english: "Hailstorm",
     icon: "fa-cloud-meatball",
+    image: "assets/weather-icons/hailstorm.png",
     sub: ["ओलावृष्टि की संभावना है।"],
   },
   {
@@ -303,6 +307,7 @@ const phenDefs = [
     hindi: "भारी वर्षा",
     english: "Heavy Rainfall",
     icon: "fa-cloud-showers-heavy",
+    image: "assets/weather-icons/heavyrain.png",
     sub: ["भारी वर्षा होने की संभावना है।"],
   },
   {
@@ -310,6 +315,7 @@ const phenDefs = [
     hindi: "घना कोहरा",
     english: "Dense Fog",
     icon: "fa-smog",
+    image: "assets/weather-icons/densefog.png",
     sub: [
       "घना कोहरा / कुहासा छाए रहने की प्रबल संभावना है।",
       "घना से बहुत घना कोहरा / कुहासा छाए रहने की प्रबल संभावना है।",
@@ -320,6 +326,7 @@ const phenDefs = [
     hindi: "शीत दिवस",
     english: "Cold Day",
     icon: "fa-snowflake",
+    image: "assets/weather-icons/coldday.png",
     sub: ["शीत दिवस होने की संभावना है।"],
   },
   {
@@ -327,6 +334,7 @@ const phenDefs = [
     hindi: "गर्म रात्रि",
     english: "Warm Night",
     icon: "fa-temperature-high",
+    image: "assets/weather-icons/warmnight.png",
     sub: ["गर्म रात्रि की संभावना है ।"],
   },
   {
@@ -334,6 +342,7 @@ const phenDefs = [
     hindi: "शुष्क मौसम",
     english: "Dry Weather",
     icon: "fa-sun",
+    image: "assets/weather-icons/dry.png",
     sub: ["मौसम शुष्क रहने की संभावना है।"],
   },
 ];
@@ -418,7 +427,7 @@ function buildPhenomenaPanel() {
       currentLang === "hi" ? intensityLines[d.id] : intensityLinesEn[d.id];
     row.innerHTML = `
       <input class="main-check same-size" type="checkbox" value="${d.id}" onchange="togglePhenom('${d.id}')">
-      <div class="phenom-icon"><i class="fas ${d.icon} phenom-anim-${d.id}"></i></div>
+      <div class="phenom-icon"><img src="${d.image}" class="phenom-anim-${d.id}" style="width: 100%; height: 100%; object-fit: contain;"></div>
       <label><strong>${name}</strong></label>
       <select class="sub-select intensity-select same-size" id="intensity-${d.id}">
         ${lines.map((s, i) => `<option value="${i}">${s}</option>`).join("")}
@@ -2101,11 +2110,9 @@ function updateMapStyle(skipMarkers = false) {
         const iconSize = assignedPhenomenaList.length > 1 ? "18px" : "32px";
 
         assignedPhenomenaList.forEach((p) => {
-          // Use SVG instead of FontAwesome <i> tag for better export compatibility
-          const svgIcon =
-            phenomenonSvgs[p.id] || `<i class="fas ${p.icon}"></i>`;
-          iconsHtml += `<div class="phenom-anim-${p.id}" style="font-size: ${iconSize}; color: ${phenColors[p.id]}; text-shadow: 0 0 3px #fff; margin: 1px; display:flex; align-items:center; justify-content:center;">
-                            ${svgIcon}
+          // Use Image tag
+          iconsHtml += `<div class="phenom-anim-${p.id}" style="width: ${iconSize}; height: ${iconSize}; margin: 1px; display:flex; align-items:center; justify-content:center;">
+                            <img src="${p.image}" style="width: 100%; height: 100%; object-fit: contain; filter: drop-shadow(0 0 2px #fff);">
                           </div>`;
         });
 
@@ -2131,8 +2138,8 @@ function updateMapStyle(skipMarkers = false) {
               .map(
                 (p) => `
               <div style="margin-bottom: 6px; line-height: 1.2;">
-                <strong style="color: ${phenColors[p.id]}">
-                  <i class="fas ${p.icon}"></i> ${p.hindi}
+                <strong style="display: flex; align-items: center; gap: 5px; color: ${phenColors[p.id]}">
+                  <img src="${p.image}" style="width: 20px; height: 20px;"> ${p.hindi}
                 </strong><br>
                 <small style="color: #555;">${p.english}</small>
               </div>
@@ -2223,12 +2230,10 @@ function updateLegend() {
     legendDiv.innerHTML += `<div style="margin: 5px 0 2px 0; font-weight:bold; border-bottom:1px solid #ccc;">PHENOMENA</div>`;
     phenDefs.forEach((p) => {
       if (activePhenomena.has(p.id)) {
-        const color = phenColors[p.id];
-        const svgIcon = phenomenonSvgs[p.id] || `<i class="fas ${p.icon}"></i>`;
         legendDiv.innerHTML += `
           <div style="display:flex; align-items:center; margin-bottom:6px;">
-            <div style="width:35px; text-align:center; margin-right:8px; font-size:24px; color:${color}; display:flex; justify-content:center;">
-                ${svgIcon}
+            <div style="width:35px; height:35px; text-align:center; margin-right:8px; display:flex; justify-content:center; align-items:center;">
+                <img src="${p.image}" style="max-width: 100%; max-height: 100%;">
             </div>
             <div style="line-height:1.2;">
                 <span style="font-weight:bold;">${p.english}</span><br>
