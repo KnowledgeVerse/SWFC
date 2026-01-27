@@ -479,6 +479,7 @@ function attachHandlers() {
   document.getElementById("updateWarningMap").onclick = () =>
     handleMapUpdate("warning");
   document.getElementById("clearMapSelection").onclick = clearDistrictSelection;
+  document.getElementById("btnTestData").onclick = generateTestData;
   document.getElementById("downloadMap").onclick = downloadMapImage;
   document.getElementById("downloadSmartImages").onclick = downloadSmartImages;
   document.getElementById("downloadSmartPDF").onclick = downloadSmartPDF;
@@ -1377,15 +1378,31 @@ function scrollToTop() {
 
 // ---------- Clear ----------
 function clearSelection() {
+  if (
+    !confirm(
+      "Are you sure you want to clear ALL Forecast and Warning data for ALL days?",
+    )
+  )
+    return;
+
   selectedDistricts = [];
   selectedPhenomena = [];
-  weeklyData[currentDay - 1] = {};
-  districtPhenomenaMap = weeklyData[currentDay - 1];
 
-  // If in multi-select mode, clear all active days
-  activeDays.forEach((dayNum) => {
-    weeklyData[dayNum - 1] = {};
-  });
+  // Clear ALL data (Forecast & Warning for all 7 days)
+  weeklyForecastData = Array(7)
+    .fill(null)
+    .map(() => ({}));
+  weeklyWarningData = Array(7)
+    .fill(null)
+    .map(() => ({}));
+
+  // Re-assign weeklyData reference based on current mode
+  const modeForecast = document.getElementById("modeForecast");
+  weeklyData =
+    modeForecast && modeForecast.checked
+      ? weeklyForecastData
+      : weeklyWarningData;
+  districtPhenomenaMap = weeklyData[currentDay - 1];
 
   document.querySelectorAll("#districtGrid input").forEach((cb) => {
     cb.checked = false;
@@ -1443,6 +1460,101 @@ function clearForecastWarningData() {
   saveData();
   updateMapStyle();
   alert("Forecast and Warning data cleared.");
+}
+
+function generateTestData() {
+  if (
+    !confirm(
+      "This will overwrite all current data with TEST data for 7 days. Continue?",
+    )
+  )
+    return;
+
+  // Clear existing
+  weeklyForecastData = Array(7)
+    .fill(null)
+    .map(() => ({}));
+  weeklyWarningData = Array(7)
+    .fill(null)
+    .map(() => ({}));
+
+  // Helper to set data for a day
+  const setDayData = (dataArray, dayIndex, districtIds, phenomId, color) => {
+    const dayData = dataArray[dayIndex];
+    districtIds.forEach((id) => {
+      if (!dayData[id]) dayData[id] = { phenomena: new Set(), color: color };
+      dayData[id].phenomena.add(phenomId);
+      dayData[id].color = color;
+    });
+  };
+
+  // --- Forecast Data ---
+  // Days 1 & 2: Thunderstorm in Patna (26) and Gaya (12) (Continuous)
+  [0, 1].forEach((i) => {
+    setDayData(weeklyForecastData, i, ["26", "12"], "thunderstorm", "#ffc107");
+  });
+
+  // Day 3: Heatwave in South Bihar (e.g. Aurangabad 3, Gaya 12, Nawada 25, Rohtas 28)
+  setDayData(
+    weeklyForecastData,
+    2,
+    ["3", "12", "25", "28"],
+    "heatwave",
+    "#fd7e14",
+  );
+
+  // Days 4 & 5: Dry in Patna (26) (Continuous)
+  [3, 4].forEach((i) => {
+    setDayData(weeklyForecastData, i, ["26"], "dry", "#ffffff");
+  });
+
+  // Days 6 & 7: Heavy Rain in North Bihar (e.g. West Champaran 38, East Champaran 11, Sitamarhi 34) (Continuous)
+  [5, 6].forEach((i) => {
+    setDayData(
+      weeklyForecastData,
+      i,
+      ["38", "11", "34"],
+      "heavyrain",
+      "#007bff",
+    );
+  });
+
+  // --- Warning Data ---
+  // Days 1 & 2: Yellow Warning for Thunderstorm
+  [0, 1].forEach((i) => {
+    setDayData(
+      weeklyWarningData,
+      i,
+      ["26", "12"],
+      "thunderstorm",
+      "rgb(255, 255, 0)",
+    );
+  });
+
+  // Day 3: Orange Alert for Heatwave
+  setDayData(
+    weeklyWarningData,
+    2,
+    ["3", "12", "25", "28"],
+    "heatwave",
+    "rgb(255, 192, 0)",
+  );
+
+  // Days 6 & 7: Red Warning for Heavy Rain
+  [5, 6].forEach((i) => {
+    setDayData(
+      weeklyWarningData,
+      i,
+      ["38", "11", "34"],
+      "heavyrain",
+      "rgb(255, 0, 0)",
+    );
+  });
+
+  saveData();
+  // Refresh current view
+  switchDay(currentDay);
+  alert("Test Data Generated Successfully for 7 Days!");
 }
 
 function resetUI() {
