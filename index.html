@@ -16,6 +16,77 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     />
+    <style>
+      /* IMD Style Table */
+      .imd-table {
+        width: 100%;
+        border-collapse: collapse;
+        margin-top: 10px;
+        font-size: 14px;
+        background: white;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+      .imd-table th,
+      .imd-table td {
+        border: 1px solid #333;
+        padding: 8px 10px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .imd-table th {
+        background-color: #0056b3;
+        color: white;
+        font-weight: bold;
+        text-transform: uppercase;
+        font-size: 12px;
+      }
+      .imd-table tr:nth-child(even) {
+        background-color: #f9f9f9;
+      }
+      .imd-table tr:hover {
+        background-color: #f1f1f1;
+      }
+      .cell-green {
+        background-color: #28a745 !important;
+        color: white;
+        font-weight: bold;
+        text-align: center;
+      }
+      .cell-yellow {
+        background-color: #ffc107 !important;
+        color: black;
+        font-weight: bold;
+        text-align: center;
+      }
+      .cell-orange {
+        background-color: #fd7e14 !important;
+        color: white;
+        font-weight: bold;
+        text-align: center;
+      }
+      .cell-red {
+        background-color: #dc3545 !important;
+        color: white;
+        font-weight: bold;
+        text-align: center;
+      }
+      #tableViewContainer {
+        background: white;
+        padding: 20px;
+        border-radius: 15px;
+        box-shadow: 0 10px 30px rgba(0, 0, 0, 0.1);
+        margin-bottom: 30px;
+        border: 2px solid #2c3e50;
+      }
+      #tableViewContainer h3 {
+        color: #2c3e50;
+        border-bottom: 2px solid #667eea;
+        padding-bottom: 10px;
+        margin-bottom: 15px;
+        text-align: center;
+        text-transform: uppercase;
+      }
+    </style>
   </head>
   <body>
     <!-- Weather Background Animation -->
@@ -514,6 +585,13 @@
                 Clear Forecast & Warning
               </button>
               <button
+                id="btnTable"
+                class="btn-secondary small-btn"
+                style="background: #3498db; color: white"
+              >
+                Table
+              </button>
+              <button
                 id="btnTestData"
                 class="btn-secondary small-btn"
                 style="background: #8e44ad; color: white"
@@ -557,6 +635,26 @@
             <canvas id="weatherCanvas"></canvas>
             <div id="weatherLightning"></div>
             <div id="weatherFog"></div>
+          </div>
+
+          <!-- Table View Container (Hidden by default) -->
+          <div id="tableViewContainer" style="display: none">
+            <h3>7-Day Weather Warning Bulletin</h3>
+            <div style="overflow-x: auto">
+              <table class="imd-table" id="imdTable">
+                <thead>
+                  <tr>
+                    <th>Day</th>
+                    <th>Date</th>
+                    <th>Affected Area</th>
+                    <th>Weather Phenomenon</th>
+                    <th>Warning Description</th>
+                    <th>Warning Colour</th>
+                  </tr>
+                </thead>
+                <tbody></tbody>
+              </table>
+            </div>
           </div>
         </div>
 
