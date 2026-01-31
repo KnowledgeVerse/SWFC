@@ -320,7 +320,7 @@ const uiTranslations = {
 const phenDefs = [
   {
     id: "dry",
-    hindi: "शुष्क मौसम",
+    hindi: "शुष्क मौसम", // Not in Rule 3, keeping default
     english: "Dry Weather",
     icon: "fa-sun",
     image: "assets/weather-icons/dry.png",
@@ -334,14 +334,14 @@ const phenDefs = [
   },
   {
     id: "heatwave",
-    hindi: "लू (उष्ण लहर)",
+    hindi: "गर्म लहर",
     english: "Heat Wave",
     icon: "fa-fire",
     image: "assets/weather-icons/heatwave.png",
   },
   {
     id: "warmnight",
-    hindi: "गर्म रात्रि",
+    hindi: "गर्म रात",
     english: "Warm Night",
     icon: "fa-temperature-high",
     image: "assets/weather-icons/warmnight.png",
@@ -369,14 +369,14 @@ const phenDefs = [
   },
   {
     id: "thunderstorm",
-    hindi: "मेघगर्जन/वज्रपात",
+    hindi: "गरज/चमक",
     english: "Thunderstorm/Lightning",
     icon: "fa-cloud-bolt",
     image: "assets/weather-icons/thunderstorm.png",
   },
   {
     id: "gustywind",
-    hindi: "तेज़ हवा",
+    hindi: "झंझावात",
     english: "Gusty Wind",
     icon: "fa-wind",
     image: "assets/weather-icons/gustywind.png",
@@ -425,7 +425,7 @@ const phenDefs = [
   },
   {
     id: "hailstorm",
-    hindi: "ओलावृष्टि",
+    hindi: "ओलावृष्टि", // Not in Rule 3 explicitly but standard
     english: "Hailstorm",
     icon: "fa-cloud-meatball",
     image: "assets/weather-icons/hailstorm.png",
@@ -1271,6 +1271,7 @@ function toggleTableView() {
     forecastOut.style.display = "none";
     tableContainer.style.display = "block";
     renderTable();
+    renderTableControls();
   } else {
     // Hide Table (Reset)
     resetTableView();
@@ -1278,8 +1279,72 @@ function toggleTableView() {
 }
 
 function renderTable() {
+  // Inject CSS for IMD Table Styling
+  const styleId = "imd-table-style";
+  if (!document.getElementById(styleId)) {
+    const style = document.createElement("style");
+    style.id = styleId;
+    style.innerHTML = `
+      #imdTable { width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px; margin-top: 20px; }
+      #imdTable th { background-color: #003366; color: white; padding: 12px; text-align: center; font-size: 14px; border: 1px solid #000; position: sticky; top: 0; z-index: 5; }
+      #imdTable td { padding: 12px; border: 1px solid #000; vertical-align: top; color: #000; }
+      .warning-red { background-color: #dc3545; color: white; font-weight: bold; text-align: center; vertical-align: middle; }
+      .warning-orange { background-color: #fd7e14; color: white; font-weight: bold; text-align: center; vertical-align: middle; }
+      .warning-yellow { background-color: #ffc107; color: black; font-weight: bold; text-align: center; vertical-align: middle; }
+      .warning-green { background-color: #28a745; color: white; font-weight: bold; text-align: center; vertical-align: middle; }
+    `;
+    document.head.appendChild(style);
+  }
+
+  // Update Table Headers
+  const table = document.getElementById("imdTable");
+  if (table) {
+    table.innerHTML = `
+        <thead>
+            <tr>
+                <th style="width: 5%;">DAY</th>
+                <th style="width: 10%;">DATE</th>
+                <th style="width: 20%;">AFFECTED AREA<br>(प्रभावित क्षेत्र)</th>
+                <th style="width: 15%;">WEATHER PHENOMENON<br>(मौसम घटना)</th>
+                <th style="width: 20%;">WARNING DESCRIPTION<br>(English)</th>
+                <th style="width: 20%;">चेतावनी विवरण<br>(हिन्दी)</th>
+                <th style="width: 10%;">WARNING COLOUR<br>(चेतावनी रंग)</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+      `;
+  }
+
+  // Update Header Title (Visible on Screen)
+  const issueDate = new Date(forecastBaseDate);
+  const endDate = new Date(forecastBaseDate);
+  endDate.setDate(endDate.getDate() + 6);
+
+  const options = { day: "2-digit", month: "long", year: "numeric" };
+  const issueStr = issueDate.toLocaleDateString("en-IN", options);
+
+  const startDay = issueDate.getDate().toString().padStart(2, "0");
+  const endDay = endDate.getDate().toString().padStart(2, "0");
+  const startMonth = issueDate.toLocaleDateString("en-IN", { month: "long" });
+  const endMonth = endDate.toLocaleDateString("en-IN", { month: "long" });
+  const startYear = issueDate.getFullYear();
+  const endYear = endDate.getFullYear();
+
+  let rangeStr = "";
+  if (startMonth === endMonth && startYear === endYear) {
+    rangeStr = `${startDay}–${endDay} ${startMonth} ${startYear}`;
+  } else if (startYear === endYear) {
+    rangeStr = `${startDay} ${startMonth} – ${endDay} ${endMonth} ${startYear}`;
+  } else {
+    rangeStr = `${startDay} ${startMonth} ${startYear} – ${endDay} ${endMonth} ${endYear}`;
+  }
+
+  const headerText = `Issued On: ${issueStr}: Weather Warning for Next 7 Days (${rangeStr})`;
+  const headerEl = document.querySelector("#tableViewContainer h3");
+  if (headerEl) headerEl.innerText = headerText;
+
   const tbody = document.querySelector("#imdTable tbody");
-  tbody.innerHTML = "";
+  if (!tbody) return;
 
   const today = new Date(forecastBaseDate);
 
@@ -1294,7 +1359,8 @@ function renderTable() {
 
     const dayData = weeklyData[i - 1];
 
-    // Grouping logic similar to forecast generation
+    const rowBg = i % 2 === 0 ? "#e6f3ff" : "#ffffff";
+
     const groups = {};
     Object.entries(dayData).forEach(([distId, data]) => {
       if (!data.phenomena || data.phenomena.size === 0) return;
@@ -1315,66 +1381,89 @@ function renderTable() {
     });
 
     if (Object.keys(groups).length === 0) {
-      // No Warning Row
       const row = `
-        <tr>
-          <td>Day ${i}</td>
-          <td>${dateStr}</td>
+        <tr style="background-color:${rowBg}">
+          <td style="text-align:center;">Day ${i}</td>
+          <td style="text-align:center;">${dateStr}</td>
           <td>-</td>
-          <td>Nil</td>
-          <td>No Warning / कोई चेतावनी नहीं</td>
-          <td class="cell-green">Green (No Warning)</td>
+          <td style="text-align:center;">Nil</td>
+          <td>No Warning</td>
+          <td>कोई चेतावनी नहीं</td>
+          <td class="warning-green">🟢 Green (No Warning)</td>
         </tr>`;
       tbody.innerHTML += row;
     } else {
-      // Render rows for each group
       Object.values(groups).forEach((group) => {
         const areaText = getAreaText(group.districts);
-        const color = group.color || "#28a745";
 
-        // Determine color class
-        let colorClass = "cell-green";
-        let colorName = "Green (No Warning)";
-        if (color === "rgb(255, 255, 0)" || color === "#ffc107") {
-          colorClass = "cell-yellow";
-          colorName = "Yellow (Watch)";
-        } else if (color === "rgb(255, 192, 0)" || color === "#fd7e14") {
-          colorClass = "cell-orange";
-          colorName = "Orange (Alert)";
-        } else if (color === "rgb(255, 0, 0)" || color === "#dc3545") {
-          colorClass = "cell-red";
-          colorName = "Red (Warning)";
+        let colorClass = "warning-green";
+        let colorText = "🟢 Green (No Warning)";
+        const c = group.color;
+        if (c === "rgb(255, 255, 0)" || c === "#ffc107") {
+          colorClass = "warning-yellow";
+          colorText = "🟡 Yellow (Watch)";
+        } else if (c === "rgb(255, 192, 0)" || c === "#fd7e14") {
+          colorClass = "warning-orange";
+          colorText = "🟠 Orange (Alert)";
+        } else if (c === "rgb(255, 0, 0)" || c === "#dc3545") {
+          colorClass = "warning-red";
+          colorText = "🔴 Red (Warning)";
         }
 
-        const phenomNames = group.phenomena
-          .map((pId) => {
-            const pDef = phenDefs.find((pd) => pd.id === pId);
-            return pDef ? `${pDef.english}<br>(${pDef.hindi})` : pId;
-          })
-          .join("<br><br>");
+        const phenomCount = group.phenomena.length;
 
-        const descriptions = group.phenomena
-          .map((pId) => {
-            const idx = group.intensities[pId] || 0;
-            const hText = intensityLines[pId][idx];
-            const eText = intensityLinesEn[pId][idx];
-            return `<div>${eText}<br><span style="color:#555;">${hText}</span></div>`;
-          })
-          .join("<hr style='margin:5px 0; border-top:1px dashed #ccc;'>");
+        group.phenomena.forEach((pId, index) => {
+          const pDef = phenDefs.find((pd) => pd.id === pId);
+          let name = pDef ? `${pDef.english}<br>(${pDef.hindi})` : pId;
+          const idx = group.intensities[pId] || 0;
+          const eText = intensityLinesEn[pId][idx];
+          const hText = intensityLines[pId][idx];
 
-        const row = `
-          <tr>
-            <td>Day ${i}</td>
-            <td>${dateStr}</td>
-            <td>
-               <strong>${areaText.english}</strong><br>
-               <span style="color:#555;">${areaText.hindi}</span>
-            </td>
-            <td>${phenomNames}</td>
-            <td>${descriptions}</td>
-            <td class="${colorClass}">${colorName}</td>
-          </tr>`;
-        tbody.innerHTML += row;
+          const speedMatch = eText.match(/(\d+-\d+\s*kmph)/i);
+          if (speedMatch) {
+            name += `<br><small>(${speedMatch[0]})</small>`;
+          }
+
+          // Rule 2: Warning Description Formatting
+          const phenomNameEn = eText.replace(/likely\.?$/i, "").trim(); // Extract phenomenon from intensity text
+          // For Hindi, we use the Phenomenon Name from phenDefs as per Rule 2 structure
+          const phenomNameHi = pDef
+            ? pDef.hindi
+            : hText.replace(/होने की संभावना है।?$/i, "").trim();
+
+          let descEn, descHi;
+          if (areaText.isAll) {
+            descEn = `${phenomNameEn} likely to occur at one or two places in most parts of the state.`;
+            descHi = `राज्य के अधिकांश भागों में ${phenomNameHi} होने की संभावना है।`;
+          } else {
+            descEn = `${phenomNameEn} likely to occur at one or two places in the ${areaText.english}.`;
+            // Strip "राज्य के " from areaText.hindi for the description sentence to avoid duplication if present
+            const areaHiClean = areaText.hindi.replace(/^राज्य के /, "");
+            descHi = `राज्य के ${areaHiClean} में कुछ स्थानों पर ${phenomNameHi} होने की संभावना है।`;
+          }
+
+          let row = `<tr style="background-color:${rowBg}">`;
+
+          if (index === 0) {
+            row += `<td rowspan="${phenomCount}" style="text-align:center; vertical-align:middle;">Day ${i}</td>`;
+            row += `<td rowspan="${phenomCount}" style="text-align:center; vertical-align:middle;">${dateStr}</td>`;
+            row += `<td rowspan="${phenomCount}" style="vertical-align:middle;">
+                           <strong>${areaText.english}</strong><br>
+                           <span style="color:#555;">(${areaText.hindi})</span>
+                        </td>`;
+          }
+
+          row += `<td style="text-align:center; vertical-align:middle;">${name}</td>`;
+          row += `<td>${descEn}</td>`;
+          row += `<td>${descHi}</td>`;
+
+          if (index === 0) {
+            row += `<td rowspan="${phenomCount}" class="${colorClass}">${colorText}</td>`;
+          }
+
+          row += `</tr>`;
+          tbody.innerHTML += row;
+        });
       });
     }
   }
@@ -2598,7 +2687,7 @@ function initMap() {
       }
       // Parse and combine SHP + DBF
       const geojson = shp.combine([
-        shp.parseShp(shpBuffer, prjStr),
+        shp.parseShp(shpBuffer, prjStr || undefined),
         shp.parseDbf(dbfBuffer),
       ]);
 
@@ -3555,3 +3644,172 @@ function toggleCleanMap(checked) {
   }
 }
 window.toggleCleanMap = toggleCleanMap;
+
+function renderTableControls() {
+  const container = document.getElementById("tableViewContainer");
+  if (!container) return;
+
+  if (document.getElementById("tableControls")) return;
+
+  const controls = document.createElement("div");
+  controls.id = "tableControls";
+  controls.style.marginBottom = "15px";
+  controls.style.display = "flex";
+  controls.style.gap = "10px";
+  controls.style.justifyContent = "flex-end";
+
+  controls.innerHTML = `
+      <button class="btn-secondary" onclick="downloadTableImage()"><i class="fas fa-camera"></i> Image</button>
+      <button class="btn-secondary" onclick="downloadTablePDF()"><i class="fas fa-file-pdf"></i> PDF</button>
+      <button class="btn-secondary" onclick="downloadTableExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+  `;
+
+  container.insertBefore(controls, container.firstChild);
+}
+
+function addExportHeader(table) {
+  const thead = table.querySelector("thead");
+  if (!thead) return null;
+
+  const issueDate = new Date(forecastBaseDate);
+  const endDate = new Date(forecastBaseDate);
+  endDate.setDate(endDate.getDate() + 6);
+
+  const options = { day: "2-digit", month: "long", year: "numeric" };
+  const issueStr = issueDate.toLocaleDateString("en-IN", options);
+
+  const startDay = issueDate.getDate().toString().padStart(2, "0");
+  const endDay = endDate.getDate().toString().padStart(2, "0");
+  const startMonth = issueDate.toLocaleDateString("en-IN", { month: "long" });
+  const endMonth = endDate.toLocaleDateString("en-IN", { month: "long" });
+  const startYear = issueDate.getFullYear();
+  const endYear = endDate.getFullYear();
+
+  let rangeStr = "";
+  if (startMonth === endMonth && startYear === endYear) {
+    rangeStr = `${startDay}–${endDay} ${startMonth} ${startYear}`;
+  } else if (startYear === endYear) {
+    rangeStr = `${startDay} ${startMonth} – ${endDay} ${endMonth} ${startYear}`;
+  } else {
+    rangeStr = `${startDay} ${startMonth} ${startYear} – ${endDay} ${endMonth} ${endYear}`;
+  }
+
+  const row = document.createElement("tr");
+  row.id = "export-header-row";
+  row.style.backgroundColor = "#ffffff";
+  row.innerHTML = `
+        <td colspan="7" style="text-align: center; border: none; padding: 15px; color: #000;">
+            <div style="font-size: 18px; font-weight: bold; font-family: Arial, sans-serif;">Issued On: ${issueStr}: Weather Warning for Next 7 Days (${rangeStr})</div>
+        </td>
+    `;
+
+  thead.insertBefore(row, thead.firstChild);
+  return row;
+}
+
+function removeExportHeader(table, row) {
+  if (row && row.parentNode) {
+    row.parentNode.removeChild(row);
+  }
+}
+
+function downloadTableImage() {
+  const node = document.getElementById("imdTable");
+  if (!node) return;
+
+  const headerRow = addExportHeader(node);
+
+  const originalBg = node.style.backgroundColor;
+  node.style.backgroundColor = "#ffffff";
+
+  domtoimage
+    .toPng(node, {
+      bgcolor: "#ffffff",
+      width: node.scrollWidth,
+      height: node.scrollHeight,
+    })
+    .then(function (dataUrl) {
+      const link = document.createElement("a");
+      link.download = `weather-warning-table-${new Date().toISOString().split("T")[0]}.png`;
+      link.href = dataUrl;
+      link.click();
+      node.style.backgroundColor = originalBg;
+      removeExportHeader(node, headerRow);
+    })
+    .catch(function (error) {
+      console.error("Image download failed", error);
+      alert("Image generation failed.");
+      node.style.backgroundColor = originalBg;
+      removeExportHeader(node, headerRow);
+    });
+}
+window.downloadTableImage = downloadTableImage;
+
+function downloadTablePDF() {
+  const node = document.getElementById("imdTable");
+  if (!node) return;
+
+  const headerRow = addExportHeader(node);
+
+  const { jsPDF } = window.jspdf;
+  const originalBg = node.style.backgroundColor;
+  node.style.backgroundColor = "#ffffff";
+
+  domtoimage
+    .toPng(node, {
+      bgcolor: "#ffffff",
+      width: node.scrollWidth,
+      height: node.scrollHeight,
+    })
+    .then(function (dataUrl) {
+      const img = new Image();
+      img.src = dataUrl;
+      img.onload = function () {
+        const width = img.width;
+        const height = img.height;
+
+        const doc = new jsPDF({
+          orientation: width > height ? "l" : "p",
+          unit: "px",
+          format: [width, height],
+        });
+
+        doc.addImage(dataUrl, "PNG", 0, 0, width, height);
+        doc.save(
+          `weather-warning-table-${new Date().toISOString().split("T")[0]}.pdf`,
+        );
+        node.style.backgroundColor = originalBg;
+        removeExportHeader(node, headerRow);
+      };
+    })
+    .catch(function (error) {
+      console.error("PDF generation failed", error);
+      alert("PDF generation failed.");
+      node.style.backgroundColor = originalBg;
+      removeExportHeader(node, headerRow);
+    });
+}
+window.downloadTablePDF = downloadTablePDF;
+
+function downloadTableExcel() {
+  const table = document.getElementById("imdTable");
+  if (!table) return;
+
+  const headerRow = addExportHeader(table);
+
+  const html = table.outerHTML;
+  const blob = new Blob(["\ufeff", html], {
+    type: "application/vnd.ms-excel",
+  });
+  const url = URL.createObjectURL(blob);
+
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `weather-warning-table-${new Date().toISOString().split("T")[0]}.xls`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
+
+  removeExportHeader(table, headerRow);
+}
+window.downloadTableExcel = downloadTableExcel;
