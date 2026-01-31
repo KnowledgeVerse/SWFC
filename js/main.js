@@ -1,72 +1,134 @@
 // ---------- Intensity lines (Scripts.xlsx order) ----------
 const intensityLines = {
-  thunderstorm: [
-    "हल्के से मध्यम दर्जे की मेघ गर्जन तथा वज्रपात के साथ वर्षा जारी रहने की संभावना है।",
-    "मध्यम दर्जे की मेघ गर्जन, वज्रपात के साथ वर्षा होने की प्रबल संभावना है।",
-    "हल्के से मध्यम दर्जे की मेघ गर्जन, वज्रपात, (हवा की गति 30-40 कि. मी. प्रति घंटे तक) के साथ हल्की वर्षा होने की संभावना है।",
-    "मध्यम दर्जे की मेघ गर्जन, वज्रपात,हवा (हवा की गति 40-50 कि. मी. प्रति घंटे तक) के साथ वर्षा होने की प्रबल संभावना है।",
-    "तीव्र दर्जे की मेघ गर्जन, वज्रपात तथा भारी वर्षा के साथ तेज हवा (हवा की गति 50-60 कि. मी. प्रति घंटे तक) की प्रबल संभावना है।",
-    "मेघ गर्जन, वज्रपात, ओलावृष्टि एवं  हवा (हवा की गति 40-50 कि. मी. प्रति घंटे तक) के साथ वर्षा होने की प्रबल संभावना है।",
-  ],
-  gustywind: [
-    "तेज़ हवा (हवा की गति 30-40 कि. मी. प्रति घंटे तक) रहने की संभावना है।",
-    "तेज़ हवा (हवा की गति 40-50 कि. मी. प्रति घंटे तक) रहने की संभावना है।",
-    "तेज़ हवा (हवा की गति 50-60 कि. मी. प्रति घंटे तक) रहने की संभावना है।",
+  dry: ["मौसम शुष्क रहने की संभावना है।"],
+  heavyrain: [
+    "भारी वर्षा होने की संभावना है।",
+    "बहुत भारी वर्षा होने की संभावना है।",
+    "अत्यधिक भारी वर्षा होने की संभावना है।",
   ],
   heatwave: [
-    "लू (उष्ण लहर ) की संभावना है ।",
-    "उष्ण दिवस होने की संभावना है।",
-    "अत्यधिक भीषण उष्ण लहर (लू) की संभावना है।",
+    "लू (उष्ण लहर) की संभावना है।",
+    "भीषण लू (उष्ण लहर) की संभावना है।",
+  ],
+  warmnight: ["गर्म रात्रि की संभावना है।", "भीषण गर्म रात्रि की संभावना है।"],
+  coldwave: ["शीत लहर की संभावना है।", "भीषण शीत लहर की संभावना है।"],
+  coldday: [
+    "शीत दिवस होने की संभावना है।",
+    "भीषण शीत दिवस होने की संभावना है।",
+  ],
+  densefog: [
+    "मध्यम कोहरा छाए रहने की संभावना है।",
+    "घना कोहरा छाए रहने की संभावना है।",
+    "बहुत घना कोहरा छाए रहने की संभावना है।",
+  ],
+  thunderstorm: [
+    "हल्के से मध्यम दर्जे की मेघ गर्जन तथा वज्रपात के साथ वर्षा होने की संभावना है।",
+    "मध्यम दर्जे की मेघ गर्जन, वज्रपात के साथ वर्षा होने की प्रबल संभावना है।",
+    "तीव्र दर्जे की मेघ गर्जन, वज्रपात तथा भारी वर्षा के साथ तेज हवा की प्रबल संभावना है।",
+  ],
+  gustywind: [
+    "तेज़ हवा (30-40 कि.मी. प्रति घंटे) रहने की संभावना है।",
+    "तेज़ हवा (40-50 कि.मी. प्रति घंटे) रहने की संभावना है।",
+    "तेज़ हवा (50-60 कि.मी. प्रति घंटे) रहने की संभावना है।",
+  ],
+  squall: [
+    "मध्यम तीव्रता के तेज़ हवा के झोंके चलने की संभावना है।",
+    "तीव्र गति के तेज़ हवा के झोंके चलने की प्रबल संभावना है।",
+    "अत्यंत तीव्र गति के तेज़ हवा के झोंके चलने की अत्यधिक संभावना है。",
+  ],
+  frost: ["जमीन के स्तर पर पाला पड़ने की संभावना है।"],
+  seastate: [
+    "समुद्र अशांत से बहुत अशांत रहने की संभावना है।",
+    "समुद्र ऊँचा से बहुत ऊँचा रहने की संभावना है।",
+    "अभूतपूर्व समुद्र रहने की संभावना है।",
+  ],
+  cyclone: [
+    "चक्रवाती तूफान की संभावना है।",
+    "भीषण चक्रवाती तूफान की संभावना है।",
+    "बहुत भीषण चक्रवाती तूफान की संभावना है।",
+    "अत्यधिक भीषण चक्रवाती तूफान की संभावना है।",
+    "सुपर साइक्लोन की संभावना है।",
+  ],
+  duststorm: ["दृश्यता में कमी के साथ धूल भरी आंधी चलने की संभावना है।"],
+  snow: [
+    "भारी बर्फबारी की संभावना है।",
+    "बहुत भारी बर्फबारी की संभावना है।",
+    "अत्यधिक भारी बर्फबारी की संभावना है।",
   ],
   hailstorm: ["ओलावृष्टि की संभावना है।"],
-  heavyrain: ["भारी वर्षा होने की संभावना है।"],
-  densefog: [
-    "घना कोहरा / कुहासा छाए रहने की प्रबल संभावना है।",
-    "घना से बहुत घना कोहरा / कुहासा छाए रहने की प्रबल संभावना है।",
-  ],
-  coldday: ["शीत दिवस होने की संभावना है।"],
-  warmnight: ["गर्म रात्रि की संभावना है ।"],
-  dry: ["मौसम शुष्क रहने की संभावना है।"],
 };
 
 const intensityLinesEn = {
+  dry: ["Weather likely to remain dry."],
+  heavyrain: [
+    "Heavy rainfall likely.",
+    "Very heavy rainfall likely.",
+    "Extremely heavy rainfall likely.",
+  ],
+  heatwave: ["Heat wave likely.", "Severe heat wave likely."],
+  warmnight: ["Warm night likely.", "Severe warm night likely."],
+  coldwave: ["Cold wave likely.", "Severe cold wave likely."],
+  coldday: ["Cold day likely.", "Severe cold day likely."],
+  densefog: [
+    "Moderate fog likely.",
+    "Dense fog likely.",
+    "Very dense fog likely.",
+  ],
   thunderstorm: [
-    "Light to moderate thunderstorm & lightning with rain likely to continue.",
+    "Light to moderate thunderstorm & lightning with rain likely.",
     "Moderate thunderstorm & lightning with rain very likely.",
-    "Light to moderate thunderstorm, lightning (wind 30-40 kmph) with light rain likely.",
-    "Moderate thunderstorm, lightning, wind (40-50 kmph) with rain very likely.",
-    "Intense thunderstorm, lightning & heavy rain with strong wind (50-60 kmph) very likely.",
-    "Thunderstorm, lightning, hail & wind (40-50 kmph) with rain very likely.",
+    "Severe thunderstorm & lightning with heavy rain very likely.",
   ],
   gustywind: [
-    "Gusty wind (speed 30-40 kmph) likely.",
-    "Gusty wind (speed 40-50 kmph) likely.",
-    "Gusty wind (speed 50-60 kmph) likely.",
+    "Gusty wind (30-40 kmph) likely.",
+    "Gusty wind (40-50 kmph) likely.",
+    "Gusty wind (50-60 kmph) likely.",
   ],
-  heatwave: [
-    "Heat wave likely.",
-    "Hot day likely.",
-    "Severe heat wave likely.",
+  squall: [
+    "Moderate squall likely.",
+    "Severe squall likely.",
+    "Very severe squall likely.",
+  ],
+  frost: ["Frost at ground level likely."],
+  seastate: [
+    "Rough to very rough sea likely.",
+    "High to very high sea likely.",
+    "Phenomenal sea likely.",
+  ],
+  cyclone: [
+    "Cyclonic storm likely.",
+    "Severe cyclonic storm likely.",
+    "Very severe cyclonic storm likely.",
+    "Extremely severe cyclonic storm likely.",
+    "Super cyclone likely.",
+  ],
+  duststorm: ["Dust / sand storm with visibility reduction likely."],
+  snow: [
+    "Heavy snow likely.",
+    "Very heavy snow likely.",
+    "Extremely heavy snow likely.",
   ],
   hailstorm: ["Hailstorm likely."],
-  heavyrain: ["Heavy rainfall likely."],
-  densefog: ["Dense fog likely.", "Very dense fog likely."],
-  coldday: ["Cold day likely."],
-  warmnight: ["Warm night likely."],
-  dry: ["Weather likely to remain dry."],
 };
 
 // ---------- Phenomena colour-map ----------
 const phenColors = {
+  dry: "#ffffff", // White
+  heavyrain: "#007bff", // Blue
+  heatwave: "#fd7e14", // Orange
+  warmnight: "#e83e8c", // Pink
+  coldwave: "#00bcd4", // Cyan
+  coldday: "#20c997", // Teal
+  densefog: "#6c757d", // Grey
   thunderstorm: "#ffc107", // Amber
   gustywind: "#17a2b8", // Info
-  heatwave: "#fd7e14", // Orange
+  squall: "#607d8b", // Blue Grey
+  frost: "#b2ebf2", // Light Cyan
+  seastate: "#0d47a1", // Dark Blue
+  cyclone: "#b71c1c", // Dark Red
+  duststorm: "#d7ccc8", // Tan
+  snow: "#f5f5f5", // White/Grey
   hailstorm: "#6f42c1", // Indigo
-  heavyrain: "#007bff", // Blue
-  densefog: "#6c757d", // Grey
-  coldday: "#20c997", // Teal
-  warmnight: "#e83e8c", // Pink
-  dry: "#ffffff", // White
 };
 
 // ---------- Audio Assets ----------
@@ -163,7 +225,8 @@ const warningLegendItems = [
 // ---------- Globals ----------
 let selectedDistricts = [],
   selectedPhenomena = [],
-  showFoothill = true,
+  showFoothill = false,
+  forecastBaseDate = new Date(),
   currentDay = 1,
   activeDays = new Set([1]),
   weeklyForecastData = Array(7)
@@ -256,51 +319,11 @@ const uiTranslations = {
 // ---------- Phenomena + Scripts.xlsx sub-options ----------
 const phenDefs = [
   {
-    id: "thunderstorm",
-    hindi: "मेघगर्जन/वज्रपात",
-    english: "Thunderstorm/Lightning",
-    icon: "fa-cloud-bolt",
-    image: "assets/weather-icons/thunderstorm.png",
-    sub: [
-      "हल्के से मध्यम दर्जे की मेघ गर्जन तथा वज्रपात के साथ वर्षा जारी रहने की संभावना है।",
-      "मध्यम दर्जे की मेघ गर्जन, वज्रपात के साथ वर्षा होने की प्रबल संभावना है।",
-      "हल्के से मध्यम दर्जे की मेघ गर्जन, वज्रपात, (हवा की गति 30-40 कि. मी. प्रति घंटे तक) के साथ हल्की वर्षा होने की संभावना है।",
-      "मध्यम दर्जे की मेघ गर्जन, वज्रपात,हवा (हवा की गति 40-50 कि. मी. प्रति घंटे तक) के साथ वर्षा होने की प्रबल संभावना है।",
-      "तीव्र दर्जे की मेघ गर्जन, वज्रपात तथा भारी वर्षा के साथ तेज हवा (हवा की गति 50-60 कि. मी. प्रति घंटे तक) की प्रबल संभावना है।",
-      "मेघ गर्जन, वज्रपात, ओलावृष्टि एवं  हवा (हवा की गति 40-50 कि. मी. प्रति घंटे तक) के साथ वर्षा होने की प्रबल संभावना है।",
-    ],
-  },
-  {
-    id: "gustywind",
-    hindi: "तेज़ हवा",
-    english: "Gusty Wind",
-    icon: "fa-wind",
-    image: "assets/weather-icons/gustywind.png",
-    sub: [
-      "तेज़ हवा (हवा की गति 30-40 कि. मी. प्रति घंटे तक) रहने की संभावना है।",
-      "तेज़ हवा (हवा की गति 40-50 कि. मी. प्रति घंटे तक) रहने की संभावना है।",
-      "तेज़ हवा (हवा की गति 50-60 कि. मी. प्रति घंटे तक) रहने की संभावना है।",
-    ],
-  },
-  {
-    id: "heatwave",
-    hindi: "लू (उष्ण लहर)",
-    english: "Heat Wave",
-    icon: "fa-fire",
-    image: "assets/weather-icons/heatwave.png",
-    sub: [
-      "लू (उष्ण लहर ) की संभावना है ।",
-      "उष्ण दिवस होने की संभावना है।",
-      "अत्यधिक भीषण उष्ण लहर (लू) की संभावना है।",
-    ],
-  },
-  {
-    id: "hailstorm",
-    hindi: "ओलावृष्टि",
-    english: "Hailstorm",
-    icon: "fa-cloud-meatball",
-    image: "assets/weather-icons/hailstorm.png",
-    sub: ["ओलावृष्टि की संभावना है।"],
+    id: "dry",
+    hindi: "शुष्क मौसम",
+    english: "Dry Weather",
+    icon: "fa-sun",
+    image: "assets/weather-icons/dry.png",
   },
   {
     id: "heavyrain",
@@ -308,26 +331,13 @@ const phenDefs = [
     english: "Heavy Rainfall",
     icon: "fa-cloud-showers-heavy",
     image: "assets/weather-icons/heavyrain.png",
-    sub: ["भारी वर्षा होने की संभावना है।"],
   },
   {
-    id: "densefog",
-    hindi: "घना कोहरा",
-    english: "Dense Fog",
-    icon: "fa-smog",
-    image: "assets/weather-icons/densefog.png",
-    sub: [
-      "घना कोहरा / कुहासा छाए रहने की प्रबल संभावना है।",
-      "घना से बहुत घना कोहरा / कुहासा छाए रहने की प्रबल संभावना है।",
-    ],
-  },
-  {
-    id: "coldday",
-    hindi: "शीत दिवस",
-    english: "Cold Day",
-    icon: "fa-snowflake",
-    image: "assets/weather-icons/coldday.png",
-    sub: ["शीत दिवस होने की संभावना है।"],
+    id: "heatwave",
+    hindi: "लू (उष्ण लहर)",
+    english: "Heat Wave",
+    icon: "fa-fire",
+    image: "assets/weather-icons/heatwave.png",
   },
   {
     id: "warmnight",
@@ -335,15 +345,90 @@ const phenDefs = [
     english: "Warm Night",
     icon: "fa-temperature-high",
     image: "assets/weather-icons/warmnight.png",
-    sub: ["गर्म रात्रि की संभावना है ।"],
   },
   {
-    id: "dry",
-    hindi: "शुष्क मौसम",
-    english: "Dry Weather",
-    icon: "fa-sun",
-    image: "assets/weather-icons/dry.png",
-    sub: ["मौसम शुष्क रहने की संभावना है।"],
+    id: "coldwave",
+    hindi: "शीत लहर",
+    english: "Cold Wave",
+    icon: "fa-temperature-low",
+    image: "assets/weather-icons/coldwave.png",
+  },
+  {
+    id: "coldday",
+    hindi: "शीत दिवस",
+    english: "Cold Day",
+    icon: "fa-snowflake",
+    image: "assets/weather-icons/coldday.png",
+  },
+  {
+    id: "densefog",
+    hindi: "घना कोहरा",
+    english: "Dense Fog",
+    icon: "fa-smog",
+    image: "assets/weather-icons/densefog.png",
+  },
+  {
+    id: "thunderstorm",
+    hindi: "मेघगर्जन/वज्रपात",
+    english: "Thunderstorm/Lightning",
+    icon: "fa-cloud-bolt",
+    image: "assets/weather-icons/thunderstorm.png",
+  },
+  {
+    id: "gustywind",
+    hindi: "तेज़ हवा",
+    english: "Gusty Wind",
+    icon: "fa-wind",
+    image: "assets/weather-icons/gustywind.png",
+  },
+  {
+    id: "squall",
+    hindi: "तेज़ हवा के झोंके",
+    english: "Squall",
+    icon: "fa-wind",
+    image: "assets/weather-icons/squall.png",
+  },
+  {
+    id: "frost",
+    hindi: "पाला",
+    english: "Frost",
+    icon: "fa-icicles",
+    image: "assets/weather-icons/frost.png",
+  },
+  {
+    id: "seastate",
+    hindi: "समुद्र की स्थिति",
+    english: "Sea State",
+    icon: "fa-water",
+    image: "assets/weather-icons/sea.png",
+  },
+  {
+    id: "cyclone",
+    hindi: "चक्रवात",
+    english: "Cyclone",
+    icon: "fa-hurricane",
+    image: "assets/weather-icons/cyclone.png",
+  },
+  {
+    id: "duststorm",
+    hindi: "धूल भरी आंधी",
+    english: "Dust Storm",
+    icon: "fa-wind",
+    image: "assets/weather-icons/dust.png",
+  },
+  {
+    id: "snow",
+    hindi: "बर्फबारी",
+    english: "Snow",
+    icon: "fa-snowflake",
+    image: "assets/weather-icons/snow.png",
+  },
+  {
+    id: "hailstorm",
+    hindi: "ओलावृष्टि",
+    english: "Hailstorm",
+    icon: "fa-cloud-meatball",
+    image: "assets/weather-icons/hailstorm.png",
   },
 ];
 
@@ -353,6 +438,8 @@ const phenomenonSvgs = {
     '<svg viewBox="0 0 512 512" fill="currentColor" width="1em" height="1em"><path d="M296 464h-56V338.78l68.74-75.48a32 32 0 0 0-4.28-46.66C296.7 210.8 286.33 208 271.46 208H240V112c0-8.84-7.16-16-16-16h-16c-8.84 0-16 7.16-16 16v104h-31.46c-14.87 0-25.24 2.8-33 8.64a32 32 0 0 0-4.28 46.66l68.74 75.48V464zM400 32H112C50.14 32 0 82.14 0 144v224c0 61.86 50.14 112 112 112h288c61.86 0 112-50.14 112-112V144c0-61.86-50.14-112-112-112zM112 448c-44.11 0-80-35.89-80-80V144c0-44.11 35.89-80 80-80h288c44.11 0 80 35.89 80 80v224c0 44.11-35.89 80-80 80H112z"/></svg>', // Bolt/Cloud approx
   gustywind:
     '<svg viewBox="0 0 512 512" fill="currentColor" width="1em" height="1em"><path d="M480 288c0-53-43-96-96-96h-64v-32h64c70.7 0 128 57.3 128 128s-57.3 128-128 128H176c-8.8 0-16-7.2-16-16s7.2-16 16-16h208c53 0 96-43 96-96zM128 32C57.3 32 0 89.3 0 160s57.3 128 128 128h256c8.8 0 16-7.2 16-16s-7.2-16-16-16H128c-53 0-96-43-96-96s43-96 96-96h288c8.8 0 16-7.2 16-16s-7.2-16-16-16H128zm0 384c-53 0-96 43-96 96s43 96 96 96h112c8.8 0 16-7.2 16-16s-7.2-16-16-16H128c-35.3 0-64-28.7-64-64s28.7-64 64-64h160c8.8 0 16-7.2 16-16s-7.2-16-16-16H128z"/></svg>',
+  squall:
+    '<svg viewBox="0 0 512 512" fill="currentColor" width="1em" height="1em"><!-- PASTE YOUR SVG CONTENT HERE --></svg>',
   heatwave:
     '<svg viewBox="0 0 384 512" fill="currentColor" width="1em" height="1em"><path d="M192 0C139 0 96 43 96 96V256c0 11.8-1.3 23.4-3.9 34.6C60.9 308.6 32 348.2 32 392c0 66.3 53.7 120 120 120s120-53.7 120-120c0-43.8-28.9-83.4-60.1-101.4-2.6-11.2-3.9-22.8-3.9-34.6V96c0-53-43-96-96-96zM64 96c0-70.7 57.3-128 128-128s128 57.3 128 128v160c0 17.7 14.3 32 32 32s32-14.3 32-32V96C384 43 341 0 288 0H96C43 0 0 43 0 96v160c0 17.7 14.3 32 32 32s32-14.3 32-32V96z"/></svg>', // Thermometer approx
   hailstorm:
@@ -426,15 +513,14 @@ function buildPhenomenaPanel() {
     const lines =
       currentLang === "hi" ? intensityLines[d.id] : intensityLinesEn[d.id];
 
-    let hideIconHtml = "";
-    if (d.id === "dry") {
-      const isChecked =
-        localStorage.getItem("bihar_hide_dry_icon") === "true" ? "checked" : "";
-      hideIconHtml = `<label style="margin-left:auto; font-size:0.9em; display:flex; align-items:center; cursor:pointer; white-space:nowrap;">
-                        <input type="checkbox" id="hideIcon-${d.id}" ${isChecked} onchange="localStorage.setItem('bihar_hide_dry_icon', this.checked); updateMapStyle()" style="margin-right:4px;"> 
-                        Hide Icon
-                      </label>`;
-    }
+    const isChecked =
+      localStorage.getItem(`bihar_hide_icon_${d.id}`) === "true"
+        ? "checked"
+        : "";
+    const hideIconHtml = `<label style="margin-left:auto; font-size:0.9em; display:flex; align-items:center; cursor:pointer; white-space:nowrap;">
+                      <input type="checkbox" id="hideIcon-${d.id}" ${isChecked} onchange="localStorage.setItem('bihar_hide_icon_${d.id}', this.checked); updateMapStyle()" style="margin-right:4px;"> 
+                      Hide Icon
+                    </label>`;
 
     row.innerHTML = `
       <input class="main-check same-size" type="checkbox" value="${d.id}" onchange="togglePhenom('${d.id}')">
@@ -474,6 +560,10 @@ function attachHandlers() {
     updateMapStyle();
     updateLegend();
   };
+  const fhToggle = document.getElementById("toggleFoothill");
+  if (fhToggle) {
+    fhToggle.checked = false;
+  }
   document.getElementById("updateForecastMap").onclick = () =>
     handleMapUpdate("forecast");
   document.getElementById("updateWarningMap").onclick = () =>
@@ -605,7 +695,53 @@ function attachHandlers() {
 
   // Clear Forecast & Warning Button
   const btnClearFW = document.getElementById("btnClearFW");
-  if (btnClearFW) btnClearFW.onclick = clearForecastWarningData;
+  if (btnClearFW) {
+    btnClearFW.onclick = clearForecastWarningData;
+
+    // Inject Custom Date Picker
+    const dateWrapper = document.createElement("div");
+    dateWrapper.style.display = "inline-flex";
+    dateWrapper.style.alignItems = "center";
+    dateWrapper.style.marginRight = "10px";
+    const todayStr = new Date().toISOString().split("T")[0];
+    dateWrapper.innerHTML = `
+        <label style="margin-right:5px; font-weight:bold; font-size:0.9em; color:#333;">Date:</label>
+        <input type="date" id="customDateInput" value="${todayStr}" style="padding:4px; border:1px solid #ccc; border-radius:4px;">
+        <button id="resetDateBtn" title="Reset to Today" style="margin-left:5px; padding:4px 8px; border:1px solid #ccc; border-radius:4px; background:#f8f9fa; cursor:pointer;">
+            <i class="fas fa-sync-alt"></i>
+        </button>
+    `;
+    btnClearFW.parentNode.insertBefore(dateWrapper, btnClearFW);
+
+    const dateInput = document.getElementById("customDateInput");
+
+    dateInput.addEventListener("change", (e) => {
+      forecastBaseDate = e.target.value ? new Date(e.target.value) : new Date();
+      localStorage.setItem(
+        "bihar_forecast_date",
+        forecastBaseDate.toISOString(),
+      );
+      updateMapDateHeader();
+      updateMapHeaderText();
+    });
+
+    document.getElementById("resetDateBtn").onclick = () => {
+      const today = new Date();
+      // Adjust for local timezone to set input value correctly
+      const offset = today.getTimezoneOffset();
+      const localDate = new Date(today.getTime() - offset * 60 * 1000);
+      const tStr = localDate.toISOString().split("T")[0];
+
+      dateInput.value = tStr;
+      forecastBaseDate = today;
+      localStorage.setItem(
+        "bihar_forecast_date",
+        forecastBaseDate.toISOString(),
+      );
+      updateMapDateHeader();
+      updateMapHeaderText();
+    };
+  }
 
   // Show Update Button Handler
   const btnShowUpdate = document.getElementById("btnShowUpdate");
@@ -837,7 +973,7 @@ function generateForecast() {
 
   setTimeout(() => {
     let fullHtml = "";
-    const today = new Date();
+    const today = new Date(forecastBaseDate);
 
     // Generate forecast for all 7 days
     for (let i = 1; i <= 7; i++) {
@@ -1145,7 +1281,7 @@ function renderTable() {
   const tbody = document.querySelector("#imdTable tbody");
   tbody.innerHTML = "";
 
-  const today = new Date();
+  const today = new Date(forecastBaseDate);
 
   for (let i = 1; i <= 7; i++) {
     const dayDate = new Date(today);
@@ -1724,7 +1860,7 @@ function clearForecastWarningData() {
 function generateTestData() {
   if (
     !confirm(
-      "This will overwrite all current data with ENHANCED TEST data for 7 days. Continue?",
+      "This will overwrite all current data with COMPREHENSIVE TEST data for 7 days covering all phenomena. Continue?",
     )
   )
     return;
@@ -1761,102 +1897,209 @@ function generateTestData() {
     });
   };
 
-  // --- Day 1: Thunderstorm (Yellow) ---
-  // Scenario: North-West Region + Patna (26) -> Tests "Region + District" logic
-  const day1Districts = [...regionalGroups["north-west"].districts, 26];
+  // --- Day 1: Thunderstorm + Gusty Wind + Hailstorm (Severe) ---
+  // Region: North-West + Patna (26) + Gaya (12)
+  const day1Districts = [...regionalGroups["north-west"].districts, 26, 12];
+  // Thunderstorm (Severe)
   setDayData(
     weeklyForecastData,
     0,
     day1Districts,
     "thunderstorm",
-    1,
-    "#ffc107",
-  );
+    2,
+    "#dc3545",
+  ); // Red
   setDayData(
     weeklyWarningData,
     0,
     day1Districts,
     "thunderstorm",
+    2,
+    "rgb(255, 0, 0)",
+  );
+  // Gusty Wind (40-50 kmph)
+  setDayData(weeklyForecastData, 0, day1Districts, "gustywind", 1, "#dc3545");
+  setDayData(
+    weeklyWarningData,
+    0,
+    day1Districts,
+    "gustywind",
     1,
-    "rgb(255, 255, 0)",
+    "rgb(255, 0, 0)",
+  );
+  // Hailstorm
+  setDayData(weeklyForecastData, 0, day1Districts, "hailstorm", 0, "#dc3545");
+  setDayData(
+    weeklyWarningData,
+    0,
+    day1Districts,
+    "hailstorm",
+    0,
+    "rgb(255, 0, 0)",
   );
 
-  // --- Day 2: Heavy Rain (Orange) ---
-  // Scenario: North-East Region -> Tests "Region Only" logic
-  const day2Districts = regionalGroups["north-east"].districts;
-  setDayData(weeklyForecastData, 1, day2Districts, "heavyrain", 0, "#fd7e14");
+  // --- Day 2: Heavy Rain + Squall (Orange) ---
+  // Region: North-East + North-Central
+  const day2Districts = [
+    ...regionalGroups["north-east"].districts,
+    ...regionalGroups["north-central"].districts,
+  ];
+  setDayData(weeklyForecastData, 1, day2Districts, "heavyrain", 1, "#fd7e14"); // Very Heavy Rain
   setDayData(
     weeklyWarningData,
     1,
     day2Districts,
     "heavyrain",
+    1,
+    "rgb(255, 192, 0)",
+  );
+  setDayData(weeklyForecastData, 1, day2Districts, "squall", 0, "#fd7e14"); // Moderate Squall
+  setDayData(
+    weeklyWarningData,
+    1,
+    day2Districts,
+    "squall",
     0,
     "rgb(255, 192, 0)",
   );
 
-  // --- Day 3: Heatwave (Red) ---
-  // Scenario: Southern Region -> Tests "Large Region" logic
+  // --- Day 3: Heatwave + Warm Night (Red) ---
+  // Region: Southern (SW + SC + SE)
   const day3Districts = regionalGroups["southern"].districts;
-  setDayData(weeklyForecastData, 2, day3Districts, "heatwave", 2, "#dc3545"); // Severe Heatwave
+  setDayData(weeklyForecastData, 2, day3Districts, "heatwave", 1, "#dc3545"); // Severe Heatwave
   setDayData(
     weeklyWarningData,
     2,
     day3Districts,
     "heatwave",
+    1,
+    "rgb(255, 0, 0)",
+  );
+  setDayData(weeklyForecastData, 2, day3Districts, "warmnight", 0, "#dc3545");
+  setDayData(
+    weeklyWarningData,
     2,
+    day3Districts,
+    "warmnight",
+    0,
     "rgb(255, 0, 0)",
   );
 
-  // --- Day 4: Gusty Wind (Yellow) ---
-  // Scenario: Specific Districts (Patna, Gaya, Nalanda, Jehanabad) -> Tests "Multiple Districts" logic
-  const day4Districts = [26, 12, 24, 14];
-  setDayData(weeklyForecastData, 3, day4Districts, "gustywind", 1, "#ffc107");
+  // --- Day 4: SAME AS DAY 3 (Continuous Test) ---
+  setDayData(weeklyForecastData, 3, day3Districts, "heatwave", 1, "#dc3545");
   setDayData(
     weeklyWarningData,
     3,
-    day4Districts,
-    "gustywind",
+    day3Districts,
+    "heatwave",
     1,
-    "rgb(255, 255, 0)",
+    "rgb(255, 0, 0)",
+  );
+  setDayData(weeklyForecastData, 3, day3Districts, "warmnight", 0, "#dc3545");
+  setDayData(
+    weeklyWarningData,
+    3,
+    day3Districts,
+    "warmnight",
+    0,
+    "rgb(255, 0, 0)",
   );
 
-  // --- Day 5: Dense Fog (Yellow) ---
-  // Scenario: Foothill Districts -> Tests "Foothill" logic
-  const day5Districts = regionalGroups["foothill"].districts;
-  setDayData(weeklyForecastData, 4, day5Districts, "densefog", 1, "#ffc107"); // Very Dense Fog
+  // --- Day 5: Cold Wave + Cold Day + Dense Fog (Orange) ---
+  // Region: All Districts
+  const allDistricts = districtsData.map((d) => d.id);
+  setDayData(weeklyForecastData, 4, allDistricts, "coldwave", 0, "#fd7e14");
   setDayData(
     weeklyWarningData,
     4,
-    day5Districts,
+    allDistricts,
+    "coldwave",
+    0,
+    "rgb(255, 192, 0)",
+  );
+  setDayData(weeklyForecastData, 4, allDistricts, "coldday", 0, "#fd7e14");
+  setDayData(
+    weeklyWarningData,
+    4,
+    allDistricts,
+    "coldday",
+    0,
+    "rgb(255, 192, 0)",
+  );
+  setDayData(weeklyForecastData, 4, allDistricts, "densefog", 1, "#fd7e14"); // Dense Fog
+  setDayData(
+    weeklyWarningData,
+    4,
+    allDistricts,
     "densefog",
     1,
-    "rgb(255, 255, 0)",
+    "rgb(255, 192, 0)",
   );
 
-  // --- Day 6: Hailstorm (Orange) ---
-  // Scenario: South-West Region -> Tests another region
-  const day6Districts = regionalGroups["south-west"].districts;
-  setDayData(weeklyForecastData, 5, day6Districts, "hailstorm", 0, "#fd7e14");
+  // --- Day 6: Cyclone + Heavy Rain + Sea State (Red) ---
+  // Region: South-East (Hypothetical coastal impact)
+  const day6Districts = regionalGroups["south-east"].districts;
+  setDayData(weeklyForecastData, 5, day6Districts, "cyclone", 0, "#dc3545");
   setDayData(
     weeklyWarningData,
     5,
     day6Districts,
-    "hailstorm",
+    "cyclone",
     0,
-    "rgb(255, 192, 0)",
+    "rgb(255, 0, 0)",
+  );
+  setDayData(weeklyForecastData, 5, day6Districts, "heavyrain", 2, "#dc3545"); // Extremely Heavy
+  setDayData(
+    weeklyWarningData,
+    5,
+    day6Districts,
+    "heavyrain",
+    2,
+    "rgb(255, 0, 0)",
+  );
+  setDayData(weeklyForecastData, 5, day6Districts, "seastate", 0, "#dc3545"); // Rough
+  setDayData(
+    weeklyWarningData,
+    5,
+    day6Districts,
+    "seastate",
+    0,
+    "rgb(255, 0, 0)",
   );
 
-  // --- Day 7: Dry Weather (Green) ---
-  // Scenario: All Districts -> Tests "All" logic
-  const allDistricts = districtsData.map((d) => d.id);
-  setDayData(weeklyForecastData, 6, allDistricts, "dry", 0, "#28a745");
-  setDayData(weeklyWarningData, 6, allDistricts, "dry", 0, "rgb(0, 153, 0)");
+  // --- Day 7: Frost (Yellow) & Dry (Green) ---
+  // Region: Foothills get Frost, Rest get Dry
+  const foothillDistricts = regionalGroups["foothill"].districts;
+  const otherDistricts = allDistricts.filter(
+    (id) => !foothillDistricts.includes(id),
+  );
+
+  // Frost for Foothills
+  setDayData(weeklyForecastData, 6, foothillDistricts, "frost", 0, "#ffc107");
+  setDayData(
+    weeklyWarningData,
+    6,
+    foothillDistricts,
+    "frost",
+    0,
+    "rgb(255, 255, 0)",
+  );
+
+  // Dry for others
+  setDayData(weeklyForecastData, 6, otherDistricts, "dry", 0, "#28a745");
+  setDayData(weeklyWarningData, 6, otherDistricts, "dry", 0, "rgb(0, 153, 0)");
+
+  // Also add Snow to a specific district for demo (e.g. West Champaran - 38) on Day 7
+  setDayData(weeklyForecastData, 6, [38], "snow", 0, "#ffc107");
+  setDayData(weeklyWarningData, 6, [38], "snow", 0, "rgb(255, 255, 0)");
 
   saveData();
   // Refresh current view
   switchDay(currentDay);
   resetTableView();
-  alert("Enhanced Test Data Generated Successfully for 7 Days!");
+  alert(
+    "Comprehensive Test Data Generated Successfully for 7 Days (with continuous days)!",
+  );
 }
 
 function resetUI() {
@@ -2540,8 +2783,9 @@ function updateMapStyle(skipMarkers = false) {
         if (distData.phenomena.has(pDef.id)) {
           if (!phenomColor) phenomColor = phenColors[pDef.id];
 
-          const hideCb = document.getElementById(`hideIcon-${pDef.id}`);
-          if (hideCb && hideCb.checked) continue;
+          const isHidden =
+            localStorage.getItem(`bihar_hide_icon_${pDef.id}`) === "true";
+          if (isHidden) continue;
 
           assignedPhenomenaList.push(pDef);
         }
@@ -2869,11 +3113,7 @@ function switchDay(day) {
 function updateMapDateHeader() {
   const el = document.getElementById("mapDateOverlay");
   if (el) {
-    const date = new Date();
-    // If reviewing a specific day, we might want to show that day's date,
-    // but request says "Date: 23-01-2026" (Current Date usually, or selected day date).
-    // Assuming selected day date based on context of "Day 1", "Day 2" selection.
-    date.setDate(date.getDate() + (currentDay - 1));
+    const date = new Date(forecastBaseDate);
 
     const options = { day: "2-digit", month: "2-digit", year: "numeric" };
     const dateStr = date
@@ -2935,7 +3175,7 @@ function updateMapHeaderText() {
     endDay++;
   }
 
-  const date = new Date();
+  const date = new Date(forecastBaseDate);
   // Start Date for Range Start
   const startDate = new Date(date);
   startDate.setDate(date.getDate() + (startDay - 1));

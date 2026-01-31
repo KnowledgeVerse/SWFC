@@ -1,16 +1,66 @@
 // Configuration Data (Copied from main.js for standalone operation)
 const phenColors = {
+  dry: "#ffffff",
+  heavyrain: "#007bff",
+  heatwave: "#fd7e14",
+  warmnight: "#e83e8c",
+  coldwave: "#00bcd4",
+  coldday: "#20c997",
+  densefog: "#6c757d",
   thunderstorm: "#ffc107",
   gustywind: "#17a2b8",
-  heatwave: "#fd7e14",
+  squall: "#607d8b",
+  frost: "#b2ebf2",
+  seastate: "#0d47a1",
+  cyclone: "#b71c1c",
+  duststorm: "#d7ccc8",
+  snow: "#f5f5f5",
   hailstorm: "#6f42c1",
-  heavyrain: "#007bff",
-  densefog: "#6c757d",
-  coldday: "#20c997",
-  warmnight: "#e83e8c",
 };
 
 const phenDefs = [
+  {
+    id: "dry",
+    hindi: "शुष्क मौसम",
+    icon: "fa-sun",
+    image: "assets/weather-icons/dry.png",
+  },
+  {
+    id: "heavyrain",
+    hindi: "भारी वर्षा",
+    icon: "fa-cloud-showers-heavy",
+    image: "assets/weather-icons/heavyrain.png",
+  },
+  {
+    id: "heatwave",
+    hindi: "लू (उष्ण लहर)",
+    icon: "fa-fire",
+    image: "assets/weather-icons/heatwave.png",
+  },
+  {
+    id: "warmnight",
+    hindi: "गर्म रात्रि",
+    icon: "fa-temperature-high",
+    image: "assets/weather-icons/warmnight.png",
+  },
+  {
+    id: "coldwave",
+    hindi: "शीत लहर",
+    icon: "fa-temperature-low",
+    image: "assets/weather-icons/coldwave.png",
+  },
+  {
+    id: "coldday",
+    hindi: "शीत दिवस",
+    icon: "fa-snowflake",
+    image: "assets/weather-icons/coldday.png",
+  },
+  {
+    id: "densefog",
+    hindi: "घना कोहरा",
+    icon: "fa-smog",
+    image: "assets/weather-icons/densefog.png",
+  },
   {
     id: "thunderstorm",
     hindi: "मेघगर्जन/वज्रपात",
@@ -24,40 +74,46 @@ const phenDefs = [
     image: "assets/weather-icons/gustywind.png",
   },
   {
-    id: "heatwave",
-    hindi: "लू (उष्ण लहर)",
-    icon: "fa-fire",
-    image: "assets/weather-icons/heatwave.png",
+    id: "squall",
+    hindi: "तेज़ हवा के झोंके",
+    icon: "fa-wind",
+    image: "assets/weather-icons/squall.png",
+  },
+  {
+    id: "frost",
+    hindi: "पाला",
+    icon: "fa-icicles",
+    image: "assets/weather-icons/frost.png",
+  },
+  {
+    id: "seastate",
+    hindi: "समुद्र की स्थिति",
+    icon: "fa-water",
+    image: "assets/weather-icons/sea.png",
+  },
+  {
+    id: "cyclone",
+    hindi: "चक्रवात",
+    icon: "fa-hurricane",
+    image: "assets/weather-icons/cyclone.png",
+  },
+  {
+    id: "duststorm",
+    hindi: "धूल भरी आंधी",
+    icon: "fa-wind",
+    image: "assets/weather-icons/dust.png",
+  },
+  {
+    id: "snow",
+    hindi: "बर्फबारी",
+    icon: "fa-snowflake",
+    image: "assets/weather-icons/snow.png",
   },
   {
     id: "hailstorm",
     hindi: "ओलावृष्टि",
     icon: "fa-cloud-meatball",
     image: "assets/weather-icons/hailstorm.png",
-  },
-  {
-    id: "heavyrain",
-    hindi: "भारी वर्षा",
-    icon: "fa-cloud-showers-heavy",
-    image: "assets/weather-icons/heavyrain.png",
-  },
-  {
-    id: "densefog",
-    hindi: "घना कोहरा",
-    icon: "fa-smog",
-    image: "assets/weather-icons/densefog.png",
-  },
-  {
-    id: "coldday",
-    hindi: "शीत दिवस",
-    icon: "fa-snowflake",
-    image: "assets/weather-icons/coldday.png",
-  },
-  {
-    id: "warmnight",
-    hindi: "गर्म रात्रि",
-    icon: "fa-temperature-high",
-    image: "assets/weather-icons/warmnight.png",
   },
 ];
 
@@ -316,7 +372,11 @@ function renderImageSlide() {
 }
 
 function updateSlideHeader(dayNum) {
-  const date = new Date();
+  let date = new Date();
+  const storedDate = localStorage.getItem("bihar_forecast_date");
+  if (storedDate) {
+    date = new Date(storedDate);
+  }
   const targetDate = new Date();
   targetDate.setDate(date.getDate() + (dayNum - 1));
 
@@ -454,12 +514,13 @@ function updateMapStyle() {
     let phenomColor = null;
     let assignedPhenomenaList = [];
 
-    const hideDry = localStorage.getItem("bihar_hide_dry_icon") === "true";
     if (districtPhenomenaMap[oid] && districtPhenomenaMap[oid].size > 0) {
       for (const pDef of phenDefs) {
         if (districtPhenomenaMap[oid].has(pDef.id)) {
           if (!phenomColor) phenomColor = phenColors[pDef.id];
-          if (pDef.id === "dry" && hideDry) continue;
+          const isHidden =
+            localStorage.getItem(`bihar_hide_icon_${pDef.id}`) === "true";
+          if (isHidden) continue;
           assignedPhenomenaList.push(pDef);
         }
       }
