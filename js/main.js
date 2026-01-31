@@ -3707,67 +3707,88 @@ function addExportHeader(table) {
   return row;
 }
 
-function removeExportHeader(table, row) {
-  if (row && row.parentNode) {
-    row.parentNode.removeChild(row);
-  }
-}
-
 function downloadTableImage() {
-  const node = document.getElementById("imdTable");
-  if (!node) return;
+  const originalTable = document.getElementById("imdTable");
+  if (!originalTable) return;
 
-  const headerRow = addExportHeader(node);
+  // Create temporary container
+  const container = document.createElement("div");
+  container.style.position = "fixed";
+  container.style.top = "0";
+  container.style.left = "0";
+  container.style.zIndex = "-9999";
+  container.style.width = originalTable.offsetWidth + "px";
+  container.style.backgroundColor = "#ffffff";
+  container.style.padding = "20px";
+  document.body.appendChild(container);
 
-  const originalBg = node.style.backgroundColor;
-  node.style.backgroundColor = "#ffffff";
+  // Clone table
+  const tableClone = originalTable.cloneNode(true);
+  tableClone.style.width = "100%";
+
+  // Add header
+  addExportHeader(tableClone);
+
+  container.appendChild(tableClone);
+
+  const width = container.offsetWidth;
+  const height = container.offsetHeight;
 
   domtoimage
-    .toPng(node, {
+    .toPng(container, {
       bgcolor: "#ffffff",
-      width: node.scrollWidth,
-      height: node.scrollHeight,
+      width: width,
+      height: height,
     })
     .then(function (dataUrl) {
       const link = document.createElement("a");
       link.download = `weather-warning-table-${new Date().toISOString().split("T")[0]}.png`;
       link.href = dataUrl;
       link.click();
-      node.style.backgroundColor = originalBg;
-      removeExportHeader(node, headerRow);
+      document.body.removeChild(container);
     })
     .catch(function (error) {
       console.error("Image download failed", error);
       alert("Image generation failed.");
-      node.style.backgroundColor = originalBg;
-      removeExportHeader(node, headerRow);
+      document.body.removeChild(container);
     });
 }
 window.downloadTableImage = downloadTableImage;
 
 function downloadTablePDF() {
-  const node = document.getElementById("imdTable");
-  if (!node) return;
+  const originalTable = document.getElementById("imdTable");
+  if (!originalTable) return;
 
-  const headerRow = addExportHeader(node);
+  const container = document.createElement("div");
+  container.style.position = "fixed";
+  container.style.top = "0";
+  container.style.left = "0";
+  container.style.zIndex = "-9999";
+  container.style.width = originalTable.offsetWidth + "px";
+  container.style.backgroundColor = "#ffffff";
+  container.style.padding = "20px";
+  document.body.appendChild(container);
+
+  const tableClone = originalTable.cloneNode(true);
+  tableClone.style.width = "100%";
+  addExportHeader(tableClone);
+  container.appendChild(tableClone);
+
+  const width = container.offsetWidth;
+  const height = container.offsetHeight;
 
   const { jsPDF } = window.jspdf;
-  const originalBg = node.style.backgroundColor;
-  node.style.backgroundColor = "#ffffff";
 
   domtoimage
-    .toPng(node, {
+    .toPng(container, {
       bgcolor: "#ffffff",
-      width: node.scrollWidth,
-      height: node.scrollHeight,
+      width: width,
+      height: height,
     })
     .then(function (dataUrl) {
       const img = new Image();
       img.src = dataUrl;
       img.onload = function () {
-        const width = img.width;
-        const height = img.height;
-
         const doc = new jsPDF({
           orientation: width > height ? "l" : "p",
           unit: "px",
@@ -3778,26 +3799,25 @@ function downloadTablePDF() {
         doc.save(
           `weather-warning-table-${new Date().toISOString().split("T")[0]}.pdf`,
         );
-        node.style.backgroundColor = originalBg;
-        removeExportHeader(node, headerRow);
+        document.body.removeChild(container);
       };
     })
     .catch(function (error) {
       console.error("PDF generation failed", error);
       alert("PDF generation failed.");
-      node.style.backgroundColor = originalBg;
-      removeExportHeader(node, headerRow);
+      document.body.removeChild(container);
     });
 }
 window.downloadTablePDF = downloadTablePDF;
 
 function downloadTableExcel() {
-  const table = document.getElementById("imdTable");
-  if (!table) return;
+  const originalTable = document.getElementById("imdTable");
+  if (!originalTable) return;
 
-  const headerRow = addExportHeader(table);
+  const tableClone = originalTable.cloneNode(true);
+  addExportHeader(tableClone);
 
-  const html = table.outerHTML;
+  const html = tableClone.outerHTML;
   const blob = new Blob(["\ufeff", html], {
     type: "application/vnd.ms-excel",
   });
@@ -3809,7 +3829,5 @@ function downloadTableExcel() {
   document.body.appendChild(a);
   a.click();
   document.body.removeChild(a);
-
-  removeExportHeader(table, headerRow);
 }
 window.downloadTableExcel = downloadTableExcel;
