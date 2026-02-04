@@ -222,6 +222,22 @@ const warningLegendItems = [
   },
 ];
 
+// ---------- Helper: Get Distribution Text (Single Source of Truth) ----------
+function getDistributionText(val, lang) {
+  const mapping = {
+    0: {
+      hi: "मौसम शुष्क रहने की संभावना है",
+      en: "Weather likely to remain dry",
+    },
+    1: { hi: "एक-दो स्थानों पर", en: "at one or two places" },
+    2: { hi: "कुछ स्थानों पर", en: "at a few places" },
+    3: { hi: "अनेक स्थानों पर", en: "at many places" },
+    4: { hi: "अधिकांश स्थानों पर", en: "at most places" },
+  };
+  // Strict mapping based on dropdown value
+  return mapping[val] ? mapping[val][lang] : mapping[1][lang];
+}
+
 // ---------- Globals ----------
 let selectedDistricts = [],
   selectedPhenomena = [],
@@ -240,7 +256,12 @@ let selectedDistricts = [],
   districtPhenomenaMap = weeklyData[0],
   phenomenaMarkersLayer,
   isAudioEnabled = false,
-  currentAudio = new Audio();
+  currentAudio = new Audio(),
+  // Independent State Variables
+  currentDistribution = 0,
+  currentWarning = 0,
+  currentColor = null;
+
 let isLayoutEditMode = false;
 let mapEffectConfig = {
   enabled: false,
@@ -263,7 +284,7 @@ const uiTranslations = {
     regional: "क्षेत्रीय समूह चुनें:",
     multiple: "एकाधिक जिले चुनें:",
     searchPlaceholder: "जिला खोजें...",
-    placeCount: "FORECAST",
+    placeCount: "DISTRIBUTION",
     warning: "WARNING",
     colorSelect: "COLOR SELECTION",
     phenomena: "मौसम घटनाएँ:",
@@ -291,7 +312,7 @@ const uiTranslations = {
     regional: "Select Regional Groups:",
     multiple: "Select Multiple Districts:",
     searchPlaceholder: "Search District...",
-    placeCount: "FORECAST",
+    placeCount: "DISTRIBUTION",
     warning: "WARNING",
     colorSelect: "COLOR SELECTION",
     phenomena: "Weather Phenomena:",
@@ -485,6 +506,14 @@ document.addEventListener("DOMContentLoaded", () => {
 // ---------- UI builders ----------
 function buildRegionalGrid() {
   const box = document.getElementById("regionalGrid");
+  box.innerHTML = ""; // Clear to prevent duplicates
+
+  // Add ALL Option (First)
+  const allLbl = document.createElement("label");
+  allLbl.className = "regional-checkbox region-all";
+  allLbl.innerHTML = `<input type="checkbox" value="ALL" onchange="handleRegionChange(this)"><span>ALL</span>`;
+  box.appendChild(allLbl);
+
   Object.entries(regionalGroups).forEach(([key, g]) => {
     const lbl = document.createElement("label");
     lbl.className = `regional-checkbox region-${key}`;
@@ -495,6 +524,7 @@ function buildRegionalGrid() {
 }
 function buildMultipleDistrictGrid() {
   const grid = document.getElementById("districtGrid");
+  grid.innerHTML = ""; // Clear existing content to prevent duplicates
   districtsData.forEach((d) => {
     const lbl = document.createElement("label");
     lbl.className = "district-checkbox";
@@ -502,6 +532,7 @@ function buildMultipleDistrictGrid() {
     lbl.innerHTML = `<input type="checkbox" value="${d.id}" onchange="updateMultipleSelection()"><span>${text}</span>`;
     grid.appendChild(lbl);
   });
+  filterDistricts(); // Ensure all items are visible by default
 }
 function buildPhenomenaPanel() {
   const box = document.getElementById("phenomenaContainer");
@@ -570,7 +601,7 @@ function attachHandlers() {
     handleMapUpdate("warning");
   document.getElementById("clearMapSelection").onclick = clearDistrictSelection;
   document.getElementById("btnTable").onclick = toggleTableView;
-  document.getElementById("btnTestData").onclick = generateTestData;
+  document.getElementById("btnTestData").onclick = generateDemoData; // Switched to new Demo function
   document.getElementById("downloadMap").onclick = downloadMapImage;
   document.getElementById("downloadSmartImages").onclick = downloadSmartImages;
   document.getElementById("downloadSmartPDF").onclick = downloadSmartPDF;
@@ -642,56 +673,35 @@ function attachHandlers() {
 
   document.getElementById("userLogoBtn").onclick = handleUserLogoClick;
 
-  // Dropdown Color Handlers
+  // ---------- INDEPENDENT STATE HANDLERS ----------
+
+  // 1. Distribution Change
   document.getElementById("globalPlaceCount").addEventListener("change", () => {
+    currentDistribution =
+      parseInt(document.getElementById("globalPlaceCount").value) || 0;
     updateDropdownBackgrounds();
-    updateLegend();
   });
+
+  // 2. Warning Change
   document.getElementById("globalWarning").addEventListener("change", () => {
+    currentWarning =
+      parseInt(document.getElementById("globalWarning").value) || 0;
     updateDropdownBackgrounds();
-    updateMapStyle(); // Update map fill color based on warning
-    updateLegend();
   });
+
+  // 3. Color Change
   document
     .getElementById("globalColorSelect")
     .addEventListener("change", (e) => {
       const val = e.target.value;
-      if (val) {
+      if (val && val !== "default") {
+        currentColor = val;
         e.target.style.backgroundColor = val;
       } else {
+        currentColor = null;
         e.target.style.backgroundColor = "";
       }
     });
-
-  // Mode Checkbox Handlers
-  const modeForecast = document.getElementById("modeForecast");
-  const modeWarning = document.getElementById("modeWarning");
-
-  if (modeForecast && modeWarning) {
-    modeForecast.addEventListener("change", () => {
-      if (modeForecast.checked) {
-        modeWarning.checked = false;
-      } else if (!modeWarning.checked) {
-        modeForecast.checked = true; // Enforce one always on
-      }
-      setReviewMode("forecast");
-      updateMapStyle();
-      resetTableView(); // Ensure table is hidden when switching modes
-      updateLegend();
-    });
-
-    modeWarning.addEventListener("change", () => {
-      if (modeWarning.checked) {
-        modeForecast.checked = false;
-      } else if (!modeForecast.checked) {
-        modeWarning.checked = true; // Enforce one always on
-      }
-      setReviewMode("warning");
-      updateMapStyle();
-      resetTableView(); // Ensure table is hidden when switching modes
-      updateLegend();
-    });
-  }
 
   // Clear Forecast & Warning Button
   const btnClearFW = document.getElementById("btnClearFW");
@@ -804,6 +814,25 @@ function filterDistricts() {
 function handleRegionChange(checkbox) {
   const val = checkbox.value;
   const checked = checkbox.checked;
+
+  if (val === "ALL") {
+    // Select/Deselect All Regions
+    document
+      .querySelectorAll("#regionalGrid input:not([value='ALL'])")
+      .forEach((cb) => {
+        cb.checked = checked;
+      });
+    // Trigger update to select districts
+    updateRegionalSelection();
+    return;
+  }
+
+  // If any specific region is unchecked, uncheck ALL
+  if (!checked) {
+    const allCb = document.querySelector("#regionalGrid input[value='ALL']");
+    if (allCb) allCb.checked = false;
+  }
+
   const hierarchy = {
     northern: ["foothill", "north-west", "north-central", "north-east"],
     southern: ["south-west", "south-central", "south-east"],
@@ -879,8 +908,6 @@ function clearDistrictSelection() {
 function setReviewMode(mode) {
   const btnF = document.getElementById("btnReviewForecast");
   const btnW = document.getElementById("btnReviewWarning");
-  const modeForecast = document.getElementById("modeForecast");
-  const modeWarning = document.getElementById("modeWarning");
   const headerText = document.getElementById("mapHeaderText");
 
   // Toggle logic: if clicking the already active mode, deselect it
@@ -894,13 +921,6 @@ function setReviewMode(mode) {
     if (btnW) {
       btnW.style.background = ""; // Reset to default CSS
       btnW.style.color = "#333";
-    }
-
-    // Revert to the data selected in the control panel
-    if (modeForecast && modeForecast.checked) {
-      weeklyData = weeklyForecastData;
-    } else {
-      weeklyData = weeklyWarningData;
     }
     // Hide header text
     if (headerText) headerText.style.display = "none";
@@ -1008,7 +1028,9 @@ function generateDayForecastHtml(dayNum, dateStr, dayData) {
     const phenArray = Array.from(data.phenomena).sort();
     const intensities = data.intensities || {};
     const keyParts = phenArray.map((p) => `${p}:${intensities[p] || 0}`);
-    const key = keyParts.join("|") + `|${data.color}`;
+    const key =
+      keyParts.join("|") +
+      `|${data.color}|${data.distribution}|${data.warningLevel}`;
 
     if (!groups[key]) {
       groups[key] = {
@@ -1016,6 +1038,8 @@ function generateDayForecastHtml(dayNum, dateStr, dayData) {
         phenomena: phenArray,
         intensities: intensities,
         color: data.color,
+        distribution: data.distribution || 0,
+        warningLevel: data.warningLevel || 0,
       };
     }
     groups[key].districts.push(parseInt(distId));
@@ -1037,6 +1061,8 @@ function generateDayForecastHtml(dayNum, dateStr, dayData) {
   Object.values(groups).forEach((group) => {
     const areaText = getAreaText(group.districts);
     const color = group.color || "#28a745";
+    const coverageHi = getDistributionText(group.distribution, "hi");
+    const coverageEn = getDistributionText(group.distribution, "en");
 
     let hindiDesc = "";
     let englishDesc = "";
@@ -1051,22 +1077,12 @@ function generateDayForecastHtml(dayNum, dateStr, dayData) {
 
         // Construct sentences based on templates
         if (currentLang === "hi") {
-          // "राज्य के <Region> भाग के जिलों एवं <Districts> के एक या दो स्थानों पर <Phenomenon> की संभावना है।"
-          // Simplified construction: Area + " के एक या दो स्थानों पर " + Phenomenon Text
-          // Note: The intensity text usually includes "ki sambhavna hai"
-          // We need to merge carefully.
-          // Most intensity lines end with "hai".
-          // Area text already includes "zilon ke..."
-          hindiDesc += `<p><strong>${pDef.hindi}:</strong> ${areaText.hindi} के एक या दो स्थानों पर ${hText}</p>`;
+          // Area + " के " + Coverage Text + " " + Phenomenon Text
+          hindiDesc += `<p><strong>${pDef.hindi}:</strong> ${areaText.hindi} के ${coverageHi} ${hText}</p>`;
         }
 
-        // English: "<Dropdown Text> at one or two places in <Area> districts of the state."
-        // The dropdown text is eText.
-        // eText usually is "Heavy rain likely."
-        // We transform to: "Heavy rain likely at one or two places in <Area>..."
-        // Or simply append location.
         let sentence = eText.replace(/\.$/, ""); // Remove trailing dot
-        englishDesc += `<p><strong>${pDef.english}:</strong> ${sentence} at one or two places in ${areaText.english} of the state.</p>`;
+        englishDesc += `<p><strong>${pDef.english}:</strong> ${sentence} ${coverageEn} in ${areaText.english} of the state.</p>`;
       }
     });
 
@@ -1086,26 +1102,46 @@ function generateDayForecastHtml(dayNum, dateStr, dayData) {
 }
 
 function getAreaText(districtIds) {
-  // Logic to group districts into regions
-  // 1. Check for complete regions
-  // 2. List remaining districts
+  // Check for ALL selection
+  const allCb = document.querySelector("#regionalGrid input[value='ALL']");
+  const isAllSelected =
+    (allCb && allCb.checked) ||
+    (districtIds.length === districtsData.length && districtsData.length > 0);
 
-  const joinerHi = " और ";
-  const joinerEn = " and ";
+  if (isAllSelected) {
+    return {
+      hindi: "राज्य के बिहार के अधिकांश जिलों में",
+      english: "Most districts of Bihar state",
+      isAll: true,
+    };
+  }
 
   let remainingIds = new Set(districtIds);
   let regionsFoundHi = [];
   let regionsFoundEn = [];
 
-  // Check each region
-  Object.entries(regionalGroups).forEach(([key, group]) => {
-    // Check if ALL districts of this region are present
-    const groupIds = group.districts;
-    const isComplete = groupIds.every((id) => remainingIds.has(id));
+  // Prioritize specific sub-regions for grouping
+  const specificRegions = [
+    "north-west",
+    "north-central",
+    "north-east",
+    "south-west",
+    "south-central",
+    "south-east",
+  ];
 
-    if (isComplete && groupIds.length > 0) {
-      regionsFoundHi.push(group.name + " भाग");
-      regionsFoundEn.push(group.english + " parts");
+  specificRegions.forEach((key) => {
+    const group = regionalGroups[key];
+    if (!group) return;
+    const groupIds = group.districts;
+
+    if (groupIds.every((id) => remainingIds.has(id))) {
+      // Clean names: "उत्तर-पश्चिम क्षेत्र" -> "उत्तर-पश्चिम"
+      let nameHi = group.name.replace(" क्षेत्र", "").replace(" बिहार", "");
+      let nameEn = group.english.replace(" Region", "");
+
+      regionsFoundHi.push(nameHi);
+      regionsFoundEn.push(nameEn);
       groupIds.forEach((id) => remainingIds.delete(id));
     }
   });
@@ -1113,7 +1149,9 @@ function getAreaText(districtIds) {
   let distNamesHi = [];
   let distNamesEn = [];
 
-  remainingIds.forEach((id) => {
+  // Sort remaining districts
+  const sortedRemaining = Array.from(remainingIds).sort((a, b) => a - b);
+  sortedRemaining.forEach((id) => {
     const d = getDistrictNameById(id);
     if (d) {
       distNamesHi.push(d.hindi);
@@ -1121,32 +1159,59 @@ function getAreaText(districtIds) {
     }
   });
 
-  let finalHi = "";
-  let finalEn = "";
+  // Construct Hindi String
+  let finalHi = "राज्य के ";
+  let partsHi = [];
 
-  // Construct Hindi
   if (regionsFoundHi.length > 0) {
-    finalHi += "राज्य के " + regionsFoundHi.join(", ");
-    if (distNamesHi.length > 0) {
-      finalHi += " के जिलों एवं " + distNamesHi.join(", ") + " जिलों";
-    } else {
-      finalHi += " के जिलों";
-    }
-  } else {
-    finalHi += distNamesHi.join(", ") + " जिलों";
+    let regionStr =
+      regionsFoundHi.length === 1
+        ? regionsFoundHi[0]
+        : regionsFoundHi.slice(0, -1).join(", ") +
+          " एवं " +
+          regionsFoundHi[regionsFoundHi.length - 1];
+    partsHi.push(regionStr + " भाग के जिलों");
   }
 
-  // Construct English
+  if (distNamesHi.length > 0) {
+    let distStr =
+      distNamesHi.length === 1
+        ? distNamesHi[0]
+        : distNamesHi.slice(0, -1).join(", ") +
+          " एवं " +
+          distNamesHi[distNamesHi.length - 1];
+    partsHi.push(distStr + " जिलों");
+  }
+
+  finalHi += partsHi.join(", ");
+
+  // Construct English String
+  let finalEn = "";
+  let partsEn = [];
+
   if (regionsFoundEn.length > 0) {
-    finalEn += regionsFoundEn.join(", ");
-    if (distNamesEn.length > 0) {
-      finalEn += " and " + distNamesEn.join(", ") + " districts";
-    }
-  } else {
-    finalEn += distNamesEn.join(", ") + " districts";
+    let regionStr =
+      regionsFoundEn.length === 1
+        ? regionsFoundEn[0]
+        : regionsFoundEn.slice(0, -1).join(", ") +
+          " and " +
+          regionsFoundEn[regionsFoundEn.length - 1];
+    partsEn.push(regionStr + " parts");
   }
 
-  return { hindi: finalHi, english: finalEn };
+  if (distNamesEn.length > 0) {
+    let distStr =
+      distNamesEn.length === 1
+        ? distNamesEn[0]
+        : distNamesEn.slice(0, -1).join(", ") +
+          " and " +
+          distNamesEn[distNamesEn.length - 1];
+    partsEn.push(distStr + " districts");
+  }
+
+  finalEn = partsEn.join(", ");
+
+  return { hindi: finalHi, english: finalEn, isAll: false };
 }
 
 function displayConsolidatedForecast(list) {
@@ -1288,10 +1353,9 @@ function renderTable() {
       #imdTable { width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px; margin-top: 0; }
       #imdTable th { background-color: #003366; color: white; padding: 12px; text-align: center; font-size: 14px; border: 1px solid #000; position: sticky; top: 0; z-index: 5; }
       #imdTable td { padding: 12px; border: 1px solid #000; vertical-align: top; color: #000; }
-      .warning-red { background-color: #dc3545; color: white; font-weight: bold; text-align: center; vertical-align: middle; }
-      .warning-orange { background-color: #fd7e14; color: white; font-weight: bold; text-align: center; vertical-align: middle; }
-      .warning-yellow { background-color: #ffc107; color: black; font-weight: bold; text-align: center; vertical-align: middle; }
-      .warning-green { background-color: #28a745; color: white; font-weight: bold; text-align: center; vertical-align: middle; }
+      #imdTable.compact { font-size: 11px; }
+      #imdTable.compact th { padding: 6px; font-size: 12px; }
+      #imdTable.compact td { padding: 6px; }
     `;
     document.head.appendChild(style);
   }
@@ -1301,9 +1365,15 @@ function renderTable() {
   const filterColor =
     document.getElementById("filterTableColor")?.value || "all";
   const sortBySeverity = document.getElementById("chkSortSeverity")?.checked;
+  const isCompact = document.getElementById("chkCompactView")?.checked;
+  const hideWarningCol = document.getElementById("chkHideWarningCol")?.checked;
+  const applyTextBg = document.getElementById("chkTextBgColor")?.checked;
 
   const table = document.getElementById("imdTable");
   if (table) {
+    if (isCompact) table.classList.add("compact");
+    else table.classList.remove("compact");
+
     table.innerHTML = `
         <thead>
             <tr>
@@ -1313,7 +1383,7 @@ function renderTable() {
                 ${!hideCols ? '<th style="width: 15%;">WEATHER PHENOMENON<br>(मौसम घटना)</th>' : ""}
                 <th style="width: 20%;">WARNING DESCRIPTION<br>(English)</th>
                 <th style="width: 20%;">चेतावनी विवरण<br>(हिन्दी)</th>
-                <th style="width: 10%;">WARNING COLOUR<br>(चेतावनी रंग)</th>
+                ${!hideWarningCol ? '<th style="width: 10%;">WARNING COLOUR<br>(चेतावनी रंग)</th>' : ""}
             </tr>
         </thead>
         <tbody></tbody>
@@ -1371,7 +1441,9 @@ function renderTable() {
       const phenArray = Array.from(data.phenomena).sort();
       const intensities = data.intensities || {};
       const keyParts = phenArray.map((p) => `${p}:${intensities[p] || 0}`);
-      const key = keyParts.join("|") + `|${data.color}`;
+      const key =
+        keyParts.join("|") +
+        `|${data.color}|${data.distribution}|${data.warningLevel}`;
 
       if (!groups[key]) {
         groups[key] = {
@@ -1379,6 +1451,8 @@ function renderTable() {
           phenomena: phenArray,
           intensities: intensities,
           color: data.color,
+          warningLevel: data.warningLevel || 0,
+          distribution: data.distribution || 0,
         };
       }
       groups[key].districts.push(parseInt(distId));
@@ -1395,17 +1469,17 @@ function renderTable() {
     } else {
       Object.values(groups).forEach((group) => {
         let colorClass = "warning-green";
-        let colorText = "🟢 Green (No Warning)";
-        const c = group.color;
-        if (c === "rgb(255, 255, 0)" || c === "#ffc107") {
+        let colorText = "Green (No Warning)";
+        const w = group.warningLevel;
+        if (w === 1) {
           colorClass = "warning-yellow";
-          colorText = "🟡 Yellow (Watch)";
-        } else if (c === "rgb(255, 192, 0)" || c === "#fd7e14") {
+          colorText = "Yellow (Watch)";
+        } else if (w === 2) {
           colorClass = "warning-orange";
-          colorText = "🟠 Orange (Alert)";
-        } else if (c === "rgb(255, 0, 0)" || c === "#dc3545") {
+          colorText = "Orange (Alert)";
+        } else if (w === 3) {
           colorClass = "warning-red";
-          colorText = "🔴 Red (Warning)";
+          colorText = "Red (Warning)";
         }
 
         rowDataList.push({
@@ -1443,18 +1517,33 @@ function renderTable() {
 
   // Render
   rowDataList.forEach((item, index) => {
-    const rowBg = index % 2 === 0 ? "#ffffff" : "#e6f3ff";
+    const neutralBg = index % 2 === 0 ? "#ffffff" : "#e6f3ff";
+    const groupColor = item.group ? item.group.color : null;
+
+    // Logic 4 & 5: Conditional Colour Application
+    // Day/Date always neutral
+    // Text Columns (Area, Phenom, Desc): Colored ONLY if Warning Col is Hidden AND Option Checked
+    let textColBg = neutralBg;
+    if (hideWarningCol && applyTextBg && groupColor) {
+      textColBg = groupColor;
+    }
+
+    // Warning Column: Colored ONLY if Visible AND Color Selected
+    let warningColBg = neutralBg;
+    if (!hideWarningCol && groupColor) {
+      warningColBg = groupColor;
+    }
 
     if (item.type === "no-warning") {
       const row = `
-        <tr style="background-color:${rowBg}">
-          <td style="text-align:center;">Day ${item.day}</td>
-          <td style="text-align:center;">${item.date}</td>
-          ${!hideCols ? "<td>-</td>" : ""}
-          ${!hideCols ? '<td style="text-align:center;">Nil</td>' : ""}
-          <td>No Warning</td>
-          <td>कोई चेतावनी नहीं</td>
-          <td class="${item.colorClass}">${item.colorText}</td>
+        <tr style="background-color:${neutralBg}">
+          <td style="text-align:center; background-color:${neutralBg}">Day ${item.day}</td>
+          <td style="text-align:center; background-color:${neutralBg}">${item.date}</td>
+          ${!hideCols ? `<td>-</td>` : ""}
+          ${!hideCols ? `<td style="text-align:center;">Nil</td>` : ""}
+          <td style="background-color:${neutralBg}">No Warning</td>
+          <td style="background-color:${neutralBg}">कोई चेतावनी नहीं</td>
+          ${!hideWarningCol ? `<td style="background-color:${neutralBg}; font-weight:bold;">Green (No Warning)</td>` : ""}
         </tr>`;
       tbody.innerHTML += row;
     } else {
@@ -1481,24 +1570,27 @@ function renderTable() {
           ? pDef.hindi
           : hText.replace(/होने की संभावना है।?$/i, "").trim();
 
+        const distEn = getDistributionText(group.distribution, "en");
+        const distHi = getDistributionText(group.distribution, "hi");
+
         let descEn, descHi;
         if (areaText.isAll) {
-          descEn = `${phenomNameEn} likely to occur at one or two places in most parts of the state.`;
-          descHi = `राज्य के अधिकांश भागों में ${phenomNameHi} होने की संभावना है।`;
+          descEn = `${phenomNameEn} likely to occur ${distEn} in most parts of the state.`;
+          descHi = `राज्य के अधिकांश भागों में ${distHi} ${phenomNameHi} होने की संभावना है।`;
         } else {
-          descEn = `${phenomNameEn} likely to occur at one or two places in the ${areaText.english}.`;
+          descEn = `${phenomNameEn} likely to occur ${distEn} in the ${areaText.english}.`;
           // Strip "राज्य के " from areaText.hindi for the description sentence to avoid duplication if present
           const areaHiClean = areaText.hindi.replace(/^राज्य के /, "");
-          descHi = `राज्य के ${areaHiClean} में कुछ स्थानों पर ${phenomNameHi} होने की संभावना है।`;
+          descHi = `राज्य के ${areaHiClean} में ${distHi} ${phenomNameHi} होने की संभावना है।`;
         }
 
-        let row = `<tr style="background-color:${rowBg}">`;
+        let row = `<tr style="background-color:${neutralBg}">`;
 
         if (index === 0) {
-          row += `<td rowspan="${phenomCount}" style="text-align:center; vertical-align:middle;">Day ${item.day}</td>`;
-          row += `<td rowspan="${phenomCount}" style="text-align:center; vertical-align:middle;">${item.date}</td>`;
+          row += `<td rowspan="${phenomCount}" style="text-align:center; vertical-align:middle; background-color:${neutralBg}">Day ${item.day}</td>`;
+          row += `<td rowspan="${phenomCount}" style="text-align:center; vertical-align:middle; background-color:${neutralBg}">${item.date}</td>`;
           if (!hideCols) {
-            row += `<td rowspan="${phenomCount}" style="vertical-align:middle;">
+            row += `<td rowspan="${phenomCount}" style="vertical-align:middle; background-color:${textColBg}">
                                <strong>${areaText.english}</strong><br>
                                <span style="color:#555;">(${areaText.hindi})</span>
                             </td>`;
@@ -1506,12 +1598,12 @@ function renderTable() {
         }
 
         if (!hideCols)
-          row += `<td style="text-align:center; vertical-align:middle;">${name}</td>`;
-        row += `<td>${descEn}</td>`;
-        row += `<td>${descHi}</td>`;
+          row += `<td style="text-align:center; vertical-align:middle; background-color:${textColBg}">${name}</td>`;
+        row += `<td style="background-color:${textColBg}">${descEn}</td>`;
+        row += `<td style="background-color:${textColBg}">${descHi}</td>`;
 
-        if (index === 0) {
-          row += `<td rowspan="${phenomCount}" class="${item.colorClass}">${item.colorText}</td>`;
+        if (index === 0 && !hideWarningCol) {
+          row += `<td rowspan="${phenomCount}" style="background-color:${warningColBg}; font-weight:bold; text-align:center; vertical-align:middle;">${item.colorText}</td>`;
         }
 
         row += `</tr>`;
@@ -1944,12 +2036,8 @@ function clearSelection() {
     .fill(null)
     .map(() => ({}));
 
-  // Re-assign weeklyData reference based on current mode
-  const modeForecast = document.getElementById("modeForecast");
-  weeklyData =
-    modeForecast && modeForecast.checked
-      ? weeklyForecastData
-      : weeklyWarningData;
+  // Default to Forecast data for clearing if no mode is active, or clear both?
+  // For safety, we just reset the current view's data pointer
   districtPhenomenaMap = weeklyData[currentDay - 1];
 
   document.querySelectorAll("#districtGrid input").forEach((cb) => {
@@ -1984,12 +2072,6 @@ function clearForecastWarningData() {
     .fill(null)
     .map(() => ({}));
 
-  // Reset current working data based on active checkboxes
-  const modeForecast = document.getElementById("modeForecast");
-  weeklyData =
-    modeForecast && modeForecast.checked
-      ? weeklyForecastData
-      : weeklyWarningData;
   districtPhenomenaMap = weeklyData[currentDay - 1];
 
   saveData();
@@ -1998,10 +2080,10 @@ function clearForecastWarningData() {
   alert("Forecast and Warning data cleared.");
 }
 
-function generateTestData() {
+function generateDemoData() {
   if (
     !confirm(
-      "This will overwrite all current data with COMPREHENSIVE TEST data for 7 days covering all phenomena. Continue?",
+      "Start DEMO MODE? This will generate a 7-day forecast scenario covering All Bihar, Continuous Days, and Multi-Region logic.",
     )
   )
     return;
@@ -2022,6 +2104,8 @@ function generateTestData() {
     phenomId,
     intensity,
     color,
+    distribution = 1,
+    warningLevel = 0,
   ) => {
     const dayData = dataArray[dayIndex];
     districtIds.forEach((id) => {
@@ -2031,215 +2115,207 @@ function generateTestData() {
           phenomena: new Set(),
           intensities: {},
           color: color,
+          distribution: distribution,
+          warningLevel: warningLevel,
         };
       dayData[strId].phenomena.add(phenomId);
       dayData[strId].intensities[phenomId] = intensity;
       dayData[strId].color = color;
+      dayData[strId].distribution = distribution;
+      dayData[strId].warningLevel = warningLevel;
     });
   };
 
-  // --- Day 1: Thunderstorm + Gusty Wind + Hailstorm (Severe) ---
-  // Region: North-West + Patna (26) + Gaya (12)
-  const day1Districts = [...regionalGroups["north-west"].districts, 26, 12];
-  // Thunderstorm (Severe)
+  // --- Day 1: Multi-Region (NW + NE), Yellow Warning, Scattered ---
+  const day1Districts = [
+    ...regionalGroups["north-west"].districts,
+    ...regionalGroups["north-east"].districts,
+  ];
   setDayData(
     weeklyForecastData,
     0,
     day1Districts,
     "thunderstorm",
     2,
-    "#dc3545",
-  ); // Red
+    "#ffc107", // Yellow Color
+    2, // Scattered (Few Places)
+    1, // Yellow Warning
+  );
   setDayData(
     weeklyWarningData,
     0,
     day1Districts,
     "thunderstorm",
     2,
-    "rgb(255, 0, 0)",
+    "rgb(255, 255, 0)",
+    2,
+    1,
   );
-  // Gusty Wind (40-50 kmph)
-  setDayData(weeklyForecastData, 0, day1Districts, "gustywind", 1, "#dc3545");
+
+  // --- Day 2: ALL BIHAR, Orange Warning, Widespread ---
+  const allDistricts = districtsData.map((d) => d.id);
+  setDayData(
+    weeklyForecastData,
+    1,
+    allDistricts,
+    "heavyrain",
+    1,
+    "#fd7e14", // Orange Color
+    4, // Widespread (Most Places)
+    2, // Orange Warning
+  );
   setDayData(
     weeklyWarningData,
-    0,
-    day1Districts,
-    "gustywind",
+    1,
+    allDistricts,
+    "heavyrain",
+    1,
+    "rgb(255, 192, 0)",
+    4,
+    2,
+  );
+
+  // --- Day 3: Northern Region, Red Warning, Fairly Widespread (Continuous Start) ---
+  const northDistricts = regionalGroups["northern"].districts;
+  setDayData(
+    weeklyForecastData,
+    2,
+    northDistricts,
+    "heatwave",
+    1,
+    "#dc3545", // Red Color
+    3, // Fairly Widespread (Many Places)
+    3, // Red Warning
+  );
+  setDayData(
+    weeklyWarningData,
+    2,
+    northDistricts,
+    "heatwave",
     1,
     "rgb(255, 0, 0)",
+    3,
+    3,
   );
-  // Hailstorm
-  setDayData(weeklyForecastData, 0, day1Districts, "hailstorm", 0, "#dc3545");
+
+  // --- Day 4: SAME AS DAY 3 (Continuous Scenario) ---
+  setDayData(
+    weeklyForecastData,
+    3,
+    northDistricts,
+    "heatwave",
+    1,
+    "#dc3545",
+    3,
+    3,
+  );
   setDayData(
     weeklyWarningData,
+    3,
+    northDistricts,
+    "heatwave",
+    1,
+    "rgb(255, 0, 0)",
+    3,
+    3,
+  );
+
+  // --- Day 5: Specific Districts (Patna, Gaya), Yellow, Isolated ---
+  const specificDistricts = [26, 12, 24]; // Patna, Gaya, Nalanda
+  setDayData(
+    weeklyForecastData,
+    4,
+    specificDistricts,
+    "gustywind",
     0,
-    day1Districts,
+    "#ffc107", // Yellow
+    1, // Isolated (One or Two Places)
+    1, // Yellow Warning
+  );
+  setDayData(
+    weeklyWarningData,
+    4,
+    specificDistricts,
+    "gustywind",
+    0,
+    "rgb(255, 255, 0)",
+    1,
+    1,
+  );
+
+  // --- Day 6: Southern Region, Orange, Many Places, Multi-Phenom ---
+  const southDistricts = regionalGroups["southern"].districts;
+  setDayData(
+    weeklyForecastData,
+    5,
+    southDistricts,
+    "thunderstorm",
+    0,
+    "#fd7e14",
+    3,
+    2,
+  );
+  setDayData(
+    weeklyWarningData,
+    5,
+    southDistricts,
+    "thunderstorm",
+    0,
+    "rgb(255, 192, 0)",
+    3,
+    2,
+  );
+
+  setDayData(
+    weeklyForecastData,
+    5,
+    southDistricts,
     "hailstorm",
     0,
-    "rgb(255, 0, 0)",
-  );
-
-  // --- Day 2: Heavy Rain + Squall (Orange) ---
-  // Region: North-East + North-Central
-  const day2Districts = [
-    ...regionalGroups["north-east"].districts,
-    ...regionalGroups["north-central"].districts,
-  ];
-  setDayData(weeklyForecastData, 1, day2Districts, "heavyrain", 1, "#fd7e14"); // Very Heavy Rain
-  setDayData(
-    weeklyWarningData,
-    1,
-    day2Districts,
-    "heavyrain",
-    1,
-    "rgb(255, 192, 0)",
-  );
-  setDayData(weeklyForecastData, 1, day2Districts, "squall", 0, "#fd7e14"); // Moderate Squall
-  setDayData(
-    weeklyWarningData,
-    1,
-    day2Districts,
-    "squall",
-    0,
-    "rgb(255, 192, 0)",
-  );
-
-  // --- Day 3: Heatwave + Warm Night (Red) ---
-  // Region: Southern (SW + SC + SE)
-  const day3Districts = regionalGroups["southern"].districts;
-  setDayData(weeklyForecastData, 2, day3Districts, "heatwave", 1, "#dc3545"); // Severe Heatwave
-  setDayData(
-    weeklyWarningData,
-    2,
-    day3Districts,
-    "heatwave",
-    1,
-    "rgb(255, 0, 0)",
-  );
-  setDayData(weeklyForecastData, 2, day3Districts, "warmnight", 0, "#dc3545");
-  setDayData(
-    weeklyWarningData,
-    2,
-    day3Districts,
-    "warmnight",
-    0,
-    "rgb(255, 0, 0)",
-  );
-
-  // --- Day 4: SAME AS DAY 3 (Continuous Test) ---
-  setDayData(weeklyForecastData, 3, day3Districts, "heatwave", 1, "#dc3545");
-  setDayData(
-    weeklyWarningData,
+    "#fd7e14",
     3,
-    day3Districts,
-    "heatwave",
-    1,
-    "rgb(255, 0, 0)",
-  );
-  setDayData(weeklyForecastData, 3, day3Districts, "warmnight", 0, "#dc3545");
-  setDayData(
-    weeklyWarningData,
-    3,
-    day3Districts,
-    "warmnight",
-    0,
-    "rgb(255, 0, 0)",
-  );
-
-  // --- Day 5: Cold Wave + Cold Day + Dense Fog (Orange) ---
-  // Region: All Districts
-  const allDistricts = districtsData.map((d) => d.id);
-  setDayData(weeklyForecastData, 4, allDistricts, "coldwave", 0, "#fd7e14");
-  setDayData(
-    weeklyWarningData,
-    4,
-    allDistricts,
-    "coldwave",
-    0,
-    "rgb(255, 192, 0)",
-  );
-  setDayData(weeklyForecastData, 4, allDistricts, "coldday", 0, "#fd7e14");
-  setDayData(
-    weeklyWarningData,
-    4,
-    allDistricts,
-    "coldday",
-    0,
-    "rgb(255, 192, 0)",
-  );
-  setDayData(weeklyForecastData, 4, allDistricts, "densefog", 1, "#fd7e14"); // Dense Fog
-  setDayData(
-    weeklyWarningData,
-    4,
-    allDistricts,
-    "densefog",
-    1,
-    "rgb(255, 192, 0)",
-  );
-
-  // --- Day 6: Cyclone + Heavy Rain + Sea State (Red) ---
-  // Region: South-East (Hypothetical coastal impact)
-  const day6Districts = regionalGroups["south-east"].districts;
-  setDayData(weeklyForecastData, 5, day6Districts, "cyclone", 0, "#dc3545");
-  setDayData(
-    weeklyWarningData,
-    5,
-    day6Districts,
-    "cyclone",
-    0,
-    "rgb(255, 0, 0)",
-  );
-  setDayData(weeklyForecastData, 5, day6Districts, "heavyrain", 2, "#dc3545"); // Extremely Heavy
-  setDayData(
-    weeklyWarningData,
-    5,
-    day6Districts,
-    "heavyrain",
     2,
-    "rgb(255, 0, 0)",
   );
-  setDayData(weeklyForecastData, 5, day6Districts, "seastate", 0, "#dc3545"); // Rough
   setDayData(
     weeklyWarningData,
     5,
-    day6Districts,
-    "seastate",
+    southDistricts,
+    "hailstorm",
     0,
-    "rgb(255, 0, 0)",
+    "rgb(255, 192, 0)",
+    3,
+    2,
   );
 
-  // --- Day 7: Frost (Yellow) & Dry (Green) ---
-  // Region: Foothills get Frost, Rest get Dry
+  // --- Day 7: Foothills, Green (No Warning), Dry ---
   const foothillDistricts = regionalGroups["foothill"].districts;
-  const otherDistricts = allDistricts.filter(
-    (id) => !foothillDistricts.includes(id),
+  setDayData(
+    weeklyForecastData,
+    6,
+    foothillDistricts,
+    "dry",
+    0,
+    "#28a745",
+    0,
+    0,
   );
-
-  // Frost for Foothills
-  setDayData(weeklyForecastData, 6, foothillDistricts, "frost", 0, "#ffc107");
   setDayData(
     weeklyWarningData,
     6,
     foothillDistricts,
-    "frost",
+    "dry",
     0,
-    "rgb(255, 255, 0)",
+    "rgb(0, 153, 0)",
+    0,
+    0,
   );
-
-  // Dry for others
-  setDayData(weeklyForecastData, 6, otherDistricts, "dry", 0, "#28a745");
-  setDayData(weeklyWarningData, 6, otherDistricts, "dry", 0, "rgb(0, 153, 0)");
-
-  // Also add Snow to a specific district for demo (e.g. West Champaran - 38) on Day 7
-  setDayData(weeklyForecastData, 6, [38], "snow", 0, "#ffc107");
-  setDayData(weeklyWarningData, 6, [38], "snow", 0, "rgb(255, 255, 0)");
 
   saveData();
   // Refresh current view
   switchDay(currentDay);
   resetTableView();
   alert(
-    "Comprehensive Test Data Generated Successfully for 7 Days (with continuous days)!",
+    "Demo Mode Active! Check the Table View to see the 7-day forecast scenarios.",
   );
 }
 
@@ -2285,15 +2361,9 @@ function resetUI() {
 }
 
 function handleMapUpdate(mode) {
-  const modeForecast = document.getElementById("modeForecast");
-  const modeWarning = document.getElementById("modeWarning");
   if (mode === "forecast") {
-    if (modeForecast) modeForecast.checked = true;
-    if (modeWarning) modeWarning.checked = false;
     weeklyData = weeklyForecastData; // Ensure we are updating the right data
   } else {
-    if (modeForecast) modeForecast.checked = false;
-    if (modeWarning) modeWarning.checked = true;
     weeklyData = weeklyWarningData; // Ensure we are updating the right data
   }
   updateMapWithPhenomena();
@@ -2314,6 +2384,7 @@ function loadSavedData() {
               phenomena: new Set(data.phenomena),
               intensities: data.intensities || {},
               color: data.color,
+              distribution: data.distribution || 0,
             };
           }
           return newDay;
@@ -2326,6 +2397,8 @@ function loadSavedData() {
               phenomena: new Set(data.phenomena),
               intensities: data.intensities || {},
               color: data.color,
+              distribution: data.distribution || 0,
+              warningLevel: data.warningLevel || 0,
             };
           }
           return newDay;
@@ -2373,8 +2446,6 @@ function updateMapWithPhenomena() {
         : 0;
     });
 
-  const selectedColor = document.getElementById("globalColorSelect").value;
-
   activeDays.forEach((dayNum) => {
     const dayData = weeklyData[dayNum - 1];
     selectedDistricts.forEach((id) => {
@@ -2382,10 +2453,14 @@ function updateMapWithPhenomena() {
         dayData[id] = {
           phenomena: new Set(),
           intensities: {},
-          color: selectedColor || null,
+          color: currentColor, // Strictly use currentColor
+          distribution: currentDistribution,
+          warningLevel: currentWarning,
         };
       } else {
-        if (selectedColor) dayData[id].color = selectedColor;
+        dayData[id].color = currentColor; // Strictly update color (clears if null)
+        dayData[id].distribution = currentDistribution;
+        dayData[id].warningLevel = currentWarning;
       }
 
       Object.keys(activePhenomenaMap).forEach((pId) => {
@@ -2479,6 +2554,7 @@ function saveData() {
           phenomena: Array.from(set.phenomena),
           intensities: set.intensities,
           color: set.color,
+          distribution: set.distribution || 0,
         };
       }
       return newDay;
@@ -2627,12 +2703,19 @@ function initMap() {
   // Default zoom disabled as requested
   map = L.map("map", {
     center: [25.6, 85.6],
-    zoom: 7,
+    zoom: 8,
+    zoomSnap: 0.25,
     zoomControl: false, // We will add it if enabled, or use custom
     scrollWheelZoom: false,
     doubleClickZoom: false,
     dragging: false,
     boxZoom: false,
+  });
+
+  // Handle Responsive Resize
+  window.addEventListener("resize", () => {
+    if (map) map.invalidateSize();
+    updateMapElementScale();
   });
 
   // Sync Map View with Live Preview
@@ -2706,6 +2789,7 @@ function initMap() {
   updateMapDateHeader(); // Set initial date in new overlay
   updateLegend();
   loadLayoutPositions();
+  updateMapElementScale(); // Initial scale calculation
 
   // Layer Control (Hidden by default, toggled via UI buttons if needed, or we can add standard control)
   // We are using custom buttons for toggling, but let's add standard control for Satellite
@@ -2795,13 +2879,13 @@ function initMap() {
       }).addTo(map);
 
       // Fit map to Bihar bounds
-      map.fitBounds(geojsonLayer.getBounds());
+      map.fitBounds(geojsonLayer.getBounds(), { padding: [10, 10] });
 
       // Handle label visibility on zoom
       const toggleLabels = () => {
         const pane = document.querySelector(".leaflet-tooltip-pane");
         if (!pane) return;
-        if (map.getZoom() < 8) pane.classList.add("labels-hidden");
+        if (map.getZoom() < 6) pane.classList.add("labels-hidden");
         else pane.classList.remove("labels-hidden");
       };
       map.on("zoomend", toggleLabels);
@@ -2836,7 +2920,7 @@ function toggleMapZoom(enable) {
       map.removeControl(zoomControl);
       zoomControl = null;
     }
-    if (geojsonLayer) map.fitBounds(geojsonLayer.getBounds());
+    fitMapBounds();
   }
 }
 
@@ -3085,9 +3169,6 @@ function updateLegend() {
   let showForecast = true;
   if (currentReviewMode) {
     showForecast = currentReviewMode === "forecast";
-  } else {
-    const modeForecast = document.getElementById("modeForecast");
-    if (modeForecast) showForecast = modeForecast.checked;
   }
 
   if (showForecast) {
@@ -3358,10 +3439,10 @@ function updateMapHeaderText() {
 
   el.innerHTML = `
         <div>
-            <div style="text-align:center; color:${modeColor}; font-weight:bold; font-size:1.2em; margin-bottom:5px; white-space:nowrap;">
+            <div style="text-align:center; color:${modeColor}; font-weight:bold; font-size:1.4em; margin-bottom:5px; white-space:nowrap; line-height: 1.2;">
                 ${modeText} ${dayText} के लिए
             </div>
-            <div style="text-align:center; font-size:1em; color:#333;">
+            <div style="text-align:center; font-size:1.0em; font-weight:bold; color:#333; line-height: 1.2;">
                 (${startStr} के 0830 IST से ${endStr} के 0830 IST तक मान्य)
             </div>
         </div>
@@ -3452,7 +3533,12 @@ function enableDrag(selector) {
     if (e.deltaY < 0) scale += 0.1;
     else scale -= 0.1;
     scale = Math.min(Math.max(0.5, scale), 3); // Limit scale between 0.5x and 3x
-    el.style.transform = `scale(${scale})`;
+
+    if (el.id === "mapHeaderText" || el.id === "slideHeader") {
+      el.style.transform = `translateX(-50%) scale(${scale})`;
+    } else {
+      el.style.transform = `scale(${scale})`;
+    }
     el.setAttribute("data-scale", scale.toFixed(2));
   };
 }
@@ -3697,6 +3783,21 @@ function toggleCleanMap(checked) {
 }
 window.toggleCleanMap = toggleCleanMap;
 
+function updateMapElementScale() {
+  const mapDiv = document.getElementById("map");
+  if (!mapDiv) return;
+
+  // Base width for 100% scale (e.g., standard laptop)
+  const baseWidth = 1200;
+  const currentWidth = mapDiv.offsetWidth;
+
+  let scale = currentWidth / baseWidth;
+  // Clamp scale: min 0.5 (mobile), max 1.1 (large screens)
+  scale = Math.min(Math.max(scale, 0.5), 1.1);
+
+  document.documentElement.style.setProperty("--map-overlay-scale", scale);
+}
+
 function renderTableControls() {
   const container = document.getElementById("tableViewContainer");
   if (!container) return;
@@ -3725,6 +3826,18 @@ function renderTableControls() {
           <input type="checkbox" id="chkSortSeverity" onchange="renderTable()">
           Sort by Severity
       </label>
+      <label style="display: flex; align-items: center; gap: 5px; font-weight: bold; cursor: pointer; color: #2c3e50; margin-right: 15px;">
+          <input type="checkbox" id="chkCompactView" onchange="renderTable()">
+          Compact View
+      </label>
+      <label style="display: flex; align-items: center; gap: 5px; font-weight: bold; cursor: pointer; color: #2c3e50; margin-right: 15px;">
+          <input type="checkbox" id="chkHideWarningCol" onchange="renderTable(); document.getElementById('chkTextBgColor').disabled = !this.checked;">
+          Hide Warning Colour
+      </label>
+      <label title="Apply colour to text background" style="display: flex; align-items: center; gap: 5px; font-weight: bold; cursor: pointer; color: #2c3e50; margin-right: 15px;">
+          <input type="checkbox" id="chkTextBgColor" disabled onchange="renderTable()">
+          <i class="fas fa-fill-drip" style="font-size: 1.2em;"></i>
+      </label>
       <label style="margin-right: auto; display: flex; align-items: center; gap: 5px; font-weight: bold; cursor: pointer; color: #2c3e50;">
           <input type="checkbox" id="chkHideTableCols" onchange="renderTable()">
           Hide Area & Phenomenon
@@ -3732,6 +3845,7 @@ function renderTableControls() {
       <button class="btn-secondary" onclick="downloadTableImage()"><i class="fas fa-camera"></i> Image</button>
       <button class="btn-secondary" onclick="downloadTablePDF()"><i class="fas fa-file-pdf"></i> PDF</button>
       <button class="btn-secondary" onclick="downloadTableExcel()"><i class="fas fa-file-excel"></i> Excel</button>
+      <button class="btn-secondary" onclick="copyTableToClipboard()"><i class="fas fa-copy"></i> Copy</button>
   `;
 
   container.insertBefore(controls, container.firstChild);
@@ -3765,7 +3879,8 @@ function addExportHeader(table) {
   }
 
   const hideCols = document.getElementById("chkHideTableCols")?.checked;
-  const colSpan = hideCols ? 5 : 7;
+  const hideWarningCol = document.getElementById("chkHideWarningCol")?.checked;
+  const colSpan = (hideCols ? 5 : 7) - (hideWarningCol ? 1 : 0);
 
   const row = document.createElement("tr");
   row.id = "export-header-row";
@@ -3904,3 +4019,50 @@ function downloadTableExcel() {
   document.body.removeChild(a);
 }
 window.downloadTableExcel = downloadTableExcel;
+
+async function copyTableToClipboard() {
+  const originalTable = document.getElementById("imdTable");
+  if (!originalTable) return;
+
+  const tableClone = originalTable.cloneNode(true);
+  addExportHeader(tableClone);
+
+  const html = tableClone.outerHTML;
+
+  try {
+    const blobHtml = new Blob([html], { type: "text/html" });
+    const blobText = new Blob([tableClone.innerText], { type: "text/plain" });
+    const data = [
+      new ClipboardItem({
+        "text/html": blobHtml,
+        "text/plain": blobText,
+      }),
+    ];
+    await navigator.clipboard.write(data);
+    alert("Table copied to clipboard!");
+  } catch (err) {
+    console.error("Clipboard API failed, falling back to execCommand", err);
+    // Fallback
+    const container = document.createElement("div");
+    container.style.position = "fixed";
+    container.style.left = "-9999px";
+    container.appendChild(tableClone);
+    document.body.appendChild(container);
+
+    const range = document.createRange();
+    range.selectNode(tableClone);
+    window.getSelection().removeAllRanges();
+    window.getSelection().addRange(range);
+
+    try {
+      document.execCommand("copy");
+      alert("Table copied to clipboard!");
+    } catch (e) {
+      alert("Failed to copy table.");
+    }
+
+    window.getSelection().removeAllRanges();
+    document.body.removeChild(container);
+  }
+}
+window.copyTableToClipboard = copyTableToClipboard;

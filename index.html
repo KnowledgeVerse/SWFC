@@ -86,6 +86,24 @@
         text-align: center;
         text-transform: uppercase;
       }
+      /* Responsive Map Wrapper */
+      .map-wrapper {
+        width: 100%;
+        position: relative;
+        aspect-ratio: 5 / 4;
+        min-height: 600px;
+        background: #eef2f3; /* Placeholder background */
+      }
+      #map {
+        width: 100%;
+        height: 100% !important; /* Override any fixed height */
+      }
+      @media (max-width: 768px) {
+        .map-wrapper {
+          aspect-ratio: 1 / 1; /* Square for mobile */
+          min-height: 450px;
+        }
+      }
     </style>
   </head>
   <body>
@@ -710,40 +728,15 @@
 
           <!-- Place count -->
           <div class="place-count-panel">
-            <div style="display: flex; align-items: center; margin-bottom: 5px">
-              <input
-                type="checkbox"
-                id="modeForecast"
-                checked
-                style="
-                  transform: scale(1.2);
-                  margin-right: 8px;
-                  cursor: pointer;
-                "
-              />
-              <label for="modeForecast" style="cursor: pointer; margin: 0"
-                >FORECAST</label
-              >
-            </div>
+            <label style="margin-bottom: 5px; display: block"
+              >DISTRIBUTION</label
+            >
             <select id="globalPlaceCount" class="same-size"></select>
           </div>
 
           <!-- Warning Panel -->
           <div class="warning-panel">
-            <div style="display: flex; align-items: center; margin-bottom: 5px">
-              <input
-                type="checkbox"
-                id="modeWarning"
-                style="
-                  transform: scale(1.2);
-                  margin-right: 8px;
-                  cursor: pointer;
-                "
-              />
-              <label for="modeWarning" style="cursor: pointer; margin: 0"
-                >WARNING</label
-              >
-            </div>
+            <label style="margin-bottom: 5px; display: block">WARNING</label>
             <select id="globalWarning" class="same-size"></select>
           </div>
 
