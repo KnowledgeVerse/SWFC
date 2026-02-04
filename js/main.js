@@ -1285,7 +1285,7 @@ function renderTable() {
     const style = document.createElement("style");
     style.id = styleId;
     style.innerHTML = `
-      #imdTable { width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px; margin-top: 20px; }
+      #imdTable { width: 100%; border-collapse: collapse; font-family: Arial, sans-serif; font-size: 12px; margin-top: 0; }
       #imdTable th { background-color: #003366; color: white; padding: 12px; text-align: center; font-size: 14px; border: 1px solid #000; position: sticky; top: 0; z-index: 5; }
       #imdTable td { padding: 12px; border: 1px solid #000; vertical-align: top; color: #000; }
       .warning-red { background-color: #dc3545; color: white; font-weight: bold; text-align: center; vertical-align: middle; }
@@ -1297,6 +1297,11 @@ function renderTable() {
   }
 
   // Update Table Headers
+  const hideCols = document.getElementById("chkHideTableCols")?.checked;
+  const filterColor =
+    document.getElementById("filterTableColor")?.value || "all";
+  const sortBySeverity = document.getElementById("chkSortSeverity")?.checked;
+
   const table = document.getElementById("imdTable");
   if (table) {
     table.innerHTML = `
@@ -1304,8 +1309,8 @@ function renderTable() {
             <tr>
                 <th style="width: 5%;">DAY</th>
                 <th style="width: 10%;">DATE</th>
-                <th style="width: 20%;">AFFECTED AREA<br>(प्रभावित क्षेत्र)</th>
-                <th style="width: 15%;">WEATHER PHENOMENON<br>(मौसम घटना)</th>
+                ${!hideCols ? '<th style="width: 20%;">AFFECTED AREA<br>(प्रभावित क्षेत्र)</th>' : ""}
+                ${!hideCols ? '<th style="width: 15%;">WEATHER PHENOMENON<br>(मौसम घटना)</th>' : ""}
                 <th style="width: 20%;">WARNING DESCRIPTION<br>(English)</th>
                 <th style="width: 20%;">चेतावनी विवरण<br>(हिन्दी)</th>
                 <th style="width: 10%;">WARNING COLOUR<br>(चेतावनी रंग)</th>
@@ -1346,7 +1351,9 @@ function renderTable() {
   const tbody = document.querySelector("#imdTable tbody");
   if (!tbody) return;
 
+  tbody.innerHTML = ""; // Clear existing content
   const today = new Date(forecastBaseDate);
+  let rowDataList = [];
 
   for (let i = 1; i <= 7; i++) {
     const dayDate = new Date(today);
@@ -1358,9 +1365,6 @@ function renderTable() {
     });
 
     const dayData = weeklyData[i - 1];
-
-    const rowBg = i % 2 === 0 ? "#e6f3ff" : "#ffffff";
-
     const groups = {};
     Object.entries(dayData).forEach(([distId, data]) => {
       if (!data.phenomena || data.phenomena.size === 0) return;
@@ -1381,21 +1385,15 @@ function renderTable() {
     });
 
     if (Object.keys(groups).length === 0) {
-      const row = `
-        <tr style="background-color:${rowBg}">
-          <td style="text-align:center;">Day ${i}</td>
-          <td style="text-align:center;">${dateStr}</td>
-          <td>-</td>
-          <td style="text-align:center;">Nil</td>
-          <td>No Warning</td>
-          <td>कोई चेतावनी नहीं</td>
-          <td class="warning-green">🟢 Green (No Warning)</td>
-        </tr>`;
-      tbody.innerHTML += row;
+      rowDataList.push({
+        type: "no-warning",
+        day: i,
+        date: dateStr,
+        colorClass: "warning-green",
+        colorText: "🟢 Green (No Warning)",
+      });
     } else {
       Object.values(groups).forEach((group) => {
-        const areaText = getAreaText(group.districts);
-
         let colorClass = "warning-green";
         let colorText = "🟢 Green (No Warning)";
         const c = group.color;
@@ -1410,63 +1408,117 @@ function renderTable() {
           colorText = "🔴 Red (Warning)";
         }
 
-        const phenomCount = group.phenomena.length;
-
-        group.phenomena.forEach((pId, index) => {
-          const pDef = phenDefs.find((pd) => pd.id === pId);
-          let name = pDef ? `${pDef.english}<br>(${pDef.hindi})` : pId;
-          const idx = group.intensities[pId] || 0;
-          const eText = intensityLinesEn[pId][idx];
-          const hText = intensityLines[pId][idx];
-
-          const speedMatch = eText.match(/(\d+-\d+\s*kmph)/i);
-          if (speedMatch) {
-            name += `<br><small>(${speedMatch[0]})</small>`;
-          }
-
-          // Rule 2: Warning Description Formatting
-          const phenomNameEn = eText.replace(/likely\.?$/i, "").trim(); // Extract phenomenon from intensity text
-          // For Hindi, we use the Phenomenon Name from phenDefs as per Rule 2 structure
-          const phenomNameHi = pDef
-            ? pDef.hindi
-            : hText.replace(/होने की संभावना है।?$/i, "").trim();
-
-          let descEn, descHi;
-          if (areaText.isAll) {
-            descEn = `${phenomNameEn} likely to occur at one or two places in most parts of the state.`;
-            descHi = `राज्य के अधिकांश भागों में ${phenomNameHi} होने की संभावना है।`;
-          } else {
-            descEn = `${phenomNameEn} likely to occur at one or two places in the ${areaText.english}.`;
-            // Strip "राज्य के " from areaText.hindi for the description sentence to avoid duplication if present
-            const areaHiClean = areaText.hindi.replace(/^राज्य के /, "");
-            descHi = `राज्य के ${areaHiClean} में कुछ स्थानों पर ${phenomNameHi} होने की संभावना है।`;
-          }
-
-          let row = `<tr style="background-color:${rowBg}">`;
-
-          if (index === 0) {
-            row += `<td rowspan="${phenomCount}" style="text-align:center; vertical-align:middle;">Day ${i}</td>`;
-            row += `<td rowspan="${phenomCount}" style="text-align:center; vertical-align:middle;">${dateStr}</td>`;
-            row += `<td rowspan="${phenomCount}" style="vertical-align:middle;">
-                           <strong>${areaText.english}</strong><br>
-                           <span style="color:#555;">(${areaText.hindi})</span>
-                        </td>`;
-          }
-
-          row += `<td style="text-align:center; vertical-align:middle;">${name}</td>`;
-          row += `<td>${descEn}</td>`;
-          row += `<td>${descHi}</td>`;
-
-          if (index === 0) {
-            row += `<td rowspan="${phenomCount}" class="${colorClass}">${colorText}</td>`;
-          }
-
-          row += `</tr>`;
-          tbody.innerHTML += row;
+        rowDataList.push({
+          type: "warning",
+          day: i,
+          date: dateStr,
+          group: group,
+          colorClass: colorClass,
+          colorText: colorText,
         });
       });
     }
   }
+
+  // Filter
+  if (filterColor !== "all") {
+    rowDataList = rowDataList.filter((item) => item.colorClass === filterColor);
+  }
+
+  // Sort
+  if (sortBySeverity) {
+    const severityScore = {
+      "warning-red": 3,
+      "warning-orange": 2,
+      "warning-yellow": 1,
+      "warning-green": 0,
+    };
+    rowDataList.sort((a, b) => {
+      const scoreA = severityScore[a.colorClass] || 0;
+      const scoreB = severityScore[b.colorClass] || 0;
+      if (scoreB !== scoreA) return scoreB - scoreA; // Descending severity
+      return a.day - b.day; // Ascending day
+    });
+  }
+
+  // Render
+  rowDataList.forEach((item, index) => {
+    const rowBg = index % 2 === 0 ? "#ffffff" : "#e6f3ff";
+
+    if (item.type === "no-warning") {
+      const row = `
+        <tr style="background-color:${rowBg}">
+          <td style="text-align:center;">Day ${item.day}</td>
+          <td style="text-align:center;">${item.date}</td>
+          ${!hideCols ? "<td>-</td>" : ""}
+          ${!hideCols ? '<td style="text-align:center;">Nil</td>' : ""}
+          <td>No Warning</td>
+          <td>कोई चेतावनी नहीं</td>
+          <td class="${item.colorClass}">${item.colorText}</td>
+        </tr>`;
+      tbody.innerHTML += row;
+    } else {
+      const group = item.group;
+      const areaText = getAreaText(group.districts);
+      const phenomCount = group.phenomena.length;
+
+      group.phenomena.forEach((pId, index) => {
+        const pDef = phenDefs.find((pd) => pd.id === pId);
+        let name = pDef ? `${pDef.english}<br>(${pDef.hindi})` : pId;
+        const idx = group.intensities[pId] || 0;
+        const eText = intensityLinesEn[pId][idx];
+        const hText = intensityLines[pId][idx];
+
+        const speedMatch = eText.match(/(\d+-\d+\s*kmph)/i);
+        if (speedMatch) {
+          name += `<br><small>(${speedMatch[0]})</small>`;
+        }
+
+        // Rule 2: Warning Description Formatting
+        const phenomNameEn = eText.replace(/likely\.?$/i, "").trim(); // Extract phenomenon from intensity text
+        // For Hindi, we use the Phenomenon Name from phenDefs as per Rule 2 structure
+        const phenomNameHi = pDef
+          ? pDef.hindi
+          : hText.replace(/होने की संभावना है।?$/i, "").trim();
+
+        let descEn, descHi;
+        if (areaText.isAll) {
+          descEn = `${phenomNameEn} likely to occur at one or two places in most parts of the state.`;
+          descHi = `राज्य के अधिकांश भागों में ${phenomNameHi} होने की संभावना है।`;
+        } else {
+          descEn = `${phenomNameEn} likely to occur at one or two places in the ${areaText.english}.`;
+          // Strip "राज्य के " from areaText.hindi for the description sentence to avoid duplication if present
+          const areaHiClean = areaText.hindi.replace(/^राज्य के /, "");
+          descHi = `राज्य के ${areaHiClean} में कुछ स्थानों पर ${phenomNameHi} होने की संभावना है।`;
+        }
+
+        let row = `<tr style="background-color:${rowBg}">`;
+
+        if (index === 0) {
+          row += `<td rowspan="${phenomCount}" style="text-align:center; vertical-align:middle;">Day ${item.day}</td>`;
+          row += `<td rowspan="${phenomCount}" style="text-align:center; vertical-align:middle;">${item.date}</td>`;
+          if (!hideCols) {
+            row += `<td rowspan="${phenomCount}" style="vertical-align:middle;">
+                               <strong>${areaText.english}</strong><br>
+                               <span style="color:#555;">(${areaText.hindi})</span>
+                            </td>`;
+          }
+        }
+
+        if (!hideCols)
+          row += `<td style="text-align:center; vertical-align:middle;">${name}</td>`;
+        row += `<td>${descEn}</td>`;
+        row += `<td>${descHi}</td>`;
+
+        if (index === 0) {
+          row += `<td rowspan="${phenomCount}" class="${item.colorClass}">${item.colorText}</td>`;
+        }
+
+        row += `</tr>`;
+        tbody.innerHTML += row;
+      });
+    }
+  });
 }
 
 async function download7DaysPDF() {
@@ -3659,6 +3711,24 @@ function renderTableControls() {
   controls.style.justifyContent = "flex-end";
 
   controls.innerHTML = `
+      <label style="display: flex; align-items: center; gap: 5px; font-weight: bold; color: #2c3e50; margin-right: 15px;">
+          Filter:
+          <select id="filterTableColor" onchange="renderTable()" style="padding: 4px; border-radius: 4px; border: 1px solid #ccc;">
+              <option value="all">All</option>
+              <option value="warning-red">Red</option>
+              <option value="warning-orange">Orange</option>
+              <option value="warning-yellow">Yellow</option>
+              <option value="warning-green">Green</option>
+          </select>
+      </label>
+      <label style="display: flex; align-items: center; gap: 5px; font-weight: bold; cursor: pointer; color: #2c3e50; margin-right: 15px;">
+          <input type="checkbox" id="chkSortSeverity" onchange="renderTable()">
+          Sort by Severity
+      </label>
+      <label style="margin-right: auto; display: flex; align-items: center; gap: 5px; font-weight: bold; cursor: pointer; color: #2c3e50;">
+          <input type="checkbox" id="chkHideTableCols" onchange="renderTable()">
+          Hide Area & Phenomenon
+      </label>
       <button class="btn-secondary" onclick="downloadTableImage()"><i class="fas fa-camera"></i> Image</button>
       <button class="btn-secondary" onclick="downloadTablePDF()"><i class="fas fa-file-pdf"></i> PDF</button>
       <button class="btn-secondary" onclick="downloadTableExcel()"><i class="fas fa-file-excel"></i> Excel</button>
@@ -3694,11 +3764,14 @@ function addExportHeader(table) {
     rangeStr = `${startDay} ${startMonth} ${startYear} – ${endDay} ${endMonth} ${endYear}`;
   }
 
+  const hideCols = document.getElementById("chkHideTableCols")?.checked;
+  const colSpan = hideCols ? 5 : 7;
+
   const row = document.createElement("tr");
   row.id = "export-header-row";
   row.style.backgroundColor = "#ffffff";
   row.innerHTML = `
-        <td colspan="7" style="text-align: center; border: none; padding: 15px; color: #000;">
+        <td colspan="${colSpan}" style="text-align: center; border: none; padding: 15px; color: #000;">
             <div style="font-size: 18px; font-weight: bold; font-family: Arial, sans-serif;">Issued On: ${issueStr}: Weather Warning for Next 7 Days (${rangeStr})</div>
         </td>
     `;
