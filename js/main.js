@@ -355,7 +355,7 @@ const phenDefs = [
   },
   {
     id: "heatwave",
-    hindi: "गर्म लहर",
+    hindi: "उष्ण लहर",
     english: "Heat Wave",
     icon: "fa-fire",
     image: "assets/weather-icons/heatwave.png",
@@ -390,14 +390,14 @@ const phenDefs = [
   },
   {
     id: "thunderstorm",
-    hindi: "गरज/चमक",
+    hindi: "मेघ गर्जन, वज्रपात",
     english: "Thunderstorm/Lightning",
     icon: "fa-cloud-bolt",
     image: "assets/weather-icons/thunderstorm.png",
   },
   {
     id: "gustywind",
-    hindi: "झंझावात",
+    hindi: "तेज़ हवा",
     english: "Gusty Wind",
     icon: "fa-wind",
     image: "assets/weather-icons/gustywind.png",
