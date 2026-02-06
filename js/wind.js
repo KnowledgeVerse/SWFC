@@ -47,7 +47,7 @@ function initWindDisplay() {
     .header-content { text-align: center; text-shadow: 0 1px 1px rgba(255,255,255,0.8); margin-bottom: 8px; }
     .header-content h1 { margin: 0; color: #2c3e50; font-size: 1.8em; font-weight: 800; }
     #map { width: 100%; height: 100%; border-radius: 15px; z-index: 1; }
-    .display-content-area { margin-top: 120px; flex: 1; width: 99%; max-width: 100%; margin-left: auto; margin-right: auto; height: calc(100vh - 130px); position: relative; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); background: white; border: 4px solid #2c3e50; }
+    .display-content-area { margin-top: 120px; flex: 1; width: 99%; max-width: 100%; margin-left: auto; margin-right: auto; height: calc(100vh - 130px); min-height: 600px; position: relative; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); background: white; border: 4px solid #2c3e50; }
     .live-controls-row { display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto; justify-content: center; align-items: center; width: 100%; padding: 0 20px; white-space: nowrap; scrollbar-width: thin; }
     .live-controls-bottom { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; gap: 15px; align-items: center; background: rgba(255,255,255,0.95); padding: 10px 25px; border-radius: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
     .control-btn { border: none; background: none; cursor: pointer; font-size: 1.4em; color: #2c3e50; transition: 0.2s; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; }
@@ -99,6 +99,15 @@ function initWindDisplay() {
     .theme-current { border-left-color: #2ecc71; }
     .theme-max { border-left-color: #e74c3c; }
     .theme-min { border-left-color: #3498db; }
+    
+    /* Chart Modal */
+    .chart-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 3000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+    .chart-content { background: white; padding: 20px; border-radius: 15px; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.3); animation: slideUp 0.3s ease; }
+    .close-chart { position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer; color: #555; transition: 0.2s; }
+    .close-chart:hover { color: #000; transform: scale(1.1); }
+    .chart-btn { padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; color: white; font-weight: bold; display: flex; align-items: center; gap: 5px; font-size: 13px; transition: 0.2s; }
+    .chart-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   `;
   document.head.appendChild(style);
 
@@ -1137,6 +1146,7 @@ window.updateChartComparison = updateChartComparison;
 
 function closeChartModal() {
   document.getElementById("chartModal").style.display = "none";
+  if (map) map.invalidateSize();
 }
 window.closeChartModal = closeChartModal;
 
