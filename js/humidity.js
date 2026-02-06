@@ -4,11 +4,11 @@ let map,
   streetLayer,
   satelliteLayer,
   hybridLayer;
-let districtTemps = {};
+let districtHumidity = {};
 let isLayoutEditMode = false;
 let zoomControl = null;
 let currentLang = localStorage.getItem("lang") || "hi";
-let tempMode = "current"; // 'current', 'max', 'min'
+let humidityMode = "current"; // 'current', 'max', 'min', 'avg'
 let availableDates = [];
 let selectedDate = null; // YYYY-MM-DD
 let compareDate = null; // YYYY-MM-DD
@@ -18,27 +18,26 @@ let currentChartOid = null;
 
 const uiTranslations = {
   hi: {
-    title: "बिहार लाइव तापमान (Live Temperature)",
+    title: "बिहार लाइव आर्द्रता (Live Humidity)",
     refresh: "रिफ्रेश करें",
   },
   en: {
-    title: "Bihar Live Temperature",
+    title: "Bihar Live Humidity",
     refresh: "Refresh Data",
   },
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-  initTempDisplay();
+  initHumidityDisplay();
 
   if (localStorage.getItem("darkMode") === "true") {
     document.body.classList.add("dark-mode");
   }
 });
 
-function initTempDisplay() {
+function initHumidityDisplay() {
   let root = document.getElementById("liveRoot");
 
-  // Inject CSS (Reusing live.js styles for consistency)
   const style = document.createElement("style");
   style.innerHTML = `
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; font-family: "Noto Sans Devanagari", sans-serif; background: #f4f7f6; }
@@ -47,46 +46,19 @@ function initTempDisplay() {
     .header-content { text-align: center; text-shadow: 0 1px 1px rgba(255,255,255,0.8); margin-bottom: 8px; }
     .header-content h1 { margin: 0; color: #2c3e50; font-size: 1.8em; font-weight: 800; }
     #map { width: 100%; height: 100%; border-radius: 15px; z-index: 1; }
-    .display-content-area { margin-top: 120px; flex: 1; width: 99%; max-width: 100%; margin-left: auto; margin-right: auto; height: calc(100vh - 130px); position: relative; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); background: white; border: 4px solid #2c3e50; }
+    .display-content-area { margin-top: 120px; flex: 1; width: 99%; max-width: 100%; margin-left: auto; margin-right: auto; height: calc(100vh - 130px); min-height: 600px; position: relative; border-radius: 15px; overflow: hidden; box-shadow: 0 5px 15px rgba(0,0,0,0.1); background: white; border: 4px solid #2c3e50; }
     .live-controls-row { display: flex; gap: 8px; flex-wrap: nowrap; overflow-x: auto; justify-content: center; align-items: center; width: 100%; padding: 0 20px; white-space: nowrap; scrollbar-width: thin; }
     .live-controls-bottom { position: absolute; bottom: 20px; left: 50%; transform: translateX(-50%); z-index: 1000; display: flex; gap: 15px; align-items: center; background: rgba(255,255,255,0.95); padding: 10px 25px; border-radius: 30px; box-shadow: 0 5px 15px rgba(0,0,0,0.2); }
     .control-btn { border: none; background: none; cursor: pointer; font-size: 1.4em; color: #2c3e50; transition: 0.2s; display: flex; align-items: center; justify-content: center; width: 40px; height: 40px; border-radius: 50%; }
     .control-btn:hover { background: rgba(0,0,0,0.05); color: #667eea; transform: scale(1.1); }
     .layer-btn { padding: 6px 12px; border: 1px solid #ccc; border-radius: 4px; cursor: pointer; background: white; font-size: 0.9em; font-weight: 600; color: #555; }
     .layer-btn.active { background: #667eea; color: white; border-color: #667eea; }
-    
-    /* Tricolor Gradient Background */
-    .tricolor-glow {
-        background: linear-gradient(90deg, #FF9933, #FFFFFF, #138808, #FF9933);
-        background-size: 200% auto;
-        animation: tricolorMove 3s linear infinite;
-        color: #000080;
-        padding: 5px 20px;
-        border-radius: 10px;
-        box-shadow: 0 4px 10px rgba(0,0,0,0.2);
-        display: inline-block;
-    }
-    @keyframes tricolorMove {
-        to { background-position: 200% center; }
-    }
-    
-    .temp-block {
-        background: transparent;
-        border: none;
-        box-shadow: none;
-        display: flex;
-        flex-direction: column;
-        align-items: center;
-        justify-content: center;
-        text-align: center;
-        padding: 0;
-        min-width: auto;
-    }
+    .tricolor-glow { background: linear-gradient(90deg, #FF9933, #FFFFFF, #138808, #FF9933); background-size: 200% auto; animation: tricolorMove 3s linear infinite; color: #000080; padding: 5px 20px; border-radius: 10px; box-shadow: 0 4px 10px rgba(0,0,0,0.2); display: inline-block; }
+    @keyframes tricolorMove { to { background-position: 200% center; } }
+    .temp-block { background: transparent; border: none; box-shadow: none; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; padding: 0; min-width: auto; }
     .t-name { font-size: 11px; font-weight: 700; color: #2c3e50; text-shadow: 2px 2px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff; margin-bottom: 1px; font-family: 'Verdana', sans-serif; text-transform: uppercase; letter-spacing: 0.5px; }
     .t-val { font-size: 16px; font-weight: 900; margin: 0; text-shadow: 2px 2px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff; }
     .t-diff { font-size: 12px; font-weight: 800; margin-top: 0; text-shadow: 2px 2px 0 #fff, -1px -1px 0 #fff, 1px -1px 0 #fff, -1px 1px 0 #fff, 1px 1px 0 #fff; }
-    
-    /* Stats Panels */
     .stats-container { position: absolute; top: 90px; right: 10px; z-index: 1001; display: flex; flex-direction: column; gap: 8px; pointer-events: auto; }
     .stats-box { background: rgba(255,255,255,0.95); border-radius: 6px; padding: 8px 12px; box-shadow: 0 2px 6px rgba(0,0,0,0.2); width: 210px; font-size: 12px; border-left: 5px solid #333; transition: transform 0.2s; }
     .stats-box:hover { transform: translateX(-5px); }
@@ -94,11 +66,16 @@ function initTempDisplay() {
     .stats-row { display: flex; justify-content: space-between; margin-bottom: 3px; align-items: center; }
     .stats-label { color: #555; font-weight: 600; }
     .stats-val { font-weight: 800; font-size: 13px; color: #000; }
+    .theme-current { border-left-color: #00bcd4; }
     
-    /* Theme Colors for Stats */
-    .theme-current { border-left-color: #f39c12; }
-    .theme-max { border-left-color: #c0392b; }
-    .theme-min { border-left-color: #3498db; }
+    /* Chart Modal */
+    .chart-modal { position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.5); z-index: 3000; display: none; justify-content: center; align-items: center; backdrop-filter: blur(5px); }
+    .chart-content { background: white; padding: 20px; border-radius: 15px; width: 90%; max-width: 800px; max-height: 90vh; overflow-y: auto; position: relative; box-shadow: 0 10px 25px rgba(0,0,0,0.3); animation: slideUp 0.3s ease; }
+    .close-chart { position: absolute; top: 10px; right: 15px; font-size: 24px; cursor: pointer; color: #555; transition: 0.2s; }
+    .close-chart:hover { color: #000; transform: scale(1.1); }
+    .chart-btn { padding: 6px 12px; border-radius: 4px; border: none; cursor: pointer; color: white; font-weight: bold; display: flex; align-items: center; gap: 5px; font-size: 13px; transition: 0.2s; }
+    .chart-btn:hover { opacity: 0.9; transform: translateY(-1px); }
+    @keyframes slideUp { from { transform: translateY(20px); opacity: 0; } to { transform: translateY(0); opacity: 1; } }
   `;
   document.head.appendChild(style);
 
@@ -106,14 +83,14 @@ function initTempDisplay() {
     <header class="live-header">
         <img src="assets/logo.png" style="height: 70px; position: absolute; top: 20px; left: 20px;">
         <div class="header-content">
-            <h1 id="liveTitle" class="tricolor-glow">बिहार लाइव तापमान (Live Temperature)</h1>
+            <h1 id="liveTitle" class="tricolor-glow">बिहार लाइव आर्द्रता (Live Humidity)</h1>
         </div>
         
         <div class="live-controls-row">
-            <button class="layer-btn active" id="btnTempCurrent" onclick="setTempMode('current')" title="Current Temperature"><i class="fas fa-clock"></i> Current</button>
-            <button class="layer-btn" id="btnTempMax" onclick="setTempMode('max')" title="Max Temp"><i class="fas fa-temperature-high"></i> Max</button>
-            <button class="layer-btn" id="btnTempMin" onclick="setTempMode('min')" title="Min Temp"><i class="fas fa-temperature-low"></i> Min</button>
-            <button class="layer-btn" id="btnTempAvg" onclick="setTempMode('avg')" title="Average Temp"><i class="fas fa-percent"></i> Avg</button>
+            <button class="layer-btn active" id="btnHumCurrent" onclick="setHumidityMode('current')" title="Current Humidity"><i class="fas fa-clock"></i> Current</button>
+            <button class="layer-btn" id="btnHumMax" onclick="setHumidityMode('max')" title="Max Humidity"><i class="fas fa-arrow-up"></i> Max</button>
+            <button class="layer-btn" id="btnHumMin" onclick="setHumidityMode('min')" title="Min Humidity"><i class="fas fa-arrow-down"></i> Min</button>
+            <button class="layer-btn" id="btnHumAvg" onclick="setHumidityMode('avg')" title="Average Humidity"><i class="fas fa-percent"></i> Avg</button>
             <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
             
             <select id="dateSelect" onchange="handleDateChange(this.value)" class="layer-btn" style="font-weight:bold; cursor:pointer;"></select>
@@ -122,9 +99,9 @@ function initTempDisplay() {
             
             <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
             <button class="layer-btn" onclick="window.location.href='index.html'" title="Home"><i class="fas fa-home"></i></button>
+            <button class="layer-btn" onclick="window.location.href='temp.html'" title="Temperature Map"><i class="fas fa-temperature-high"></i></button>
             <button class="layer-btn" onclick="window.location.href='wind.html'" title="Wind Map"><i class="fas fa-wind"></i></button>
             <button class="layer-btn" onclick="window.location.href='rain.html'" title="Rain Map"><i class="fas fa-cloud-showers-heavy"></i></button>
-            <button class="layer-btn" onclick="window.location.href='humidity.html'" title="Humidity Map"><i class="fas fa-tint"></i></button>
             <button class="layer-btn active" onclick="setLayer('street')" id="btnStreet">Street</button>
             <button class="layer-btn" onclick="setLayer('satellite')" id="btnSat">Satellite</button>
             <button class="layer-btn" onclick="setLayer('hybrid')" id="btnHybrid">Hybrid</button>
@@ -141,12 +118,9 @@ function initTempDisplay() {
     </header>
         <div class="display-content-area">
             <div id="map"></div>
-            
-            <!-- Header inside Map Grid -->
             <div id="slideHeader" style="position: absolute; top: 10px; left: 50%; transform: translateX(-50%); z-index: 1000; text-align: center; font-size: 1.2em; font-weight: bold; color: #2c3e50; padding: 5px 20px; background: rgba(255,255,255,0.9); border: 2px solid #2c3e50; border-radius: 8px; box-shadow: 0 2px 5px rgba(0,0,0,0.2); min-width: 300px; pointer-events: auto;">
                 Fetching Data...
             </div>
-            
             <div class="live-controls-bottom">
                 <button class="control-btn" onclick="refreshData()" title="Refresh Data"><i class="fas fa-sync-alt"></i></button>
                 <button class="control-btn" onclick="fitMapBounds()" title="Fit Map"><i class="fas fa-compress-arrows-alt"></i></button>
@@ -155,19 +129,13 @@ function initTempDisplay() {
                 <button class="control-btn" onclick="downloadMapPDF()" title="Download PDF"><i class="fas fa-file-pdf"></i></button>
             </div>
         </div>
-        <div id="tempLegend" class="info legend" style="position:absolute; bottom:20px; right:10px; z-index:1001; background:rgba(255,255,255,0.9); padding:10px; border-radius:8px; box-shadow:0 0 15px rgba(0,0,0,0.2); pointer-events:auto;"></div>
+        <div id="humLegend" class="info legend" style="position:absolute; bottom:20px; right:10px; z-index:1001; background:rgba(255,255,255,0.9); padding:10px; border-radius:8px; box-shadow:0 0 15px rgba(0,0,0,0.2); pointer-events:auto;"></div>
         
         <!-- Chart Modal -->
         <div id="chartModal" class="chart-modal">
             <div class="chart-content">
                 <span class="close-chart" onclick="closeChartModal()">&times;</span>
                 <div style="margin-bottom:15px; text-align:center; display:flex; justify-content:center; align-items:center; gap:10px; flex-wrap:wrap;">
-                    <div style="display:flex; align-items:center; gap:5px; background:#f8f9fa; padding:5px 10px; border-radius:5px; border:1px solid #ddd;">
-                        <label style="font-weight:bold; font-size:12px;">From:</label>
-                        <input type="date" id="chartStartDate" onchange="updateTrendChartFilter()" style="border:1px solid #ccc; padding:3px; border-radius:3px;">
-                        <label style="font-weight:bold; font-size:12px;">To:</label>
-                        <input type="date" id="chartEndDate" onchange="updateTrendChartFilter()" style="border:1px solid #ccc; padding:3px; border-radius:3px;">
-                    </div>
                     <div>
                         <label style="font-weight:bold; margin-right:5px; color:#333;">Compare:</label>
                         <select id="compareDistrictSelect" onchange="updateChartComparison(this.value)" style="padding:5px; border-radius:4px; border:1px solid #ccc; cursor:pointer;">
@@ -187,7 +155,7 @@ function initTempDisplay() {
 
   initMap();
   updateLanguageUI();
-  updateTempLegend();
+  updateHumidityLegend();
   initDateSelectors();
 }
 
@@ -205,12 +173,10 @@ function initMap() {
     "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
     { maxZoom: 18, attribution: "© OpenStreetMap" },
   );
-
   satelliteLayer = L.tileLayer(
     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
     { maxZoom: 18, attribution: "Tiles &copy; Esri" },
   );
-
   hybridLayer = L.tileLayer(
     "http://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}",
     { attribution: "Google", maxZoom: 20 },
@@ -223,11 +189,6 @@ function initMap() {
     map.invalidateSize();
   }, 200);
 
-  window.addEventListener("resize", () => {
-    map.invalidateSize();
-  });
-
-  // Add Static Overlays
   const mapContainer = map.getContainer();
   const overlaysContainer = L.DomUtil.create(
     "div",
@@ -259,21 +220,15 @@ function initMap() {
 
   updateDateOverlay();
 
-  // Load Shapefile
   const basePath = "data/Bihar_Districts_Shapefile/Bihar";
   Promise.all([
-    fetch(`${basePath}.shp`).then((r) => {
-      if (!r.ok) throw new Error("SHP file not found");
-      return r.arrayBuffer();
-    }),
-    fetch(`${basePath}.dbf`).then((r) => {
-      if (!r.ok) throw new Error("DBF file not found");
-      return r.arrayBuffer();
-    }),
-    fetch(`${basePath}.prj`).then((r) => {
-      if (!r.ok) return null;
-      return r.text();
-    }),
+    fetch(`${basePath}.shp`).then((r) =>
+      r.ok ? r.arrayBuffer() : Promise.reject("SHP not found"),
+    ),
+    fetch(`${basePath}.dbf`).then((r) =>
+      r.ok ? r.arrayBuffer() : Promise.reject("DBF not found"),
+    ),
+    fetch(`${basePath}.prj`).then((r) => (r.ok ? r.text() : null)),
   ])
     .then(([shpBuffer, dbfBuffer, prjStr]) => {
       const geojson = shp.combine([
@@ -288,56 +243,35 @@ function initMap() {
           color: "#333",
           fillOpacity: 0.3,
         },
-        onEachFeature: (feature, layer) => {
-          // Tooltip removed to prevent overlap with custom marker
-          layer.on("click", () => {
-            openTrendChart(
-              feature.properties.OBJECTID,
-              feature.properties.D_NAME,
-            );
-          });
-        },
       }).addTo(map);
       map.fitBounds(geojsonLayer.getBounds());
-
-      // Fetch Temperatures after map load
-      fetchTemperatures();
-      // Auto-refresh every 15 minutes
-      setInterval(fetchTemperatures, 900000);
+      fetchHumidity();
+      setInterval(fetchHumidity, 900000);
     })
-    .catch((err) => {
-      console.error("Map loading failed:", err);
-      alert("Map loading failed: " + err.message);
-    });
+    .catch((err) => console.error("Map loading failed:", err));
 }
 
 function initDateSelectors() {
   const today = new Date();
   availableDates = [];
-  // Generate last 31 days (Today + 30 past days)
   for (let i = 0; i < 31; i++) {
     const d = new Date(today);
     d.setDate(today.getDate() - i);
-    const dateStr = d.toISOString().split("T")[0];
-    availableDates.push(dateStr);
+    availableDates.push(d.toISOString().split("T")[0]);
   }
-  selectedDate = availableDates[0]; // Default to today
+  selectedDate = availableDates[0];
 }
 
-function fetchTemperatures() {
+function fetchHumidity() {
   if (!geojsonLayer) return;
-
   const header = document.getElementById("slideHeader");
-  if (header) header.innerText = "Updating Temperatures...";
+  if (header) header.innerText = "Updating Humidity Data...";
 
   const requests = [];
-
   geojsonLayer.eachLayer((layer) => {
     const center = layer.getBounds().getCenter();
     const oid = String(layer.feature.properties.OBJECTID);
-
-    // Open-Meteo API
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${center.lat}&longitude=${center.lng}&current_weather=true&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m&past_days=30&timezone=auto`;
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${center.lat}&longitude=${center.lng}&current=relative_humidity_2m&daily=relative_humidity_2m_max,relative_humidity_2m_min&hourly=relative_humidity_2m&past_days=30&timezone=auto`;
 
     requests.push(
       fetch(url)
@@ -345,17 +279,13 @@ function fetchTemperatures() {
         .then((data) => {
           if (data.daily && data.hourly) {
             const history = {};
-            const timeArray = data.daily.time;
+            data.daily.time.forEach((dateStr, index) => {
+              const max = data.daily.relative_humidity_2m_max[index];
+              const min = data.daily.relative_humidity_2m_min[index];
 
-            // Process each day
-            timeArray.forEach((dateStr, index) => {
-              const max = data.daily.temperature_2m_max[index];
-              const min = data.daily.temperature_2m_min[index];
-
-              // Calculate Avg from Hourly (24 hours per day)
               const startHour = index * 24;
               const endHour = startHour + 24;
-              const hourlySlice = data.hourly.temperature_2m.slice(
+              const hourlySlice = data.hourly.relative_humidity_2m.slice(
                 startHour,
                 endHour,
               );
@@ -372,12 +302,11 @@ function fetchTemperatures() {
                 count > 0
                   ? parseFloat((sum / count).toFixed(1))
                   : (max + min) / 2;
-
               history[dateStr] = { max, min, avg };
             });
 
-            districtTemps[oid] = {
-              current: data.current_weather.temperature,
+            districtHumidity[oid] = {
+              current: data.current ? data.current.relative_humidity_2m : 0,
               history: history,
             };
           }
@@ -390,106 +319,86 @@ function fetchTemperatures() {
     populateDateDropdowns();
     updateMapStyle();
     updateStatsForView();
-
-    if (header) header.innerText = "Live Temperature (Updated)";
+    if (header) header.innerText = "Live Humidity (Updated)";
     updateDateOverlay();
   });
 }
 
-function setTempMode(mode) {
-  tempMode = mode;
-  // Update buttons
-  document.getElementById("btnTempCurrent").classList.remove("active");
-  document.getElementById("btnTempMax").classList.remove("active");
-  document.getElementById("btnTempMin").classList.remove("active");
-  document.getElementById("btnTempAvg").classList.remove("active");
+function setHumidityMode(mode) {
+  humidityMode = mode;
+  document.querySelectorAll(".live-controls-row .layer-btn").forEach((b) => {
+    if (b.id.startsWith("btnHum")) b.classList.remove("active");
+  });
 
   if (mode === "current")
-    document.getElementById("btnTempCurrent").classList.add("active");
+    document.getElementById("btnHumCurrent").classList.add("active");
   if (mode === "max")
-    document.getElementById("btnTempMax").classList.add("active");
+    document.getElementById("btnHumMax").classList.add("active");
   if (mode === "min")
-    document.getElementById("btnTempMin").classList.add("active");
+    document.getElementById("btnHumMin").classList.add("active");
   if (mode === "avg")
-    document.getElementById("btnTempAvg").classList.add("active");
+    document.getElementById("btnHumAvg").classList.add("active");
 
   updateMapStyle();
 }
-window.setTempMode = setTempMode;
+window.setHumidityMode = setHumidityMode;
 
 function updateMapStyle() {
   if (!geojsonLayer) return;
   phenomenaMarkersLayer.clearLayers();
 
-  // If comparing, force mode to max/min/avg
-  if (isCompareMode && tempMode === "current") {
-    setTempMode("max");
+  if (isCompareMode && humidityMode === "current") {
+    setHumidityMode("max");
     return;
   }
-  // If viewing past date, current is not applicable
   if (
     !isCompareMode &&
     selectedDate !== availableDates[0] &&
-    tempMode === "current"
+    humidityMode === "current"
   ) {
-    setTempMode("max");
+    setHumidityMode("max");
     return;
   }
 
-  // 1. Calculate Dynamic Range (Min/Max) for the current mode
-  let minVal = Infinity;
-  let maxVal = -Infinity;
-
+  let minVal = Infinity,
+    maxVal = -Infinity;
   geojsonLayer.eachLayer((layer) => {
-    const oid = String(layer.feature.properties.OBJECTID);
-    const val = getValueForDistrict(oid);
-
+    const val = getValueForDistrict(String(layer.feature.properties.OBJECTID));
     if (val !== null && val !== undefined) {
       if (val < minVal) minVal = val;
       if (val > maxVal) maxVal = val;
     }
   });
 
-  // Handle case with no data
   if (minVal === Infinity) {
     minVal = 0;
-    maxVal = isCompareMode ? 5 : 40;
+    maxVal = isCompareMode ? 10 : 100;
   }
-  // Ensure distinct min/max for gradient generation if all values are same
   if (minVal === maxVal) {
     minVal -= 1;
     maxVal += 1;
   }
 
-  // Update Legend with new dynamic range
-  updateTempLegend(minVal, maxVal);
+  updateHumidityLegend(minVal, maxVal);
 
   geojsonLayer.eachLayer((layer) => {
     const oid = String(layer.feature.properties.OBJECTID);
     const val = getValueForDistrict(oid);
 
     if (val !== null && val !== undefined) {
-      let displayVal,
-        diffText,
-        diffColor = "#000";
+      let displayVal = val.toFixed(1);
+      let diffText = isCompareMode ? "Difference" : humidityMode.toUpperCase();
+      let diffColor = isCompareMode
+        ? val > 0
+          ? "#00bcd4"
+          : "#ff9800"
+        : "#000";
 
-      displayVal = val.toFixed(1);
-
-      if (isCompareMode) {
-        diffText = "Difference";
-        if (val > 0)
-          diffColor = "#c0392b"; // Warmer
-        else if (val < 0) diffColor = "#2980b9"; // Cooler
-      } else {
-        diffText = tempMode.toUpperCase();
-      }
-
-      // Color coding
       const color = getColorForValue(
         val,
         minVal,
         maxVal,
-        isCompareMode ? "compare" : tempMode,
+        isCompareMode ? "compare" : humidityMode,
       );
 
       layer.setStyle({
@@ -499,44 +408,38 @@ function updateMapStyle() {
         weight: 2,
       });
 
-      // Marker
-      const center = layer.getBounds().getCenter();
-      const districtName = layer.feature.properties.D_NAME;
-
       const iconHtml = `
         <div class="temp-block">
-            <div class="t-name">${districtName}</div>
-            <div class="t-val" style="color:#000">${displayVal}°C</div>
+            <div class="t-name">${layer.feature.properties.D_NAME}</div>
+            <div class="t-val" style="color:#000">${displayVal}%</div>
             <div class="t-diff" style="color:${diffColor}">${diffText}</div>
         </div>`;
 
-      const icon = L.divIcon({
-        html: iconHtml,
-        className: "",
-        iconSize: [100, 60],
-        iconAnchor: [25, 40],
-      });
-
-      const marker = L.marker(center, { icon: icon }).addTo(
-        phenomenaMarkersLayer,
-      );
+      const marker = L.marker(layer.getBounds().getCenter(), {
+        icon: L.divIcon({
+          html: iconHtml,
+          className: "",
+          iconSize: [100, 60],
+          iconAnchor: [25, 40],
+        }),
+      }).addTo(phenomenaMarkersLayer);
 
       let tooltipContent = `<div style="text-align:left; font-size:12px; min-width:100px;">
-        <div style="font-weight:bold; border-bottom:1px solid #ccc; margin-bottom:3px; padding-bottom:2px;">${districtName}</div>`;
+        <div style="font-weight:bold; border-bottom:1px solid #ccc; margin-bottom:3px; padding-bottom:2px;">${layer.feature.properties.D_NAME}</div>`;
 
       if (isCompareMode) {
-        tooltipContent += `<div>Diff: <b>${displayVal}</b>°C</div>`;
+        tooltipContent += `<div>Diff: <b>${displayVal}</b>%</div>`;
         tooltipContent += `<div style="font-size:10px; color:#555;">${selectedDate} vs ${compareDate}</div>`;
       } else {
-        const d = districtTemps[oid];
+        const d = districtHumidity[oid];
         const h = d && d.history ? d.history[selectedDate] : null;
         if (h) {
           if (selectedDate === availableDates[0]) {
-            tooltipContent += `<div>Current: <b>${d.current}</b>°C</div>`;
+            tooltipContent += `<div>Current: <b>${d.current}</b>%</div>`;
           }
-          tooltipContent += `<div>Max: <b>${h.max}</b>°C</div>`;
-          tooltipContent += `<div>Min: <b>${h.min}</b>°C</div>`;
-          tooltipContent += `<div>Avg: <b>${h.avg}</b>°C</div>`;
+          tooltipContent += `<div>Max: <b>${h.max}</b>%</div>`;
+          tooltipContent += `<div>Min: <b>${h.min}</b>%</div>`;
+          tooltipContent += `<div>Avg: <b>${h.avg}</b>%</div>`;
         }
       }
       tooltipContent += `</div>`;
@@ -555,307 +458,144 @@ function updateMapStyle() {
 }
 
 function getValueForDistrict(oid) {
-  const d = districtTemps[oid];
+  const d = districtHumidity[oid];
   if (!d) return null;
-
   if (isCompareMode) {
     const h1 = d.history[selectedDate];
     const h2 = d.history[compareDate];
     if (!h1 || !h2) return null;
-    // Compare Mode: Date 1 - Date 2
-    return h1[tempMode] - h2[tempMode];
+    return h1[humidityMode] - h2[humidityMode];
   } else {
-    if (tempMode === "current") {
-      // Current is only valid if selectedDate is Today
+    if (humidityMode === "current") {
       if (selectedDate === availableDates[0]) return d.current;
-      // Fallback to max if viewing history in current mode
       return d.history[selectedDate]?.max;
     }
-    return d.history[selectedDate]?.[tempMode];
+    return d.history[selectedDate]?.[humidityMode];
   }
 }
 
 function getColorForValue(val, min, max, mode) {
-  // Define palettes
   const palettes = {
-    current: ["#2ecc71", "#f1c40f", "#e67e22", "#e74c3c"], // Green -> Yellow -> Orange -> Red
-    min: ["#3498db", "#00bcd4", "#2ecc71"], // Blue -> Cyan -> Green
-    max: ["#f1c40f", "#e67e22", "#c0392b"], // Yellow -> Orange -> Dark Red
-    avg: ["#3498db", "#f1c40f", "#e67e22"], // Blue -> Yellow -> Orange
-    compare: ["#2980b9", "#ffffff", "#c0392b"], // Blue (Cooler) -> White -> Red (Warmer)
+    current: ["#ff5722", "#ffeb3b", "#4caf50", "#00bcd4", "#3f51b5"], // Red -> Yellow -> Green -> Cyan -> Blue
+    max: ["#ff9800", "#4caf50", "#00bcd4", "#3f51b5"],
+    min: ["#ff5722", "#ffeb3b", "#4caf50", "#00bcd4"],
+    avg: ["#ff9800", "#ffeb3b", "#4caf50", "#00bcd4"],
+    compare: ["#ff9800", "#ffffff", "#00bcd4"], // Orange (Drier) -> White -> Cyan (Wetter)
   };
-
   const colors = palettes[mode] || palettes.current;
-
-  // Normalize value to 0-1 range
   let t = (val - min) / (max - min);
-  t = Math.max(0, Math.min(1, t)); // Clamp
-
-  // Map t to color segments
+  t = Math.max(0, Math.min(1, t));
   const segments = colors.length - 1;
-  const segmentLength = 1 / segments;
-  const segmentIndex = Math.floor(t / segmentLength);
-
-  // Handle exact max value case
-  if (segmentIndex >= segments) return colors[colors.length - 1];
-
-  const startColor = colors[segmentIndex];
-  const endColor = colors[segmentIndex + 1];
-  const localT = (t - segmentIndex * segmentLength) / segmentLength;
-
-  return interpolateColor(startColor, endColor, localT);
+  const idx = Math.floor(t * segments);
+  if (idx >= segments) return colors[segments];
+  return interpolateColor(colors[idx], colors[idx + 1], t * segments - idx);
 }
 
 function interpolateColor(c1, c2, factor) {
-  // Simple hex interpolation
-  const r1 = parseInt(c1.substring(1, 3), 16);
-  const g1 = parseInt(c1.substring(3, 5), 16);
-  const b1 = parseInt(c1.substring(5, 7), 16);
-
-  const r2 = parseInt(c2.substring(1, 3), 16);
-  const g2 = parseInt(c2.substring(3, 5), 16);
-  const b2 = parseInt(c2.substring(5, 7), 16);
-
-  const r = Math.round(r1 + factor * (r2 - r1));
-  const g = Math.round(g1 + factor * (g2 - g1));
-  const b = Math.round(b1 + factor * (b2 - b1));
-
+  const r1 = parseInt(c1.substring(1, 3), 16),
+    g1 = parseInt(c1.substring(3, 5), 16),
+    b1 = parseInt(c1.substring(5, 7), 16);
+  const r2 = parseInt(c2.substring(1, 3), 16),
+    g2 = parseInt(c2.substring(3, 5), 16),
+    b2 = parseInt(c2.substring(5, 7), 16);
+  const r = Math.round(r1 + factor * (r2 - r1)),
+    g = Math.round(g1 + factor * (g2 - g1)),
+    b = Math.round(b1 + factor * (b2 - b1));
   return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
 
-function updateTempLegend(min, max) {
-  const div = document.getElementById("tempLegend");
+function updateHumidityLegend(min, max) {
+  const div = document.getElementById("humLegend");
   if (!div) return;
-
   const titles = {
-    current: "Current Temperature (°C)",
-    min: "Minimum Temperature (°C)",
-    max: "Maximum Temperature (°C)",
-    avg: "Average Temperature (°C)",
+    current: "Current Humidity (%)",
+    max: "Max Humidity (%)",
+    min: "Min Humidity (%)",
+    avg: "Avg Humidity (%)",
   };
-
   const palettes = {
-    current: "linear-gradient(to right, #2ecc71, #f1c40f, #e67e22, #e74c3c)",
-    min: "linear-gradient(to right, #3498db, #00bcd4, #2ecc71)",
-    max: "linear-gradient(to right, #f1c40f, #e67e22, #c0392b)",
-    avg: "linear-gradient(to right, #3498db, #f1c40f, #e67e22)",
+    current:
+      "linear-gradient(to right, #ff5722, #ffeb3b, #4caf50, #00bcd4, #3f51b5)",
+    max: "linear-gradient(to right, #ff9800, #4caf50, #00bcd4, #3f51b5)",
+    min: "linear-gradient(to right, #ff5722, #ffeb3b, #4caf50, #00bcd4)",
+    avg: "linear-gradient(to right, #ff9800, #ffeb3b, #4caf50, #00bcd4)",
   };
-
-  const bg = palettes[tempMode] || palettes.current;
-  const title = titles[tempMode] || titles.current;
-
   div.innerHTML = `
-        <div style="font-weight:bold; margin-bottom:5px; font-size:12px; border-bottom:1px solid #ccc; padding-bottom:3px;">${title}</div>
-        <div style="height:15px; width:100%; background:${bg}; border-radius:3px; margin-bottom:5px;"></div>
+        <div style="font-weight:bold; margin-bottom:5px; font-size:12px; border-bottom:1px solid #ccc; padding-bottom:3px;">${titles[humidityMode] || "Humidity"}</div>
+        <div style="height:15px; width:100%; background:${palettes[humidityMode] || palettes.current}; border-radius:3px; margin-bottom:5px;"></div>
         <div style="display:flex; justify-content:space-between; font-size:11px; font-weight:bold; color:#333;">
             <span>${min !== undefined ? min.toFixed(1) : "Low"}</span>
             <span>${max !== undefined ? max.toFixed(1) : "High"}</span>
-        </div>
-    `;
-}
-
-function calculateStats(arr) {
-  if (!arr || arr.length === 0) return { max: "N/A", min: "N/A", mean: "N/A" };
-  let min = Infinity,
-    max = -Infinity,
-    sum = 0;
-  arr.forEach((v) => {
-    if (v < min) min = v;
-    if (v > max) max = v;
-    sum += v;
-  });
-  return {
-    max: max.toFixed(1),
-    min: min.toFixed(1),
-    mean: (sum / arr.length).toFixed(1),
-  };
+        </div>`;
 }
 
 function updateStatsForView() {
   const container = document.getElementById("statsOverlay");
   if (!container) return;
-
-  // Collect data for current view
   const vals = [];
   if (geojsonLayer) {
     geojsonLayer.eachLayer((layer) => {
-      const oid = String(layer.feature.properties.OBJECTID);
-      const val = getValueForDistrict(oid);
+      const val = getValueForDistrict(
+        String(layer.feature.properties.OBJECTID),
+      );
       if (val !== null) vals.push(val);
     });
   }
+  if (vals.length === 0) return;
 
-  const stats = calculateStats(vals);
-  let title = "Stats";
-  if (isCompareMode) {
-    title = "Difference (Date 1 - Date 2)";
-  } else {
-    title = `${tempMode.charAt(0).toUpperCase() + tempMode.slice(1)} Temp`;
-  }
+  let min = Infinity,
+    max = -Infinity,
+    sum = 0;
+  vals.forEach((v) => {
+    if (v < min) min = v;
+    if (v > max) max = v;
+    sum += v;
+  });
+  const stats = {
+    max: max.toFixed(1),
+    min: min.toFixed(1),
+    mean: (sum / vals.length).toFixed(1),
+  };
 
-  const createPanel = (title, stats, themeClass, icon) => `
-        <div class="stats-box ${themeClass}">
-            <div class="stats-header">
-                <span>${title}</span>
-                <i class="fas ${icon}"></i>
-            </div>
-            <div class="stats-row">
-                <span class="stats-label">Highest:</span>
-                <span class="stats-val">${stats.max}°C</span>
-            </div>
-            <div class="stats-row">
-                <span class="stats-label">Lowest:</span>
-                <span class="stats-val">${stats.min}°C</span>
-            </div>
-            <div class="stats-row">
-                <span class="stats-label">Average:</span>
-                <span class="stats-val">${stats.mean}°C</span>
-            </div>
-        </div>
-    `;
-
-  container.innerHTML = createPanel(
-    title,
-    stats,
-    "theme-current",
-    "fa-chart-bar",
-  );
+  const title = isCompareMode
+    ? "Difference"
+    : `${humidityMode.charAt(0).toUpperCase() + humidityMode.slice(1)} Humidity`;
+  container.innerHTML = `
+        <div class="stats-box theme-current">
+            <div class="stats-header"><span>${title}</span><i class="fas fa-chart-bar"></i></div>
+            <div class="stats-row"><span class="stats-label">Highest:</span><span class="stats-val">${stats.max}%</span></div>
+            <div class="stats-row"><span class="stats-label">Lowest:</span><span class="stats-val">${stats.min}%</span></div>
+            <div class="stats-row"><span class="stats-label">Average:</span><span class="stats-val">${stats.mean}%</span></div>
+        </div>`;
 }
 
 function refreshData() {
-  fetchTemperatures();
+  fetchHumidity();
 }
 window.refreshData = refreshData;
 
 function updateDateOverlay() {
   const el = document.getElementById("liveMapDateOverlay");
-  if (el) {
-    const now = new Date();
-    let text = selectedDate || now.toLocaleDateString("en-IN");
-
-    if (isCompareMode) {
-      text = `${selectedDate} vs ${compareDate}`;
-    } else if (selectedDate === availableDates[0]) {
-      text = `Today (${selectedDate})`;
-    }
-
-    el.innerText = text;
-  }
+  if (el)
+    el.innerText = isCompareMode
+      ? `${selectedDate} vs ${compareDate}`
+      : selectedDate === availableDates[0]
+        ? `Today (${selectedDate})`
+        : selectedDate;
 }
-
-function toggleMapZoom(enable) {
-  if (enable) {
-    map.dragging.enable();
-    map.touchZoom.enable();
-    map.doubleClickZoom.enable();
-    map.scrollWheelZoom.enable();
-    map.boxZoom.enable();
-    if (!zoomControl) {
-      zoomControl = L.control.zoom({ position: "bottomright" }).addTo(map);
-    }
-  } else {
-    map.dragging.disable();
-    map.touchZoom.disable();
-    map.doubleClickZoom.disable();
-    map.scrollWheelZoom.disable();
-    map.boxZoom.disable();
-    if (zoomControl) {
-      map.removeControl(zoomControl);
-      zoomControl = null;
-    }
-    fitMapBounds();
-  }
-}
-
-function updateMapBackground(color) {
-  const mapDiv = document.getElementById("map");
-  if (mapDiv) mapDiv.style.background = color;
-}
-window.updateMapBackground = updateMapBackground;
-
-function setLayer(type) {
-  if (map.hasLayer(streetLayer)) map.removeLayer(streetLayer);
-  if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
-  if (map.hasLayer(hybridLayer)) map.removeLayer(hybridLayer);
-
-  document
-    .querySelectorAll(".layer-btn")
-    .forEach((b) => b.classList.remove("active"));
-
-  if (type === "street") {
-    map.addLayer(streetLayer);
-    document.getElementById("btnStreet").classList.add("active");
-  } else if (type === "satellite") {
-    map.addLayer(satelliteLayer);
-    document.getElementById("btnSat").classList.add("active");
-  } else if (type === "hybrid") {
-    map.addLayer(hybridLayer);
-    document.getElementById("btnHybrid").classList.add("active");
-  } else if (type === "clean") {
-    // No layer added
-    document.getElementById("btnClean").classList.add("active");
-  }
-}
-window.setLayer = setLayer;
-
-function toggleDarkMode() {
-  document.body.classList.toggle("dark-mode");
-  const isDark = document.body.classList.contains("dark-mode");
-  localStorage.setItem("darkMode", isDark);
-}
-window.toggleDarkMode = toggleDarkMode;
-
-function toggleLanguage() {
-  currentLang = currentLang === "hi" ? "en" : "hi";
-  localStorage.setItem("lang", currentLang);
-  updateLanguageUI();
-}
-window.toggleLanguage = toggleLanguage;
-
-function updateLanguageUI() {
-  const t = uiTranslations[currentLang];
-  const titleEl = document.getElementById("liveTitle");
-  const btn = document.getElementById("btnLang");
-  if (titleEl) titleEl.innerText = t.title;
-  if (btn) btn.innerText = currentLang.toUpperCase();
-}
-
-function fitMapBounds() {
-  if (geojsonLayer) {
-    map.fitBounds(geojsonLayer.getBounds());
-  }
-}
-window.fitMapBounds = fitMapBounds;
-
-function toggleFullScreen() {
-  if (!document.fullscreenElement) {
-    document.documentElement
-      .requestFullscreen()
-      .catch((err) => console.error(err));
-  } else {
-    if (document.exitFullscreen) document.exitFullscreen();
-  }
-}
-window.toggleFullScreen = toggleFullScreen;
-
-// --- Date & Compare Logic ---
 
 function populateDateDropdowns() {
   const sel = document.getElementById("dateSelect");
   const compSel = document.getElementById("compareDateSelect");
   if (!sel || !compSel) return;
-
   sel.innerHTML = "";
   compSel.innerHTML = "";
-
   availableDates.forEach((date, idx) => {
     const label = idx === 0 ? `Today (${date})` : date;
     sel.innerHTML += `<option value="${date}">${label}</option>`;
     compSel.innerHTML += `<option value="${date}">${label}</option>`;
   });
-
   sel.value = selectedDate;
-  // Default compare date to yesterday
   compareDate = availableDates[1] || availableDates[0];
   compSel.value = compareDate;
 }
@@ -867,7 +607,6 @@ function handleDateChange(val) {
   updateDateOverlay();
 }
 window.handleDateChange = handleDateChange;
-
 function handleCompareDateChange(val) {
   compareDate = val;
   updateMapStyle();
@@ -875,15 +614,14 @@ function handleCompareDateChange(val) {
   updateDateOverlay();
 }
 window.handleCompareDateChange = handleCompareDateChange;
-
 function toggleCompareMode() {
   isCompareMode = !isCompareMode;
-  const btn = document.getElementById("btnCompareToggle");
-  const sel = document.getElementById("compareDateSelect");
-
-  sel.style.display = isCompareMode ? "inline-block" : "none";
-  btn.classList.toggle("active", isCompareMode);
-
+  document.getElementById("compareDateSelect").style.display = isCompareMode
+    ? "inline-block"
+    : "none";
+  document
+    .getElementById("btnCompareToggle")
+    .classList.toggle("active", isCompareMode);
   updateMapStyle();
   updateStatsForView();
   updateDateOverlay();
@@ -894,21 +632,19 @@ window.toggleCompareMode = toggleCompareMode;
 
 function openTrendChart(oid, districtName) {
   currentChartOid = oid;
-  let d = districtTemps[oid] || { history: {} };
+  let d = districtHumidity[oid] || { history: {} };
 
-  // Set default date range (Last 30 days)
+  // Generate last 30 days dates ascending
+  const dates = [];
   const today = new Date();
-  const pastDate = new Date();
-  pastDate.setDate(today.getDate() - 30);
-
-  const startInput = document.getElementById("chartStartDate");
-  const endInput = document.getElementById("chartEndDate");
-
-  if (startInput) startInput.value = pastDate.toISOString().split("T")[0];
-  if (endInput) endInput.value = today.toISOString().split("T")[0];
-
-  // Initial Render
-  updateTrendChartFilter();
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i);
+    dates.push(date.toISOString().split("T")[0]);
+  }
+  const maxData = dates.map((date) => d.history[date]?.max ?? null);
+  const minData = dates.map((date) => d.history[date]?.min ?? null);
+  const avgData = dates.map((date) => d.history[date]?.avg ?? null);
 
   // Populate Compare Dropdown
   const sel = document.getElementById("compareDistrictSelect");
@@ -933,42 +669,6 @@ function openTrendChart(oid, districtName) {
     sel.value = "";
   }
 
-  document.getElementById("chartModal").style.display = "flex";
-}
-window.openTrendChart = openTrendChart;
-
-function updateTrendChartFilter() {
-  if (!currentChartOid) return;
-
-  const startVal = document.getElementById("chartStartDate").value;
-  const endVal = document.getElementById("chartEndDate").value;
-
-  if (!startVal || !endVal) return;
-
-  const startDate = new Date(startVal);
-  const endDate = new Date(endVal);
-  const d = districtTemps[currentChartOid] || { history: {} };
-  let districtName = "District";
-
-  geojsonLayer.eachLayer((l) => {
-    if (String(l.feature.properties.OBJECTID) === String(currentChartOid))
-      districtName = l.feature.properties.D_NAME;
-  });
-
-  // Generate dates within range
-  const dates = [];
-  for (
-    let dt = new Date(startDate);
-    dt <= endDate;
-    dt.setDate(dt.getDate() + 1)
-  ) {
-    dates.push(dt.toISOString().split("T")[0]);
-  }
-
-  const maxData = dates.map((date) => d.history[date]?.max ?? null);
-  const minData = dates.map((date) => d.history[date]?.min ?? null);
-  const avgData = dates.map((date) => d.history[date]?.avg ?? null);
-
   const ctx = document.getElementById("trendChart").getContext("2d");
 
   if (trendChart) trendChart.destroy();
@@ -979,24 +679,24 @@ function updateTrendChartFilter() {
       labels: dates,
       datasets: [
         {
-          label: `Max Temp (${districtName})`,
+          label: `Max Humidity (${districtName})`,
           data: maxData,
-          borderColor: "#c0392b",
-          backgroundColor: "#c0392b",
+          borderColor: "#3f51b5",
+          backgroundColor: "#3f51b5",
           tension: 0.3,
         },
         {
-          label: `Min Temp (${districtName})`,
+          label: `Min Humidity (${districtName})`,
           data: minData,
-          borderColor: "#2980b9",
-          backgroundColor: "#2980b9",
+          borderColor: "#ff9800",
+          backgroundColor: "#ff9800",
           tension: 0.3,
         },
         {
-          label: `Avg Temp (${districtName})`,
+          label: `Avg Humidity (${districtName})`,
           data: avgData,
-          borderColor: "#f39c12",
-          backgroundColor: "#f39c12",
+          borderColor: "#00bcd4",
+          backgroundColor: "#00bcd4",
           borderDash: [5, 5],
           tension: 0.3,
         },
@@ -1015,7 +715,7 @@ function updateTrendChartFilter() {
           display: true,
           text: [
             `District: ${districtName}`,
-            `Parameter: Temperature | Period: ${startVal} to ${endVal}`,
+            `Parameter: Humidity | Period: Last 30 Days`,
           ],
           font: { size: 14 },
         },
@@ -1032,18 +732,15 @@ function updateTrendChartFilter() {
       },
     },
   });
+
+  document.getElementById("chartModal").style.display = "flex";
 }
-window.updateTrendChartFilter = updateTrendChartFilter;
+window.openTrendChart = openTrendChart;
 
 function updateChartComparison(compareOid) {
   if (!trendChart || !currentChartOid) return;
 
-  const startVal = document.getElementById("chartStartDate").value;
-  const endVal = document.getElementById("chartEndDate").value;
-  const startDate = new Date(startVal);
-  const endDate = new Date(endVal);
-
-  const d1 = districtTemps[currentChartOid] || { history: {} };
+  const d1 = districtHumidity[currentChartOid] || { history: {} };
   let d1Name = "District 1";
   geojsonLayer.eachLayer((l) => {
     if (String(l.feature.properties.OBJECTID) === String(currentChartOid))
@@ -1051,12 +748,11 @@ function updateChartComparison(compareOid) {
   });
 
   const dates = [];
-  for (
-    let dt = new Date(startDate);
-    dt <= endDate;
-    dt.setDate(dt.getDate() + 1)
-  ) {
-    dates.push(dt.toISOString().split("T")[0]);
+  const today = new Date();
+  for (let i = 29; i >= 0; i--) {
+    const date = new Date(today);
+    date.setDate(today.getDate() - i);
+    dates.push(date.toISOString().split("T")[0]);
   }
   const maxData1 = dates.map((date) => d1.history[date]?.max ?? null);
   const minData1 = dates.map((date) => d1.history[date]?.min ?? null);
@@ -1064,26 +760,26 @@ function updateChartComparison(compareOid) {
 
   const datasets = [
     {
-      label: `Max Temp (${d1Name})`,
+      label: `Max Humidity (${d1Name})`,
       data: maxData1,
-      borderColor: "#c0392b",
-      backgroundColor: "#c0392b",
+      borderColor: "#3f51b5",
+      backgroundColor: "#3f51b5",
       tension: 0.3,
       fill: false,
     },
     {
-      label: `Min Temp (${d1Name})`,
+      label: `Min Humidity (${d1Name})`,
       data: minData1,
-      borderColor: "#2980b9",
-      backgroundColor: "#2980b9",
+      borderColor: "#ff9800",
+      backgroundColor: "#ff9800",
       tension: 0.3,
       fill: false,
     },
     {
-      label: `Avg Temp (${d1Name})`,
+      label: `Avg Humidity (${d1Name})`,
       data: avgData1,
-      borderColor: "#f39c12",
-      backgroundColor: "#f39c12",
+      borderColor: "#00bcd4",
+      backgroundColor: "#00bcd4",
       borderDash: [2, 2],
       tension: 0.3,
       fill: false,
@@ -1091,7 +787,7 @@ function updateChartComparison(compareOid) {
   ];
 
   if (compareOid) {
-    const d2 = districtTemps[compareOid] || { history: {} };
+    const d2 = districtHumidity[compareOid] || { history: {} };
     let d2Name = "District 2";
     geojsonLayer.eachLayer((l) => {
       if (String(l.feature.properties.OBJECTID) === String(compareOid))
@@ -1104,28 +800,28 @@ function updateChartComparison(compareOid) {
 
     datasets.push(
       {
-        label: `Max Temp (${d2Name})`,
+        label: `Max Humidity (${d2Name})`,
         data: maxData2,
-        borderColor: "#e74c3c",
-        backgroundColor: "#e74c3c",
+        borderColor: "#303f9f",
+        backgroundColor: "#303f9f",
         borderDash: [5, 5],
         tension: 0.3,
         fill: false,
       },
       {
-        label: `Min Temp (${d2Name})`,
+        label: `Min Humidity (${d2Name})`,
         data: minData2,
-        borderColor: "#3498db",
-        backgroundColor: "#3498db",
+        borderColor: "#f57c00",
+        backgroundColor: "#f57c00",
         borderDash: [5, 5],
         tension: 0.3,
         fill: false,
       },
       {
-        label: `Avg Temp (${d2Name})`,
+        label: `Avg Humidity (${d2Name})`,
         data: avgData2,
-        borderColor: "#f1c40f",
-        backgroundColor: "#f1c40f",
+        borderColor: "#0097a7",
+        backgroundColor: "#0097a7",
         borderDash: [5, 5],
         tension: 0.3,
         fill: false,
@@ -1133,13 +829,13 @@ function updateChartComparison(compareOid) {
     );
 
     if (trendChart.options.plugins.title) {
-      trendChart.options.plugins.title.text = `Temperature Comparison: ${d1Name} vs ${d2Name}`;
+      trendChart.options.plugins.title.text = `Humidity Comparison: ${d1Name} vs ${d2Name}`;
     }
   } else {
     if (trendChart.options.plugins.title) {
       trendChart.options.plugins.title.text = [
         `District: ${d1Name}`,
-        `Parameter: Temperature | Period: ${startVal} to ${endVal}`,
+        `Parameter: Humidity | Period: Last 30 Days`,
       ];
     }
   }
@@ -1160,7 +856,7 @@ function downloadMapImage() {
     .toPng(node)
     .then(function (dataUrl) {
       const link = document.createElement("a");
-      link.download = `Bihar_Temp_Map_${new Date().toISOString().split("T")[0]}.png`;
+      link.download = `Bihar_Humidity_Map_${new Date().toISOString().split("T")[0]}.png`;
       link.href = dataUrl;
       link.click();
     })
@@ -1179,7 +875,9 @@ function downloadMapPDF() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF("l", "px", [node.offsetWidth, node.offsetHeight]);
       doc.addImage(dataUrl, "PNG", 0, 0, node.offsetWidth, node.offsetHeight);
-      doc.save(`Bihar_Temp_Map_${new Date().toISOString().split("T")[0]}.pdf`);
+      doc.save(
+        `Bihar_Humidity_Map_${new Date().toISOString().split("T")[0]}.pdf`,
+      );
     })
     .catch(function (error) {
       console.error("oops, something went wrong!", error);
@@ -1220,7 +918,7 @@ function exportChartDataToCSV() {
   link.setAttribute("href", url);
   link.setAttribute(
     "download",
-    `Temperature_Trend_${new Date().toISOString().split("T")[0]}.csv`,
+    `Humidity_Trend_${new Date().toISOString().split("T")[0]}.csv`,
   );
   link.style.visibility = "hidden";
   document.body.appendChild(link);
@@ -1235,7 +933,7 @@ function downloadChartImage() {
     .toPng(node, { bgcolor: "#ffffff" })
     .then(function (dataUrl) {
       const link = document.createElement("a");
-      link.download = `Temp_Chart_${new Date().toISOString().split("T")[0]}.png`;
+      link.download = `Humidity_Chart_${new Date().toISOString().split("T")[0]}.png`;
       link.href = dataUrl;
       link.click();
     })
@@ -1254,7 +952,7 @@ function downloadChartPDF() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF("l", "px", [node.offsetWidth, node.offsetHeight]);
       doc.addImage(dataUrl, "PNG", 0, 0, node.offsetWidth, node.offsetHeight);
-      doc.save(`Temp_Chart_${new Date().toISOString().split("T")[0]}.pdf`);
+      doc.save(`Humidity_Chart_${new Date().toISOString().split("T")[0]}.pdf`);
     })
     .catch(function (error) {
       console.error("Chart PDF download failed:", error);
@@ -1262,3 +960,83 @@ function downloadChartPDF() {
     });
 }
 window.downloadChartPDF = downloadChartPDF;
+
+// Common functions
+function toggleMapZoom(enable) {
+  if (enable) {
+    map.dragging.enable();
+    map.touchZoom.enable();
+    map.doubleClickZoom.enable();
+    map.scrollWheelZoom.enable();
+    map.boxZoom.enable();
+    if (!zoomControl)
+      zoomControl = L.control.zoom({ position: "bottomright" }).addTo(map);
+  } else {
+    map.dragging.disable();
+    map.touchZoom.disable();
+    map.doubleClickZoom.disable();
+    map.scrollWheelZoom.disable();
+    map.boxZoom.disable();
+    if (zoomControl) {
+      map.removeControl(zoomControl);
+      zoomControl = null;
+    }
+    fitMapBounds();
+  }
+}
+function updateMapBackground(color) {
+  document.getElementById("map").style.background = color;
+}
+window.updateMapBackground = updateMapBackground;
+function setLayer(type) {
+  if (map.hasLayer(streetLayer)) map.removeLayer(streetLayer);
+  if (map.hasLayer(satelliteLayer)) map.removeLayer(satelliteLayer);
+  if (map.hasLayer(hybridLayer)) map.removeLayer(hybridLayer);
+  document
+    .querySelectorAll(".layer-btn")
+    .forEach((b) => b.classList.remove("active"));
+  if (type === "street") {
+    map.addLayer(streetLayer);
+    document.getElementById("btnStreet").classList.add("active");
+  } else if (type === "satellite") {
+    map.addLayer(satelliteLayer);
+    document.getElementById("btnSat").classList.add("active");
+  } else if (type === "hybrid") {
+    map.addLayer(hybridLayer);
+    document.getElementById("btnHybrid").classList.add("active");
+  } else if (type === "clean") {
+    document.getElementById("btnClean").classList.add("active");
+  }
+}
+window.setLayer = setLayer;
+function toggleDarkMode() {
+  document.body.classList.toggle("dark-mode");
+  localStorage.setItem(
+    "darkMode",
+    document.body.classList.contains("dark-mode"),
+  );
+}
+window.toggleDarkMode = toggleDarkMode;
+function toggleLanguage() {
+  currentLang = currentLang === "hi" ? "en" : "hi";
+  localStorage.setItem("lang", currentLang);
+  updateLanguageUI();
+}
+window.toggleLanguage = toggleLanguage;
+function updateLanguageUI() {
+  const t = uiTranslations[currentLang];
+  if (document.getElementById("liveTitle"))
+    document.getElementById("liveTitle").innerText = t.title;
+  if (document.getElementById("btnLang"))
+    document.getElementById("btnLang").innerText = currentLang.toUpperCase();
+}
+function fitMapBounds() {
+  if (geojsonLayer) map.fitBounds(geojsonLayer.getBounds());
+}
+window.fitMapBounds = fitMapBounds;
+function toggleFullScreen() {
+  if (!document.fullscreenElement)
+    document.documentElement.requestFullscreen().catch(console.error);
+  else if (document.exitFullscreen) document.exitFullscreen();
+}
+window.toggleFullScreen = toggleFullScreen;

@@ -4,11 +4,11 @@ let map,
   streetLayer,
   satelliteLayer,
   hybridLayer;
-let districtTemps = {};
+let districtWinds = {};
 let isLayoutEditMode = false;
 let zoomControl = null;
 let currentLang = localStorage.getItem("lang") || "hi";
-let tempMode = "current"; // 'current', 'max', 'min'
+let windMode = "current"; // 'current', 'max', 'min'
 let availableDates = [];
 let selectedDate = null; // YYYY-MM-DD
 let compareDate = null; // YYYY-MM-DD
@@ -18,24 +18,24 @@ let currentChartOid = null;
 
 const uiTranslations = {
   hi: {
-    title: "बिहार लाइव तापमान (Live Temperature)",
+    title: "बिहार लाइव हवा (Live Wind)",
     refresh: "रिफ्रेश करें",
   },
   en: {
-    title: "Bihar Live Temperature",
+    title: "Bihar Live Wind",
     refresh: "Refresh Data",
   },
 };
 
 document.addEventListener("DOMContentLoaded", () => {
-  initTempDisplay();
+  initWindDisplay();
 
   if (localStorage.getItem("darkMode") === "true") {
     document.body.classList.add("dark-mode");
   }
 });
 
-function initTempDisplay() {
+function initWindDisplay() {
   let root = document.getElementById("liveRoot");
 
   // Inject CSS (Reusing live.js styles for consistency)
@@ -96,8 +96,8 @@ function initTempDisplay() {
     .stats-val { font-weight: 800; font-size: 13px; color: #000; }
     
     /* Theme Colors for Stats */
-    .theme-current { border-left-color: #f39c12; }
-    .theme-max { border-left-color: #c0392b; }
+    .theme-current { border-left-color: #2ecc71; }
+    .theme-max { border-left-color: #e74c3c; }
     .theme-min { border-left-color: #3498db; }
   `;
   document.head.appendChild(style);
@@ -106,14 +106,14 @@ function initTempDisplay() {
     <header class="live-header">
         <img src="assets/logo.png" style="height: 70px; position: absolute; top: 20px; left: 20px;">
         <div class="header-content">
-            <h1 id="liveTitle" class="tricolor-glow">बिहार लाइव तापमान (Live Temperature)</h1>
+            <h1 id="liveTitle" class="tricolor-glow">बिहार लाइव हवा (Live Wind)</h1>
         </div>
         
         <div class="live-controls-row">
-            <button class="layer-btn active" id="btnTempCurrent" onclick="setTempMode('current')" title="Current Temperature"><i class="fas fa-clock"></i> Current</button>
-            <button class="layer-btn" id="btnTempMax" onclick="setTempMode('max')" title="Max Temp"><i class="fas fa-temperature-high"></i> Max</button>
-            <button class="layer-btn" id="btnTempMin" onclick="setTempMode('min')" title="Min Temp"><i class="fas fa-temperature-low"></i> Min</button>
-            <button class="layer-btn" id="btnTempAvg" onclick="setTempMode('avg')" title="Average Temp"><i class="fas fa-percent"></i> Avg</button>
+            <button class="layer-btn active" id="btnWindCurrent" onclick="setWindMode('current')" title="Current Wind Speed"><i class="fas fa-clock"></i> Current</button>
+            <button class="layer-btn" id="btnWindMax" onclick="setWindMode('max')" title="Max Wind"><i class="fas fa-arrow-up"></i> Max</button>
+            <button class="layer-btn" id="btnWindMin" onclick="setWindMode('min')" title="Min Wind"><i class="fas fa-arrow-down"></i> Min</button>
+            <button class="layer-btn" id="btnWindAvg" onclick="setWindMode('avg')" title="Average Wind"><i class="fas fa-percent"></i> Avg</button>
             <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
             
             <select id="dateSelect" onchange="handleDateChange(this.value)" class="layer-btn" style="font-weight:bold; cursor:pointer;"></select>
@@ -122,7 +122,7 @@ function initTempDisplay() {
             
             <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
             <button class="layer-btn" onclick="window.location.href='index.html'" title="Home"><i class="fas fa-home"></i></button>
-            <button class="layer-btn" onclick="window.location.href='wind.html'" title="Wind Map"><i class="fas fa-wind"></i></button>
+            <button class="layer-btn" onclick="window.location.href='temp.html'" title="Temperature Map"><i class="fas fa-temperature-high"></i></button>
             <button class="layer-btn" onclick="window.location.href='rain.html'" title="Rain Map"><i class="fas fa-cloud-showers-heavy"></i></button>
             <button class="layer-btn" onclick="window.location.href='humidity.html'" title="Humidity Map"><i class="fas fa-tint"></i></button>
             <button class="layer-btn active" onclick="setLayer('street')" id="btnStreet">Street</button>
@@ -155,7 +155,7 @@ function initTempDisplay() {
                 <button class="control-btn" onclick="downloadMapPDF()" title="Download PDF"><i class="fas fa-file-pdf"></i></button>
             </div>
         </div>
-        <div id="tempLegend" class="info legend" style="position:absolute; bottom:20px; right:10px; z-index:1001; background:rgba(255,255,255,0.9); padding:10px; border-radius:8px; box-shadow:0 0 15px rgba(0,0,0,0.2); pointer-events:auto;"></div>
+        <div id="windLegend" class="info legend" style="position:absolute; bottom:20px; right:10px; z-index:1001; background:rgba(255,255,255,0.9); padding:10px; border-radius:8px; box-shadow:0 0 15px rgba(0,0,0,0.2); pointer-events:auto;"></div>
         
         <!-- Chart Modal -->
         <div id="chartModal" class="chart-modal">
@@ -187,7 +187,7 @@ function initTempDisplay() {
 
   initMap();
   updateLanguageUI();
-  updateTempLegend();
+  updateWindLegend();
   initDateSelectors();
 }
 
@@ -300,10 +300,10 @@ function initMap() {
       }).addTo(map);
       map.fitBounds(geojsonLayer.getBounds());
 
-      // Fetch Temperatures after map load
-      fetchTemperatures();
+      // Fetch Winds after map load
+      fetchWinds();
       // Auto-refresh every 15 minutes
-      setInterval(fetchTemperatures, 900000);
+      setInterval(fetchWinds, 900000);
     })
     .catch((err) => {
       console.error("Map loading failed:", err);
@@ -324,11 +324,11 @@ function initDateSelectors() {
   selectedDate = availableDates[0]; // Default to today
 }
 
-function fetchTemperatures() {
+function fetchWinds() {
   if (!geojsonLayer) return;
 
   const header = document.getElementById("slideHeader");
-  if (header) header.innerText = "Updating Temperatures...";
+  if (header) header.innerText = "Updating Wind Data...";
 
   const requests = [];
 
@@ -336,8 +336,9 @@ function fetchTemperatures() {
     const center = layer.getBounds().getCenter();
     const oid = String(layer.feature.properties.OBJECTID);
 
-    // Open-Meteo API
-    const url = `https://api.open-meteo.com/v1/forecast?latitude=${center.lat}&longitude=${center.lng}&current_weather=true&daily=temperature_2m_max,temperature_2m_min&hourly=temperature_2m&past_days=30&timezone=auto`;
+    // Open-Meteo API for Wind
+    // Fetching 30 past days + forecast days (default)
+    const url = `https://api.open-meteo.com/v1/forecast?latitude=${center.lat}&longitude=${center.lng}&current_weather=true&daily=wind_speed_10m_max&hourly=wind_speed_10m&past_days=30&timezone=auto`;
 
     requests.push(
       fetch(url)
@@ -349,35 +350,37 @@ function fetchTemperatures() {
 
             // Process each day
             timeArray.forEach((dateStr, index) => {
-              const max = data.daily.temperature_2m_max[index];
-              const min = data.daily.temperature_2m_min[index];
+              // Daily Max
+              const max = data.daily.wind_speed_10m_max[index];
 
-              // Calculate Avg from Hourly (24 hours per day)
+              // Calculate Min and Avg from Hourly (24 hours per day)
               const startHour = index * 24;
               const endHour = startHour + 24;
-              const hourlySlice = data.hourly.temperature_2m.slice(
+              const hourlySlice = data.hourly.wind_speed_10m.slice(
                 startHour,
                 endHour,
               );
 
+              let min = 999;
               let sum = 0;
               let count = 0;
+
               hourlySlice.forEach((val) => {
                 if (val !== null) {
+                  if (val < min) min = val;
                   sum += val;
                   count++;
                 }
               });
-              const avg =
-                count > 0
-                  ? parseFloat((sum / count).toFixed(1))
-                  : (max + min) / 2;
+
+              const avg = count > 0 ? parseFloat((sum / count).toFixed(1)) : 0;
+              if (min === 999) min = 0;
 
               history[dateStr] = { max, min, avg };
             });
 
-            districtTemps[oid] = {
-              current: data.current_weather.temperature,
+            districtWinds[oid] = {
+              current: data.current_weather.windspeed,
               history: history,
             };
           }
@@ -391,48 +394,48 @@ function fetchTemperatures() {
     updateMapStyle();
     updateStatsForView();
 
-    if (header) header.innerText = "Live Temperature (Updated)";
+    if (header) header.innerText = "Live Wind Speed (Updated)";
     updateDateOverlay();
   });
 }
 
-function setTempMode(mode) {
-  tempMode = mode;
+function setWindMode(mode) {
+  windMode = mode;
   // Update buttons
-  document.getElementById("btnTempCurrent").classList.remove("active");
-  document.getElementById("btnTempMax").classList.remove("active");
-  document.getElementById("btnTempMin").classList.remove("active");
-  document.getElementById("btnTempAvg").classList.remove("active");
+  document.getElementById("btnWindCurrent").classList.remove("active");
+  document.getElementById("btnWindMax").classList.remove("active");
+  document.getElementById("btnWindMin").classList.remove("active");
+  document.getElementById("btnWindAvg").classList.remove("active");
 
   if (mode === "current")
-    document.getElementById("btnTempCurrent").classList.add("active");
+    document.getElementById("btnWindCurrent").classList.add("active");
   if (mode === "max")
-    document.getElementById("btnTempMax").classList.add("active");
+    document.getElementById("btnWindMax").classList.add("active");
   if (mode === "min")
-    document.getElementById("btnTempMin").classList.add("active");
+    document.getElementById("btnWindMin").classList.add("active");
   if (mode === "avg")
-    document.getElementById("btnTempAvg").classList.add("active");
+    document.getElementById("btnWindAvg").classList.add("active");
 
   updateMapStyle();
 }
-window.setTempMode = setTempMode;
+window.setWindMode = setWindMode;
 
 function updateMapStyle() {
   if (!geojsonLayer) return;
   phenomenaMarkersLayer.clearLayers();
 
-  // If comparing, force mode to max/min/avg
-  if (isCompareMode && tempMode === "current") {
-    setTempMode("max");
+  // If comparing, force mode to max/min/avg (current not applicable for past)
+  if (isCompareMode && windMode === "current") {
+    setWindMode("max");
     return;
   }
   // If viewing past date, current is not applicable
   if (
     !isCompareMode &&
     selectedDate !== availableDates[0] &&
-    tempMode === "current"
+    windMode === "current"
   ) {
-    setTempMode("max");
+    setWindMode("max");
     return;
   }
 
@@ -453,16 +456,16 @@ function updateMapStyle() {
   // Handle case with no data
   if (minVal === Infinity) {
     minVal = 0;
-    maxVal = isCompareMode ? 5 : 40;
+    maxVal = isCompareMode ? 10 : 30; // Smaller range for difference
   }
-  // Ensure distinct min/max for gradient generation if all values are same
+  // Ensure distinct min/max for gradient generation
   if (minVal === maxVal) {
     minVal -= 1;
     maxVal += 1;
   }
 
   // Update Legend with new dynamic range
-  updateTempLegend(minVal, maxVal);
+  updateWindLegend(minVal, maxVal);
 
   geojsonLayer.eachLayer((layer) => {
     const oid = String(layer.feature.properties.OBJECTID);
@@ -477,11 +480,10 @@ function updateMapStyle() {
 
       if (isCompareMode) {
         diffText = "Difference";
-        if (val > 0)
-          diffColor = "#c0392b"; // Warmer
-        else if (val < 0) diffColor = "#2980b9"; // Cooler
+        if (val > 0) diffColor = "#c0392b";
+        else if (val < 0) diffColor = "#2980b9";
       } else {
-        diffText = tempMode.toUpperCase();
+        diffText = windMode.toUpperCase();
       }
 
       // Color coding
@@ -489,7 +491,7 @@ function updateMapStyle() {
         val,
         minVal,
         maxVal,
-        isCompareMode ? "compare" : tempMode,
+        isCompareMode ? "compare" : windMode,
       );
 
       layer.setStyle({
@@ -506,7 +508,7 @@ function updateMapStyle() {
       const iconHtml = `
         <div class="temp-block">
             <div class="t-name">${districtName}</div>
-            <div class="t-val" style="color:#000">${displayVal}°C</div>
+            <div class="t-val" style="color:#000">${displayVal} <span style="font-size:10px">km/h</span></div>
             <div class="t-diff" style="color:${diffColor}">${diffText}</div>
         </div>`;
 
@@ -525,18 +527,18 @@ function updateMapStyle() {
         <div style="font-weight:bold; border-bottom:1px solid #ccc; margin-bottom:3px; padding-bottom:2px;">${districtName}</div>`;
 
       if (isCompareMode) {
-        tooltipContent += `<div>Diff: <b>${displayVal}</b>°C</div>`;
+        tooltipContent += `<div>Diff: <b>${displayVal}</b> km/h</div>`;
         tooltipContent += `<div style="font-size:10px; color:#555;">${selectedDate} vs ${compareDate}</div>`;
       } else {
-        const d = districtTemps[oid];
+        const d = districtWinds[oid];
         const h = d && d.history ? d.history[selectedDate] : null;
         if (h) {
           if (selectedDate === availableDates[0]) {
-            tooltipContent += `<div>Current: <b>${d.current}</b>°C</div>`;
+            tooltipContent += `<div>Current: <b>${d.current}</b> km/h</div>`;
           }
-          tooltipContent += `<div>Max: <b>${h.max}</b>°C</div>`;
-          tooltipContent += `<div>Min: <b>${h.min}</b>°C</div>`;
-          tooltipContent += `<div>Avg: <b>${h.avg}</b>°C</div>`;
+          tooltipContent += `<div>Max: <b>${h.max}</b> km/h</div>`;
+          tooltipContent += `<div>Min: <b>${h.min}</b> km/h</div>`;
+          tooltipContent += `<div>Avg: <b>${h.avg}</b> km/h</div>`;
         }
       }
       tooltipContent += `</div>`;
@@ -555,7 +557,7 @@ function updateMapStyle() {
 }
 
 function getValueForDistrict(oid) {
-  const d = districtTemps[oid];
+  const d = districtWinds[oid];
   if (!d) return null;
 
   if (isCompareMode) {
@@ -563,15 +565,15 @@ function getValueForDistrict(oid) {
     const h2 = d.history[compareDate];
     if (!h1 || !h2) return null;
     // Compare Mode: Date 1 - Date 2
-    return h1[tempMode] - h2[tempMode];
+    return h1[windMode] - h2[windMode];
   } else {
-    if (tempMode === "current") {
+    if (windMode === "current") {
       // Current is only valid if selectedDate is Today
       if (selectedDate === availableDates[0]) return d.current;
-      // Fallback to max if viewing history in current mode
+      // Fallback to max if viewing history in current mode (though we force switch)
       return d.history[selectedDate]?.max;
     }
-    return d.history[selectedDate]?.[tempMode];
+    return d.history[selectedDate]?.[windMode];
   }
 }
 
@@ -579,11 +581,17 @@ function getColorForValue(val, min, max, mode) {
   // Define palettes
   const palettes = {
     current: ["#2ecc71", "#f1c40f", "#e67e22", "#e74c3c"], // Green -> Yellow -> Orange -> Red
-    min: ["#3498db", "#00bcd4", "#2ecc71"], // Blue -> Cyan -> Green
+    min: ["#3498db", "#2ecc71"], // Blue -> Green
     max: ["#f1c40f", "#e67e22", "#c0392b"], // Yellow -> Orange -> Dark Red
     avg: ["#3498db", "#f1c40f", "#e67e22"], // Blue -> Yellow -> Orange
-    compare: ["#2980b9", "#ffffff", "#c0392b"], // Blue (Cooler) -> White -> Red (Warmer)
+    compare: ["#2980b9", "#ffffff", "#c0392b"], // Blue (Less) -> White (Same) -> Red (More)
   };
+
+  if (mode === "compare") {
+    // Diverging scale centered at 0
+    // Normalize -X to +X range to 0-1
+    // We assume min is negative, max is positive usually
+  }
 
   const colors = palettes[mode] || palettes.current;
 
@@ -623,26 +631,26 @@ function interpolateColor(c1, c2, factor) {
   return "#" + ((1 << 24) + (r << 16) + (g << 8) + b).toString(16).slice(1);
 }
 
-function updateTempLegend(min, max) {
-  const div = document.getElementById("tempLegend");
+function updateWindLegend(min, max) {
+  const div = document.getElementById("windLegend");
   if (!div) return;
 
   const titles = {
-    current: "Current Temperature (°C)",
-    min: "Minimum Temperature (°C)",
-    max: "Maximum Temperature (°C)",
-    avg: "Average Temperature (°C)",
+    current: "Current Wind Speed (km/h)",
+    min: "Minimum Wind Speed (km/h)",
+    max: "Maximum Wind Speed (km/h)",
+    avg: "Average Wind Speed (km/h)",
   };
 
   const palettes = {
     current: "linear-gradient(to right, #2ecc71, #f1c40f, #e67e22, #e74c3c)",
-    min: "linear-gradient(to right, #3498db, #00bcd4, #2ecc71)",
+    min: "linear-gradient(to right, #3498db, #2ecc71)",
     max: "linear-gradient(to right, #f1c40f, #e67e22, #c0392b)",
     avg: "linear-gradient(to right, #3498db, #f1c40f, #e67e22)",
   };
 
-  const bg = palettes[tempMode] || palettes.current;
-  const title = titles[tempMode] || titles.current;
+  const bg = palettes[windMode] || palettes.current;
+  const title = titles[windMode] || titles.current;
 
   div.innerHTML = `
         <div style="font-weight:bold; margin-bottom:5px; font-size:12px; border-bottom:1px solid #ccc; padding-bottom:3px;">${title}</div>
@@ -690,7 +698,7 @@ function updateStatsForView() {
   if (isCompareMode) {
     title = "Difference (Date 1 - Date 2)";
   } else {
-    title = `${tempMode.charAt(0).toUpperCase() + tempMode.slice(1)} Temp`;
+    title = `${windMode.charAt(0).toUpperCase() + windMode.slice(1)} Wind`;
   }
 
   const createPanel = (title, stats, themeClass, icon) => `
@@ -701,15 +709,15 @@ function updateStatsForView() {
             </div>
             <div class="stats-row">
                 <span class="stats-label">Highest:</span>
-                <span class="stats-val">${stats.max}°C</span>
+                <span class="stats-val">${stats.max} km/h</span>
             </div>
             <div class="stats-row">
                 <span class="stats-label">Lowest:</span>
-                <span class="stats-val">${stats.min}°C</span>
+                <span class="stats-val">${stats.min} km/h</span>
             </div>
             <div class="stats-row">
                 <span class="stats-label">Average:</span>
-                <span class="stats-val">${stats.mean}°C</span>
+                <span class="stats-val">${stats.mean} km/h</span>
             </div>
         </div>
     `;
@@ -723,7 +731,7 @@ function updateStatsForView() {
 }
 
 function refreshData() {
-  fetchTemperatures();
+  fetchWinds();
 }
 window.refreshData = refreshData;
 
@@ -894,7 +902,7 @@ window.toggleCompareMode = toggleCompareMode;
 
 function openTrendChart(oid, districtName) {
   currentChartOid = oid;
-  let d = districtTemps[oid] || { history: {} };
+  let d = districtWinds[oid] || { history: {} };
 
   // Set default date range (Last 30 days)
   const today = new Date();
@@ -910,29 +918,6 @@ function openTrendChart(oid, districtName) {
   // Initial Render
   updateTrendChartFilter();
 
-  // Populate Compare Dropdown
-  const sel = document.getElementById("compareDistrictSelect");
-  if (sel) {
-    sel.innerHTML = '<option value="">None</option>';
-    const districts = [];
-    if (geojsonLayer) {
-      geojsonLayer.eachLayer((layer) => {
-        const props = layer.feature.properties;
-        districts.push({ oid: String(props.OBJECTID), name: props.D_NAME });
-      });
-    }
-    districts.sort((a, b) => a.name.localeCompare(b.name));
-    districts.forEach((dist) => {
-      if (dist.oid !== String(oid)) {
-        const opt = document.createElement("option");
-        opt.value = dist.oid;
-        opt.innerText = dist.name;
-        sel.appendChild(opt);
-      }
-    });
-    sel.value = "";
-  }
-
   document.getElementById("chartModal").style.display = "flex";
 }
 window.openTrendChart = openTrendChart;
@@ -947,7 +932,7 @@ function updateTrendChartFilter() {
 
   const startDate = new Date(startVal);
   const endDate = new Date(endVal);
-  const d = districtTemps[currentChartOid] || { history: {} };
+  const d = districtWinds[currentChartOid] || { history: {} };
   let districtName = "District";
 
   geojsonLayer.eachLayer((l) => {
@@ -979,24 +964,24 @@ function updateTrendChartFilter() {
       labels: dates,
       datasets: [
         {
-          label: `Max Temp (${districtName})`,
+          label: `Max Wind (${districtName})`,
           data: maxData,
-          borderColor: "#c0392b",
-          backgroundColor: "#c0392b",
+          borderColor: "#e74c3c",
+          backgroundColor: "#e74c3c",
           tension: 0.3,
         },
         {
-          label: `Min Temp (${districtName})`,
+          label: `Min Wind (${districtName})`,
           data: minData,
-          borderColor: "#2980b9",
-          backgroundColor: "#2980b9",
+          borderColor: "#3498db",
+          backgroundColor: "#3498db",
           tension: 0.3,
         },
         {
-          label: `Avg Temp (${districtName})`,
+          label: `Avg Wind (${districtName})`,
           data: avgData,
-          borderColor: "#f39c12",
-          backgroundColor: "#f39c12",
+          borderColor: "#2ecc71",
+          backgroundColor: "#2ecc71",
           borderDash: [5, 5],
           tension: 0.3,
         },
@@ -1015,7 +1000,7 @@ function updateTrendChartFilter() {
           display: true,
           text: [
             `District: ${districtName}`,
-            `Parameter: Temperature | Period: ${startVal} to ${endVal}`,
+            `Parameter: Wind Speed | Period: ${startVal} to ${endVal}`,
           ],
           font: { size: 14 },
         },
@@ -1027,6 +1012,7 @@ function updateTrendChartFilter() {
           ticks: { maxRotation: 45, minRotation: 45 },
         },
         y: {
+          beginAtZero: true,
           grace: "5%",
         },
       },
@@ -1043,7 +1029,7 @@ function updateChartComparison(compareOid) {
   const startDate = new Date(startVal);
   const endDate = new Date(endVal);
 
-  const d1 = districtTemps[currentChartOid] || { history: {} };
+  const d1 = districtWinds[currentChartOid] || { history: {} };
   let d1Name = "District 1";
   geojsonLayer.eachLayer((l) => {
     if (String(l.feature.properties.OBJECTID) === String(currentChartOid))
@@ -1064,26 +1050,26 @@ function updateChartComparison(compareOid) {
 
   const datasets = [
     {
-      label: `Max Temp (${d1Name})`,
+      label: `Max Wind (${d1Name})`,
       data: maxData1,
-      borderColor: "#c0392b",
-      backgroundColor: "#c0392b",
+      borderColor: "#e74c3c",
+      backgroundColor: "#e74c3c",
       tension: 0.3,
       fill: false,
     },
     {
-      label: `Min Temp (${d1Name})`,
+      label: `Min Wind (${d1Name})`,
       data: minData1,
-      borderColor: "#2980b9",
-      backgroundColor: "#2980b9",
+      borderColor: "#3498db",
+      backgroundColor: "#3498db",
       tension: 0.3,
       fill: false,
     },
     {
-      label: `Avg Temp (${d1Name})`,
+      label: `Avg Wind (${d1Name})`,
       data: avgData1,
-      borderColor: "#f39c12",
-      backgroundColor: "#f39c12",
+      borderColor: "#2ecc71",
+      backgroundColor: "#2ecc71",
       borderDash: [2, 2],
       tension: 0.3,
       fill: false,
@@ -1091,7 +1077,7 @@ function updateChartComparison(compareOid) {
   ];
 
   if (compareOid) {
-    const d2 = districtTemps[compareOid] || { history: {} };
+    const d2 = districtWinds[compareOid] || { history: {} };
     let d2Name = "District 2";
     geojsonLayer.eachLayer((l) => {
       if (String(l.feature.properties.OBJECTID) === String(compareOid))
@@ -1104,28 +1090,28 @@ function updateChartComparison(compareOid) {
 
     datasets.push(
       {
-        label: `Max Temp (${d2Name})`,
+        label: `Max Wind (${d2Name})`,
         data: maxData2,
-        borderColor: "#e74c3c",
-        backgroundColor: "#e74c3c",
+        borderColor: "#c0392b",
+        backgroundColor: "#c0392b",
         borderDash: [5, 5],
         tension: 0.3,
         fill: false,
       },
       {
-        label: `Min Temp (${d2Name})`,
+        label: `Min Wind (${d2Name})`,
         data: minData2,
-        borderColor: "#3498db",
-        backgroundColor: "#3498db",
+        borderColor: "#2980b9",
+        backgroundColor: "#2980b9",
         borderDash: [5, 5],
         tension: 0.3,
         fill: false,
       },
       {
-        label: `Avg Temp (${d2Name})`,
+        label: `Avg Wind (${d2Name})`,
         data: avgData2,
-        borderColor: "#f1c40f",
-        backgroundColor: "#f1c40f",
+        borderColor: "#27ae60",
+        backgroundColor: "#27ae60",
         borderDash: [5, 5],
         tension: 0.3,
         fill: false,
@@ -1133,13 +1119,13 @@ function updateChartComparison(compareOid) {
     );
 
     if (trendChart.options.plugins.title) {
-      trendChart.options.plugins.title.text = `Temperature Comparison: ${d1Name} vs ${d2Name}`;
+      trendChart.options.plugins.title.text = `Wind Speed Comparison: ${d1Name} vs ${d2Name}`;
     }
   } else {
     if (trendChart.options.plugins.title) {
       trendChart.options.plugins.title.text = [
         `District: ${d1Name}`,
-        `Parameter: Temperature | Period: ${startVal} to ${endVal}`,
+        `Parameter: Wind Speed | Period: ${startVal} to ${endVal}`,
       ];
     }
   }
@@ -1160,7 +1146,7 @@ function downloadMapImage() {
     .toPng(node)
     .then(function (dataUrl) {
       const link = document.createElement("a");
-      link.download = `Bihar_Temp_Map_${new Date().toISOString().split("T")[0]}.png`;
+      link.download = `Bihar_Wind_Map_${new Date().toISOString().split("T")[0]}.png`;
       link.href = dataUrl;
       link.click();
     })
@@ -1179,7 +1165,7 @@ function downloadMapPDF() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF("l", "px", [node.offsetWidth, node.offsetHeight]);
       doc.addImage(dataUrl, "PNG", 0, 0, node.offsetWidth, node.offsetHeight);
-      doc.save(`Bihar_Temp_Map_${new Date().toISOString().split("T")[0]}.pdf`);
+      doc.save(`Bihar_Wind_Map_${new Date().toISOString().split("T")[0]}.pdf`);
     })
     .catch(function (error) {
       console.error("oops, something went wrong!", error);
@@ -1220,7 +1206,7 @@ function exportChartDataToCSV() {
   link.setAttribute("href", url);
   link.setAttribute(
     "download",
-    `Temperature_Trend_${new Date().toISOString().split("T")[0]}.csv`,
+    `Wind_Trend_${new Date().toISOString().split("T")[0]}.csv`,
   );
   link.style.visibility = "hidden";
   document.body.appendChild(link);
@@ -1235,7 +1221,7 @@ function downloadChartImage() {
     .toPng(node, { bgcolor: "#ffffff" })
     .then(function (dataUrl) {
       const link = document.createElement("a");
-      link.download = `Temp_Chart_${new Date().toISOString().split("T")[0]}.png`;
+      link.download = `Wind_Chart_${new Date().toISOString().split("T")[0]}.png`;
       link.href = dataUrl;
       link.click();
     })
@@ -1254,7 +1240,7 @@ function downloadChartPDF() {
       const { jsPDF } = window.jspdf;
       const doc = new jsPDF("l", "px", [node.offsetWidth, node.offsetHeight]);
       doc.addImage(dataUrl, "PNG", 0, 0, node.offsetWidth, node.offsetHeight);
-      doc.save(`Temp_Chart_${new Date().toISOString().split("T")[0]}.pdf`);
+      doc.save(`Wind_Chart_${new Date().toISOString().split("T")[0]}.pdf`);
     })
     .catch(function (error) {
       console.error("Chart PDF download failed:", error);
