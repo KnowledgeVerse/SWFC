@@ -113,7 +113,7 @@ function renderGrid() {
     const trForecast = document.createElement("tr");
     trForecast.innerHTML = `<td class="row-header">${region.name}<div class="row-sub-header">T. Max: Range</div></td>`;
     for (let i = 0; i < 7; i++) {
-      trForecast.innerHTML += `<td contenteditable="true" data-region="${region.code}" data-type="forecast" data-day="${i}"></td>`;
+      trForecast.innerHTML += `<td contenteditable="true" data-region="${region.code}" data-type="max_temp" data-day="${i}"></td>`;
     }
     tbody.appendChild(trForecast);
 
@@ -121,7 +121,7 @@ function renderGrid() {
     const trWarning = document.createElement("tr");
     trWarning.innerHTML = `<td class="row-header">${region.name}<div class="row-sub-header">T. Min: Range</div></td>`;
     for (let i = 0; i < 7; i++) {
-      trWarning.innerHTML += `<td contenteditable="true" data-region="${region.code}" data-type="warning" data-day="${i}"></td>`;
+      trWarning.innerHTML += `<td contenteditable="true" data-region="${region.code}" data-type="min_temp" data-day="${i}"></td>`;
     }
     tbody.appendChild(trWarning);
   });
@@ -184,10 +184,10 @@ function clearGrid() {
 
 function processAndSave() {
   // Initialize Data Structures
-  const weeklyForecast = Array(7)
+  const weeklyMaxTemp = Array(7)
     .fill(null)
     .map(() => ({}));
-  const weeklyWarning = Array(7)
+  const weeklyMinTemp = Array(7)
     .fill(null)
     .map(() => ({}));
 
@@ -212,48 +212,24 @@ function processAndSave() {
 
     const districtIds = getDistricts(regionCode);
 
-    if (type === "forecast") {
-      // Process Forecast (Phenomenon)
-      const phenomId = identifyPhenomenon(text);
-      if (phenomId) {
-        const color = phenColors[phenomId];
+    // Parse Temperature Range (e.g., "24-26" -> 24)
+    // We take the first number before '-'
+    const parts = text.split("-");
+    const val = parseInt(parts[0].trim());
 
-        districtIds.forEach((id) => {
-          const strId = String(id);
-          if (!weeklyForecast[dayIndex][strId]) {
-            weeklyForecast[dayIndex][strId] = {
-              phenomena: [],
-              intensities: {},
-              color: color,
-              distribution: 3, // Default to 'Many Places'
-            };
-          }
-          // Add phenomenon if not exists
-          if (!weeklyForecast[dayIndex][strId].phenomena.includes(phenomId)) {
-            weeklyForecast[dayIndex][strId].phenomena.push(phenomId);
-            weeklyForecast[dayIndex][strId].intensities[phenomId] = 0; // Default intensity
-          }
-          // Update color
-          weeklyForecast[dayIndex][strId].color = color;
-        });
-      }
-    } else if (type === "warning") {
-      // Process Warning (Color/Level)
-      const warningInfo = identifyWarning(text);
-
+    if (!isNaN(val)) {
       districtIds.forEach((id) => {
         const strId = String(id);
-        if (!weeklyWarning[dayIndex][strId]) {
-          weeklyWarning[dayIndex][strId] = {
-            phenomena: [],
-            intensities: {},
-            color: warningInfo.color,
-            warningLevel: warningInfo.level,
-            distribution: 3,
-          };
-        } else {
-          weeklyWarning[dayIndex][strId].color = warningInfo.color;
-          weeklyWarning[dayIndex][strId].warningLevel = warningInfo.level;
+        if (type === "max_temp") {
+          if (!weeklyMaxTemp[dayIndex][strId])
+            weeklyMaxTemp[dayIndex][strId] = {};
+          weeklyMaxTemp[dayIndex][strId].val = val;
+          weeklyMaxTemp[dayIndex][strId].range = text;
+        } else if (type === "min_temp") {
+          if (!weeklyMinTemp[dayIndex][strId])
+            weeklyMinTemp[dayIndex][strId] = {};
+          weeklyMinTemp[dayIndex][strId].val = val;
+          weeklyMinTemp[dayIndex][strId].range = text;
         }
       });
     }
@@ -264,41 +240,21 @@ function processAndSave() {
     return;
   }
 
-  // Sync Forecast Phenomena to Warning Data
-  for (let i = 0; i < 7; i++) {
-    const fDay = weeklyForecast[i];
-    const wDay = weeklyWarning[i];
-
-    Object.keys(fDay).forEach((distId) => {
-      if (wDay[distId]) {
-        wDay[distId].phenomena = [...fDay[distId].phenomena];
-        wDay[distId].intensities = { ...fDay[distId].intensities };
-      } else {
-        // If forecast exists but no warning data (Green), create Green warning entry
-        if (!wDay[distId]) {
-          wDay[distId] = {
-            phenomena: [...fDay[distId].phenomena],
-            intensities: { ...fDay[distId].intensities },
-            color: warningColors.green,
-            warningLevel: 0,
-            distribution: fDay[distId].distribution,
-          };
-        }
-      }
-    });
-  }
-
   // Save to LocalStorage
   const payload = {
-    forecast: weeklyForecast,
-    warning: weeklyWarning,
+    max: weeklyMaxTemp,
+    min: weeklyMinTemp,
   };
 
-  localStorage.setItem("bihar_weather_data", JSON.stringify(payload));
-  localStorage.setItem("bihar_forecast_date", new Date().toISOString());
+  localStorage.setItem("bihar_temperature_data", JSON.stringify(payload));
 
-  alert("Data processed and saved successfully! Redirecting to Dashboard...");
-  window.location.href = "index.html";
+  // Sync date if not set
+  if (!localStorage.getItem("bihar_forecast_date")) {
+    localStorage.setItem("bihar_forecast_date", new Date().toISOString());
+  }
+
+  alert("Temperature Data processed and saved successfully!");
+  window.location.href = "Temperature_Forecast.html";
 }
 
 function identifyPhenomenon(text) {

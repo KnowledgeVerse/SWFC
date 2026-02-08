@@ -320,11 +320,11 @@ function renderGrid() {
 
   const legendItem = document.createElement("div");
   legendItem.className = "grid-item legend-container";
-  let legendHtml = `<div class="legend-title" style="font-size:4em; padding:25px; text-align:center;">LEGEND / संकेत</div>`;
+  let legendHtml = `<div class="legend-title" style="font-size:5em; padding:30px; text-align:center; white-space:nowrap;">LEGEND / संकेत</div>`;
 
-  legendHtml += `<div class="legend-section" style="padding:40px; display:flex; flex-direction:column; justify-content:center; flex-grow:1;"><strong style="font-size: 3.5em; margin-bottom: 40px; display:block;">Warning (चेतावनी)</strong><div style="display:flex; flex-direction:column; gap:40px;">`;
+  legendHtml += `<div class="legend-section" style="padding:50px; display:flex; flex-direction:column; justify-content:center; flex-grow:1;"><strong style="font-size: 4em; margin-bottom: 50px; display:block; white-space:nowrap;">Warning (चेतावनी)</strong><div style="display:flex; flex-direction:column; gap:50px;">`;
   warningLegendItems.forEach((l) => {
-    legendHtml += `<div class="legend-item" style="font-size:50px; display:flex; align-items:center;"><div class="color-box" style="width:100px; height:100px; background:${l.color}; ${l.border || ""}; margin-right: 35px; flex-shrink:0;"></div><span>${l.text}</span></div>`;
+    legendHtml += `<div class="legend-item" style="font-size:60px; display:flex; align-items:center;"><div class="color-box" style="width:120px; height:120px; background:${l.color}; ${l.border || ""}; margin-right: 40px; flex-shrink:0;"></div><span>${l.text}</span></div>`;
   });
   legendHtml += `</div></div>`;
 
@@ -512,7 +512,7 @@ function addLegendToMap(map, dayData, index) {
     div.style.padding = "8px";
     div.style.borderRadius = "5px";
     div.style.boxShadow = "0 0 15px rgba(0,0,0,0.3)";
-    div.style.fontSize = "22px";
+    div.style.fontSize = "24px";
     div.style.lineHeight = "1.3";
     div.style.minWidth = "260px";
     div.style.transformOrigin = "top right";
@@ -529,14 +529,14 @@ function addLegendToMap(map, dayData, index) {
       presentPhenomena.forEach((pId) => {
         const pDef = phenDefs.find((p) => p.id === pId);
         if (pDef) {
-          html += `<div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;"><img src="${pDef.image}" style="width:40px; height:40px;"><span>${pDef.english}</span></div>`;
+          html += `<div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;"><img src="${pDef.image}" style="width:45px; height:45px;"><span>${pDef.english}</span></div>`;
         }
       });
       html += "<hr style='margin:5px 0; border:0; border-top:1px solid #ccc;'>";
     }
     html += "<strong>Warning</strong><br>";
     warningLegendItems.forEach((item) => {
-      html += `<div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;"><span style="width:30px; height:30px; background:${item.color}; border:${item.border || "1px solid #ccc"}; display:inline-block;"></span><span>${item.text}</span></div>`;
+      html += `<div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;"><span style="width:35px; height:35px; background:${item.color}; border:${item.border || "1px solid #ccc"}; display:inline-block;"></span><span>${item.text}</span></div>`;
     });
     div.innerHTML = html;
     L.DomEvent.disableClickPropagation(div);
