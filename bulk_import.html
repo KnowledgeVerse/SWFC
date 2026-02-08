@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Temperature Data Import - Bihar Weather</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <link rel="stylesheet" href="css/style.css" />
+    <style>
+      body {
+        background-color: #f4f7f6;
+        font-family: "Roboto", sans-serif;
+        padding: 20px;
+      }
+      .container {
+        max-width: 1400px;
+        margin: 0 auto;
+        background: white;
+        padding: 20px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+      .header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 20px;
+        border-bottom: 2px solid #eee;
+        padding-bottom: 10px;
+      }
+      .header h1 {
+        color: #2c3e50;
+        margin: 0;
+      }
+      .controls {
+        display: flex;
+        gap: 10px;
+      }
+      /* Excel-like Grid */
+      .excel-grid {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        font-size: 13px;
+      }
+      .excel-grid th,
+      .excel-grid td {
+        border: 1px solid #ccc;
+        padding: 8px;
+        text-align: center;
+        min-width: 100px;
+        position: relative;
+      }
+      .excel-grid th {
+        background-color: #f8f9fa;
+        font-weight: bold;
+        color: #333;
+      }
+      .excel-grid td {
+        background-color: #fff;
+        cursor: text;
+      }
+      .excel-grid td:focus {
+        outline: 2px solid #667eea;
+        background-color: #eef2ff;
+        z-index: 10;
+      }
+      /* Row Headers */
+      .row-header {
+        background-color: #e9ecef !important;
+        font-weight: bold;
+        text-align: left !important;
+        width: 150px;
+      }
+      .row-sub-header {
+        font-size: 0.85em;
+        color: #666;
+        font-weight: normal;
+      }
+      /* Status Indicators */
+      .status-success {
+        background-color: #d4edda !important;
+        transition: background-color 0.5s;
+      }
+      .status-error {
+        background-color: #f8d7da !important;
+      }
+      .legend-help {
+        font-size: 0.9em;
+        color: #555;
+        margin-top: 10px;
+        background: #fff3cd;
+        padding: 10px;
+        border-radius: 5px;
+        border-left: 4px solid #ffc107;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <h1><i class="fas fa-temperature-high"></i> Temperature Data Import</h1>
+        <div class="controls">
+          <button
+            class="btn-secondary"
+            onclick="window.location.href = 'index.html'"
+          >
+            <i class="fas fa-home"></i> Home
+          </button>
+          <button class="btn-secondary" onclick="clearGrid()">
+            <i class="fas fa-eraser"></i> Clear Grid
+          </button>
+          <button class="btn-primary" onclick="processAndSave()">
+            <i class="fas fa-save"></i> Process & Save Data
+          </button>
+        </div>
+      </div>
+
+      <div class="legend-help">
+        <strong
+          ><i class="fas fa-info-circle"></i> Instructions
+          (Temperature):</strong
+        >
+        Copy your data from Excel (12 rows x 7 columns) and paste it into the
+        first cell (Day 1 of NW Forecast).
+        <br />
+        <strong>Rows Order:</strong> NW T. Max, NW T. Min, NC T. Max, NC T. Min,
+        NE T. Max, NE T. Min, SW T. Max, SW T. Min, SC T. Max, SC T. Min, SE T.
+        Max, SE T. Min.
+      </div>
+
+      <div style="overflow-x: auto; border: 1px solid #ccc; margin-top: 10px">
+        <table class="excel-grid" id="importGrid">
+          <thead>
+            <tr id="headerRow">
+              <th class="row-header">Region / Type</th>
+              <!-- Date headers will be injected here -->
+            </tr>
+          </thead>
+          <tbody id="gridBody">
+            <!-- Rows will be injected here -->
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <script src="js/districts.js"></script>
+    <script src="js/bulk_import.js"></script>
+  </body>
+</html>
