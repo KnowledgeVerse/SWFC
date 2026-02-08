@@ -2,7 +2,7 @@
 <html lang="en">
   <head>
     <meta charset="UTF-8" />
-    <title>7-Day Forecast Print View</title>
+    <title>7-Day Warning Dashboard</title>
     <link
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
@@ -20,7 +20,7 @@
       body {
         margin: 0;
         padding: 0;
-        background: #e0e0e0;
+        background: #f0f0f0;
         font-family: "Noto Sans Devanagari", sans-serif;
       }
       .header-container {
@@ -224,10 +224,6 @@
       .leaflet-bottom {
         margin-bottom: 25px !important;
       }
-      /* Override style.css body background for this specific page */
-      body {
-        background: #f0f0f0;
-      }
       /* Map Labels */
       .map-label {
         background: transparent !important;
@@ -342,7 +338,6 @@
             style="display: none"
             onchange="setAllMapsBackground(this.value)"
           />
-
           <button
             class="toggle-btn"
             onclick="toggleBodyAnimation()"
@@ -350,7 +345,6 @@
           >
             <i class="fas fa-magic"></i> Anim BG
           </button>
-
           <button
             class="toggle-btn"
             onclick="downloadPDF()"
@@ -389,7 +383,7 @@
 
       <!-- Bottom Row: Title -->
       <div class="header-title" id="mainHeaderTitle">
-        7-Day Weather Forecast Dashboard
+        7-Day Weather Warning Dashboard
       </div>
     </div>
     <div class="page" id="gridContainer">
@@ -402,6 +396,6 @@
     <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
     <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
     <script src="js/districts.js"></script>
-    <script src="js/forecast.js"></script>
+    <script src="js/warning.js"></script>
   </body>
 </html>
