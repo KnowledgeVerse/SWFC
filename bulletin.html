@@ -1,0 +1,200 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weather Bulletin</title>
+    <link
+      href="https://fonts.googleapis.com/css2?family=Roboto:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <style>
+      body {
+        font-family: "Roboto", sans-serif;
+        background-color: #f0f2f5;
+        margin: 0;
+        padding: 20px;
+        color: #333;
+      }
+      .container {
+        max-width: 1200px;
+        margin: 0 auto;
+      }
+      .header {
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        position: relative;
+        margin-bottom: 40px;
+        padding-bottom: 20px;
+        border-bottom: 2px solid #ddd;
+      }
+      .header h1 {
+        margin: 0;
+        color: #2c3e50;
+        font-size: 2.5em;
+      }
+      .home-btn {
+        position: absolute;
+        left: 0;
+        text-decoration: none;
+        color: #fff;
+        background-color: #0056b3;
+        padding: 10px 20px;
+        border-radius: 5px;
+        font-weight: bold;
+        transition: background 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+      }
+      .home-btn:hover {
+        background-color: #004494;
+      }
+      .grid {
+        display: grid;
+        grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+        gap: 25px;
+      }
+      .card {
+        background: white;
+        border-radius: 12px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.05);
+        padding: 30px;
+        text-align: center;
+        text-decoration: none;
+        color: inherit;
+        transition:
+          transform 0.3s,
+          box-shadow 0.3s;
+        border: 1px solid #eee;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+      }
+      .card:hover {
+        transform: translateY(-5px);
+        box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        border-color: #667eea;
+      }
+      .icon-box {
+        width: 80px;
+        height: 80px;
+        border-radius: 50%;
+        background: #f8f9fa;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        margin-bottom: 20px;
+        font-size: 32px;
+        transition:
+          background 0.3s,
+          color 0.3s;
+      }
+      .card:hover .icon-box {
+        background: #667eea;
+        color: white;
+      }
+      .card h3 {
+        margin: 0 0 10px 0;
+        font-size: 1.4em;
+        color: #2c3e50;
+      }
+      .card p {
+        margin: 0;
+        color: #7f8c8d;
+        font-size: 0.95em;
+        line-height: 1.5;
+      }
+      /* Specific Icon Colors */
+      .icon-forecast {
+        color: #0056b3;
+      }
+      .icon-warning {
+        color: #e74c3c;
+      }
+      .icon-temp {
+        color: #fd7e14;
+      }
+      .icon-rain {
+        color: #007bff;
+      }
+      .icon-wind {
+        color: #17a2b8;
+      }
+      .icon-humidity {
+        color: #00bcd4;
+      }
+      .icon-display {
+        color: #6f42c1;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="header">
+        <a href="index.html" class="home-btn"
+          ><i class="fas fa-home"></i> Home</a
+        >
+        <h1>Weather Bulletin</h1>
+      </div>
+
+      <div class="grid">
+        <a href="forecast.html" class="card"
+          ><div class="icon-box icon-forecast">
+            <i class="fas fa-calendar-alt"></i>
+          </div>
+          <h3>7-Day Forecast</h3>
+          <p>View daily weather forecast maps for the next 7 days.</p></a
+        >
+        <a href="warning.html" class="card"
+          ><div class="icon-box icon-warning">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <h3>Weather Warnings</h3>
+          <p>Severe weather alerts and warning bulletins.</p></a
+        >
+        <a href="min_max_temp.html" class="card"
+          ><div class="icon-box icon-temp">
+            <i class="fas fa-temperature-high"></i>
+          </div>
+          <h3>Min/Max Temperature</h3>
+          <p>Daily minimum and maximum temperature reports.</p></a
+        >
+        <a href="temp.html" class="card"
+          ><div class="icon-box icon-temp">
+            <i class="fas fa-thermometer-half"></i>
+          </div>
+          <h3>Live Temperature</h3>
+          <p>Real-time temperature map visualization.</p></a
+        >
+        <a href="rain.html" class="card"
+          ><div class="icon-box icon-rain">
+            <i class="fas fa-cloud-showers-heavy"></i>
+          </div>
+          <h3>Rainfall Map</h3>
+          <p>Live rainfall distribution and intensity.</p></a
+        >
+        <a href="wind.html" class="card"
+          ><div class="icon-box icon-wind"><i class="fas fa-wind"></i></div>
+          <h3>Wind Speed</h3>
+          <p>Current wind speed and direction analysis.</p></a
+        >
+        <a href="humidity.html" class="card"
+          ><div class="icon-box icon-humidity"><i class="fas fa-tint"></i></div>
+          <h3>Humidity</h3>
+          <p>Relative humidity levels across districts.</p></a
+        >
+        <a href="display.html" class="card"
+          ><div class="icon-box icon-display"><i class="fas fa-tv"></i></div>
+          <h3>Display Mode</h3>
+          <p>Full-screen presentation mode for displays.</p></a
+        >
+      </div>
+    </div>
+  </body>
+</html>

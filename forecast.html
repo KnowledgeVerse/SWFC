@@ -1,0 +1,450 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <title>7-Day Forecast Print View</title>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <link
+      href="https://fonts.googleapis.com/css2?family=Noto+Sans+Devanagari:wght@400;700&display=swap"
+      rel="stylesheet"
+    />
+    <style>
+      body {
+        margin: 0;
+        padding: 0;
+        background: #e0e0e0;
+        font-family: "Noto Sans Devanagari", sans-serif;
+      }
+      .page {
+        width: 210mm;
+        height: 297mm;
+        background: white;
+        margin: 10mm auto;
+        padding: 10mm;
+        box-shadow: 0 0 10px rgba(0, 0, 0, 0.5);
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: repeat(4, 1fr);
+        gap: 4mm;
+        box-sizing: border-box;
+      }
+      @media print {
+        body {
+          background: white;
+        }
+        .page {
+          margin: 0;
+          box-shadow: none;
+          width: 100%;
+          height: 100vh;
+          padding: 5mm;
+          page-break-after: always;
+        }
+      }
+      .grid-item {
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        overflow: hidden;
+        display: flex;
+        flex-direction: column;
+        position: relative;
+      }
+      .map-header {
+        background: #2c3e50;
+        color: white;
+        padding: 4px 8px;
+        font-size: 12px;
+        font-weight: bold;
+        text-align: center;
+        z-index: 10;
+      }
+      .map-container {
+        flex: 1;
+        background: #f4f7f6;
+        width: 100%;
+        height: 100%;
+      }
+      .legend-container {
+        padding: 10px;
+        display: flex;
+        flex-direction: column;
+        background: #fff;
+        overflow: hidden;
+      }
+      .legend-title {
+        font-weight: bold;
+        margin-bottom: 5px;
+        text-align: center;
+        text-decoration: underline;
+        color: #2c3e50;
+        font-size: 14px;
+      }
+      .legend-section {
+        margin-bottom: 8px;
+      }
+      .legend-section strong {
+        display: block;
+        font-size: 11px;
+        margin-bottom: 3px;
+        color: #555;
+        border-bottom: 1px solid #eee;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        margin-bottom: 2px;
+        font-size: 10px;
+        line-height: 1.1;
+      }
+      .color-box {
+        width: 12px;
+        height: 12px;
+        border: 1px solid #999;
+        margin-right: 6px;
+        flex-shrink: 0;
+      }
+      .phenom-icon {
+        width: 16px;
+        height: 16px;
+        margin-right: 6px;
+        object-fit: contain;
+      }
+      /* Hide Leaflet controls to save space */
+      .leaflet-control-attribution {
+        display: none !important;
+      }
+      .leaflet-control-zoom {
+        display: none !important;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="page" id="gridContainer">
+      <!-- Items will be injected here -->
+    </div>
+
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/shpjs@latest/dist/shp.js"></script>
+    <script src="js/districts.js"></script>
+    <script>
+      // Configuration
+      const phenColors = {
+        dry: "#ffffff",
+        heavyrain: "#007bff",
+        heatwave: "#fd7e14",
+        warmnight: "#e83e8c",
+        coldwave: "#00bcd4",
+        coldday: "#20c997",
+        densefog: "#6c757d",
+        thunderstorm: "#ffc107",
+        gustywind: "#17a2b8",
+        squall: "#607d8b",
+        frost: "#b2ebf2",
+        seastate: "#0d47a1",
+        cyclone: "#b71c1c",
+        duststorm: "#d7ccc8",
+        snow: "#f5f5f5",
+        hailstorm: "#6f42c1",
+      };
+
+      const phenDefs = [
+        {
+          id: "dry",
+          hindi: "शुष्क मौसम",
+          english: "Dry Weather",
+          image: "assets/weather-icons/dry.png",
+        },
+        {
+          id: "heavyrain",
+          hindi: "भारी वर्षा",
+          english: "Heavy Rainfall",
+          image: "assets/weather-icons/heavyrain.png",
+        },
+        {
+          id: "heatwave",
+          hindi: "लू (उष्ण लहर)",
+          english: "Heat Wave",
+          image: "assets/weather-icons/heatwave.png",
+        },
+        {
+          id: "warmnight",
+          hindi: "गर्म रात्रि",
+          english: "Warm Night",
+          image: "assets/weather-icons/warmnight.png",
+        },
+        {
+          id: "coldwave",
+          hindi: "शीत लहर",
+          english: "Cold Wave",
+          image: "assets/weather-icons/coldwave.png",
+        },
+        {
+          id: "coldday",
+          hindi: "शीत दिवस",
+          english: "Cold Day",
+          image: "assets/weather-icons/coldday.png",
+        },
+        {
+          id: "densefog",
+          hindi: "घना कोहरा",
+          english: "Dense Fog",
+          image: "assets/weather-icons/densefog.png",
+        },
+        {
+          id: "thunderstorm",
+          hindi: "मेघगर्जन/वज्रपात",
+          english: "Thunderstorm",
+          image: "assets/weather-icons/thunderstorm.png",
+        },
+        {
+          id: "gustywind",
+          hindi: "तेज़ हवा",
+          english: "Gusty Wind",
+          image: "assets/weather-icons/gustywind.png",
+        },
+        {
+          id: "squall",
+          hindi: "तेज़ हवा के झोंके",
+          english: "Squall",
+          image: "assets/weather-icons/squall.png",
+        },
+        {
+          id: "frost",
+          hindi: "पाला",
+          english: "Frost",
+          image: "assets/weather-icons/frost.png",
+        },
+        {
+          id: "seastate",
+          hindi: "समुद्र की स्थिति",
+          english: "Sea State",
+          image: "assets/weather-icons/sea.png",
+        },
+        {
+          id: "cyclone",
+          hindi: "चक्रवात",
+          english: "Cyclone",
+          image: "assets/weather-icons/cyclone.png",
+        },
+        {
+          id: "duststorm",
+          hindi: "धूल भरी आंधी",
+          english: "Dust Storm",
+          image: "assets/weather-icons/dust.png",
+        },
+        {
+          id: "snow",
+          hindi: "बर्फबारी",
+          english: "Snow",
+          image: "assets/weather-icons/snow.png",
+        },
+        {
+          id: "hailstorm",
+          hindi: "ओलावृष्टि",
+          english: "Hailstorm",
+          image: "assets/weather-icons/hailstorm.png",
+        },
+      ];
+
+      const forecastLegendItems = [
+        { color: "transparent", text: "DRY (शुष्क)", border: "1px solid #999" },
+        { color: "rgb(51, 204, 51)", text: "ISOL (एक दो स्थानों पर)" },
+        { color: "rgb(0, 153, 0)", text: "SCATTERED (कुछ स्थानों पर)" },
+        {
+          color: "rgb(51, 204, 255)",
+          text: "FAIRLY WIDESPREAD (अनेक स्थानों पर)",
+        },
+        { color: "rgb(0, 102, 255)", text: "WIDESPREAD (अधिकांश स्थानों पर)" },
+      ];
+
+      let weeklyData = [];
+      let baseDate = new Date();
+
+      function init() {
+        const rawData = localStorage.getItem("bihar_weather_data");
+        const rawDate = localStorage.getItem("bihar_forecast_date");
+
+        if (rawDate) baseDate = new Date(rawDate);
+
+        if (rawData) {
+          try {
+            const parsed = JSON.parse(rawData);
+            if (parsed.forecast) {
+              weeklyData = parsed.forecast;
+            } else if (Array.isArray(parsed)) {
+              weeklyData = parsed;
+            }
+          } catch (e) {
+            console.error("Data parse error", e);
+          }
+        }
+        while (weeklyData.length < 7) weeklyData.push({});
+        renderGrid();
+      }
+
+      function renderGrid() {
+        const container = document.getElementById("gridContainer");
+
+        for (let i = 0; i < 7; i++) {
+          const dayNum = i + 1;
+          const date = new Date(baseDate);
+          date.setDate(baseDate.getDate() + i);
+          const dateStr = date.toLocaleDateString("en-IN", {
+            day: "2-digit",
+            month: "short",
+            year: "numeric",
+          });
+
+          const item = document.createElement("div");
+          item.className = "grid-item";
+          item.innerHTML = `
+                <div class="map-header">Day ${dayNum} (${dateStr})</div>
+                <div id="map${i}" class="map-container"></div>
+            `;
+          container.appendChild(item);
+        }
+
+        const legendItem = document.createElement("div");
+        legendItem.className = "grid-item legend-container";
+        let legendHtml = `<div class="legend-title">LEGEND / संकेत</div>`;
+
+        legendHtml += `<div class="legend-section"><strong>Distribution (वितरण)</strong>`;
+        forecastLegendItems.forEach((l) => {
+          legendHtml += `<div class="legend-item"><div class="color-box" style="background:${l.color}; ${l.border || ""}"></div><span>${l.text}</span></div>`;
+        });
+        legendHtml += `</div>`;
+
+        legendHtml += `<div class="legend-section"><strong>Phenomena (मौसम घटना)</strong><div style="display:grid; grid-template-columns: 1fr 1fr; gap:2px;">`;
+        phenDefs.forEach((p) => {
+          legendHtml += `<div class="legend-item"><img src="${p.image}" class="phenom-icon"><span>${p.english}</span></div>`;
+        });
+        legendHtml += `</div></div>`;
+
+        legendItem.innerHTML = legendHtml;
+        container.appendChild(legendItem);
+
+        loadShapefile();
+      }
+
+      function loadShapefile() {
+        const basePath = "data/Bihar_Districts_Shapefile/Bihar";
+        Promise.all([
+          fetch(basePath + ".shp").then((r) => r.arrayBuffer()),
+          fetch(basePath + ".dbf").then((r) => r.arrayBuffer()),
+        ])
+          .then(([shpBuffer, dbfBuffer]) => {
+            const geojson = shp.combine([
+              shp.parseShp(shpBuffer),
+              shp.parseDbf(dbfBuffer),
+            ]);
+            for (let i = 0; i < 7; i++) {
+              initMap(i, geojson);
+            }
+          })
+          .catch((e) => console.error("Shapefile load error", e));
+      }
+
+      function initMap(index, geojson) {
+        const map = L.map(`map${index}`, {
+          zoomControl: false,
+          attributionControl: false,
+          dragging: false,
+          scrollWheelZoom: false,
+          doubleClickZoom: false,
+          boxZoom: false,
+          touchZoom: false,
+        }).setView([25.6, 85.6], 6);
+        L.tileLayer(
+          "https://{s}.basemaps.cartocdn.com/light_all/{z}/{x}/{y}{r}.png",
+          { opacity: 0.5 },
+        ).addTo(map);
+
+        const dayData = weeklyData[index] || {};
+        L.geoJSON(geojson, {
+          style: (feature) => {
+            const oid = String(feature.properties.OBJECTID);
+            const distData = dayData[oid];
+            let fillColor = "#ffffff",
+              fillOpacity = 0.2,
+              phenomColor = null;
+            if (
+              distData &&
+              distData.phenomena &&
+              distData.phenomena.length > 0
+            ) {
+              for (const pDef of phenDefs) {
+                if (distData.phenomena.includes(pDef.id)) {
+                  if (!phenomColor) phenomColor = phenColors[pDef.id];
+                }
+              }
+            }
+            if (distData && distData.color) {
+              fillColor = distData.color;
+              fillOpacity = 0.6;
+            } else if (phenomColor) {
+              fillColor = phenomColor;
+              fillOpacity = 0.6;
+            } else {
+              fillColor = getDistrictRegionColor(oid);
+              fillOpacity = 0.1;
+            }
+            return {
+              fillColor: fillColor,
+              weight: 1,
+              opacity: 1,
+              color: "#333",
+              fillOpacity: fillOpacity,
+            };
+          },
+          onEachFeature: (feature, layer) => {
+            const oid = String(feature.properties.OBJECTID);
+            const distData = dayData[oid];
+            if (
+              distData &&
+              distData.phenomena &&
+              distData.phenomena.length > 0
+            ) {
+              const center = layer.getBounds().getCenter();
+              const uniquePhenoms = [...new Set(distData.phenomena)].slice(
+                0,
+                2,
+              );
+              let html = `<div style="display:flex; justify-content:center; gap:1px;">`;
+              uniquePhenoms.forEach((pId) => {
+                const pDef = phenDefs.find((p) => p.id === pId);
+                if (pDef)
+                  html += `<img src="${pDef.image}" style="width:12px; height:12px;">`;
+              });
+              html += `</div>`;
+              L.marker(center, {
+                icon: L.divIcon({
+                  html: html,
+                  className: "",
+                  iconSize: [30, 15],
+                  iconAnchor: [15, 7],
+                }),
+                interactive: false,
+              }).addTo(map);
+            }
+          },
+        }).addTo(map);
+        map.fitBounds(L.geoJSON(geojson).getBounds());
+      }
+
+      function getDistrictRegionColor(id) {
+        id = parseInt(id);
+        if (subRegionDistricts.nw.includes(id)) return "#00897b";
+        if (subRegionDistricts.nc.includes(id)) return "#1976d2";
+        if (subRegionDistricts.ne.includes(id)) return "#673ab7";
+        if (subRegionDistricts.sw.includes(id)) return "#f44336";
+        if (subRegionDistricts.sc.includes(id)) return "#fbc02d";
+        if (subRegionDistricts.se.includes(id)) return "#795548";
+        return "#3388ff";
+      }
+      init();
+    </script>
+  </body>
+</html>
