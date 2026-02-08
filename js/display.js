@@ -187,6 +187,7 @@ function initDisplay() {
   style.innerHTML = `
     html, body { margin: 0; padding: 0; width: 100%; height: 100%; overflow: hidden; background: #eef2f3; font-family: sans-serif; }
     #displayRoot { width: 100%; height: 100%; display: flex; justify-content: center; align-items: center; }
+    .glass-btn.active { background: #667eea; color: white; box-shadow: 0 0 10px rgba(102, 126, 234, 0.5); }
   `;
   document.head.appendChild(style);
 
@@ -210,7 +211,12 @@ function initDisplay() {
 
         <div class="glass-toolbar">
              <button class="glass-btn small-btn" onclick="window.location.href='index.html'" title="Home"><i class="fas fa-home"></i></button>
-             <button class="glass-btn small-btn" onclick="window.open('live.html', '_blank')" title="Live Preview"><i class="fas fa-tower-broadcast"></i></button>
+             <button class="glass-btn small-btn" onclick="window.location.href='live.html'" title="Live Preview"><i class="fas fa-tower-broadcast"></i></button>
+             <button class="glass-btn small-btn" onclick="window.location.href='temp.html'" title="Temperature Map"><i class="fas fa-temperature-high"></i></button>
+             <button class="glass-btn small-btn" onclick="window.location.href='wind.html'" title="Wind Map"><i class="fas fa-wind"></i></button>
+             <button class="glass-btn small-btn" onclick="window.location.href='rain.html'" title="Rain Map"><i class="fas fa-cloud-showers-heavy"></i></button>
+             <button class="glass-btn small-btn" onclick="window.location.href='humidity.html'" title="Humidity Map"><i class="fas fa-tint"></i></button>
+             <button class="glass-btn small-btn active" onclick="window.location.href='display.html'" title="Display Mode"><i class="fas fa-tv"></i></button>
              <div class="divider"></div>
 
              <label class="glass-btn small-btn" title="Select Images">

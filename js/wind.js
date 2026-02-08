@@ -131,9 +131,12 @@ function initWindDisplay() {
             
             <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
             <button class="layer-btn" onclick="window.location.href='index.html'" title="Home"><i class="fas fa-home"></i></button>
+            <button class="layer-btn" onclick="window.location.href='live.html'" title="Live Preview"><i class="fas fa-tower-broadcast"></i></button>
             <button class="layer-btn" onclick="window.location.href='temp.html'" title="Temperature Map"><i class="fas fa-temperature-high"></i></button>
+            <button class="layer-btn active" onclick="window.location.href='wind.html'" title="Wind Map"><i class="fas fa-wind"></i></button>
             <button class="layer-btn" onclick="window.location.href='rain.html'" title="Rain Map"><i class="fas fa-cloud-showers-heavy"></i></button>
             <button class="layer-btn" onclick="window.location.href='humidity.html'" title="Humidity Map"><i class="fas fa-tint"></i></button>
+            <button class="layer-btn" onclick="window.location.href='display.html'" title="Display Mode"><i class="fas fa-tv"></i></button>
             <button class="layer-btn active" onclick="setLayer('street')" id="btnStreet">Street</button>
             <button class="layer-btn" onclick="setLayer('satellite')" id="btnSat">Satellite</button>
             <button class="layer-btn" onclick="setLayer('hybrid')" id="btnHybrid">Hybrid</button>
