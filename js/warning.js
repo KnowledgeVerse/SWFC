@@ -320,11 +320,11 @@ function renderGrid() {
 
   const legendItem = document.createElement("div");
   legendItem.className = "grid-item legend-container";
-  let legendHtml = `<div class="legend-title" style="font-size:5em; padding:30px; text-align:center; white-space:nowrap;">LEGEND / संकेत</div>`;
+  let legendHtml = `<div class="legend-title" style="font-size:3em; padding:20px; text-align:center; white-space:nowrap;">LEGEND / संकेत</div>`;
 
-  legendHtml += `<div class="legend-section" style="padding:50px; display:flex; flex-direction:column; justify-content:center; flex-grow:1;"><strong style="font-size: 4em; margin-bottom: 50px; display:block; white-space:nowrap;">Warning (चेतावनी)</strong><div style="display:flex; flex-direction:column; gap:50px;">`;
+  legendHtml += `<div class="legend-section" style="padding:30px; display:flex; flex-direction:column; justify-content:center; flex-grow:1;"><strong style="font-size: 2.5em; margin-bottom: 30px; display:block; white-space:nowrap;">Warning (चेतावनी)</strong><div style="display:flex; flex-direction:column; gap:30px;">`;
   warningLegendItems.forEach((l) => {
-    legendHtml += `<div class="legend-item" style="font-size:60px; display:flex; align-items:center;"><div class="color-box" style="width:120px; height:120px; background:${l.color}; ${l.border || ""}; margin-right: 40px; flex-shrink:0;"></div><span>${l.text}</span></div>`;
+    legendHtml += `<div class="legend-item" style="font-size:40px; display:flex; align-items:center;"><div class="color-box" style="width:80px; height:80px; background:${l.color}; ${l.border || ""}; margin-right: 25px; flex-shrink:0;"></div><span>${l.text}</span></div>`;
   });
   legendHtml += `</div></div>`;
 
