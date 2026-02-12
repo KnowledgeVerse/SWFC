@@ -90,7 +90,7 @@
       .map-wrapper {
         width: 100%;
         position: relative;
-        aspect-ratio: 16 / 9;
+        aspect-ratio: 256 / 181;
         min-height: 600px;
         background: #eef2f3; /* Placeholder background */
       }
@@ -482,6 +482,60 @@
                 </label>
               </div>
 
+              <div style="display: flex; align-items: center; gap: 5px">
+                <button
+                  onclick="fitMapToWidth()"
+                  style="
+                    border: 1px solid #ccc;
+                    background: #fff;
+                    cursor: pointer;
+                    border-radius: 50%;
+                    width: 30px;
+                    height: 30px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    padding: 0;
+                  "
+                  title="Auto Fit Map (2% Padding)"
+                >
+                  <i class="fas fa-compress-arrows-alt"></i>
+                </button>
+
+                <select
+                  id="aspectRatioSelect"
+                  onchange="changeAspectRatio(this.value)"
+                  style="
+                    border: 1px solid #ccc;
+                    background: #fff;
+                    font-size: 12px;
+                    font-weight: bold;
+                    cursor: pointer;
+                    outline: none;
+                    padding: 4px 8px;
+                    border-radius: 20px;
+                    height: 30px;
+                    max-width: 100px;
+                  "
+                  title="Change Map Aspect Ratio / Resize"
+                >
+                  <option value="256/181" selected>256:181 (Standard)</option>
+                  <option value="4/5">
+                    4:5 (Portrait – Facebook/Instagram best)
+                  </option>
+                  <option value="16/9">
+                    16:9 (Landscape – Twitter, YouTube)
+                  </option>
+                  <option value="1.91/1">1.91:1 (Facebook link preview)</option>
+                  <option value="4/3">4:3 (Standard photo)</option>
+                  <option value="2/1">2:1 (Banner / Website)</option>
+                  <option value="1/1">
+                    1:1 (Square – Facebook, Instagram, Twitter)
+                  </option>
+                  <option value="custom">Custom (Resize)</option>
+                </select>
+              </div>
+
               <label
                 class="icon-toggle-label"
                 id="lblLayoutEdit"
@@ -680,17 +734,19 @@
             </div>
           </div>
 
-          <div id="map" class="map-frame">
-            <!-- Map Header Text (Moved inside map for download) -->
-            <div
-              id="mapHeaderText"
-              class="map-header-text"
-              style="display: none"
-            ></div>
-            <!-- Weather Effects -->
-            <canvas id="weatherCanvas"></canvas>
-            <div id="weatherLightning"></div>
-            <div id="weatherFog"></div>
+          <div class="map-wrapper">
+            <div id="map" class="map-frame">
+              <!-- Map Header Text (Moved inside map for download) -->
+              <div
+                id="mapHeaderText"
+                class="map-header-text"
+                style="display: none"
+              ></div>
+              <!-- Weather Effects -->
+              <canvas id="weatherCanvas"></canvas>
+              <div id="weatherLightning"></div>
+              <div id="weatherFog"></div>
+            </div>
           </div>
 
           <!-- Table View Container (Hidden by default) -->

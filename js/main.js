@@ -1317,6 +1317,8 @@ function downloadMapImage() {
 }
 
 function resetTableView() {
+  const mapWrapper = document.querySelector(".map-wrapper");
+  if (mapWrapper) mapWrapper.style.display = "block";
   document.getElementById("map").style.display = "block";
   document.getElementById("forecastOutput").style.display = "block";
   const tableContainer = document.getElementById("tableViewContainer");
@@ -1326,12 +1328,14 @@ function resetTableView() {
 }
 
 function toggleTableView() {
+  const mapWrapper = document.querySelector(".map-wrapper");
   const mapFrame = document.getElementById("map");
   const forecastOut = document.getElementById("forecastOutput");
   const tableContainer = document.getElementById("tableViewContainer");
 
   if (tableContainer.style.display === "none") {
     // Show Table
+    if (mapWrapper) mapWrapper.style.display = "none";
     mapFrame.style.display = "none";
     forecastOut.style.display = "none";
     tableContainer.style.display = "block";
@@ -1342,6 +1346,20 @@ function toggleTableView() {
     resetTableView();
   }
 }
+
+let tableSortState = { column: "day", direction: "asc" };
+
+function sortTable(column) {
+  if (tableSortState.column === column) {
+    tableSortState.direction =
+      tableSortState.direction === "asc" ? "desc" : "asc";
+  } else {
+    tableSortState.column = column;
+    tableSortState.direction = "asc";
+  }
+  renderTable();
+}
+window.sortTable = sortTable;
 
 function renderTable() {
   // Inject CSS for IMD Table Styling
@@ -1364,7 +1382,6 @@ function renderTable() {
   const hideCols = document.getElementById("chkHideTableCols")?.checked;
   const filterColor =
     document.getElementById("filterTableColor")?.value || "all";
-  const sortBySeverity = document.getElementById("chkSortSeverity")?.checked;
   const isCompact = document.getElementById("chkCompactView")?.checked;
   const hideWarningCol = document.getElementById("chkHideWarningCol")?.checked;
   const applyTextBg = document.getElementById("chkTextBgColor")?.checked;
@@ -1374,16 +1391,24 @@ function renderTable() {
     if (isCompact) table.classList.add("compact");
     else table.classList.remove("compact");
 
+    const getSortIcon = (col) => {
+      if (tableSortState.column !== col)
+        return '<i class="fas fa-sort" style="opacity:0.3; font-size:0.8em; margin-left:5px;"></i>';
+      return tableSortState.direction === "asc"
+        ? '<i class="fas fa-sort-up" style="margin-left:5px;"></i>'
+        : '<i class="fas fa-sort-down" style="margin-left:5px;"></i>';
+    };
+
     table.innerHTML = `
         <thead>
             <tr>
-                <th style="width: 5%;">DAY</th>
-                <th style="width: 10%;">DATE</th>
-                ${!hideCols ? '<th style="width: 20%;">AFFECTED AREA<br>(प्रभावित क्षेत्र)</th>' : ""}
-                ${!hideCols ? '<th style="width: 15%;">WEATHER PHENOMENON<br>(मौसम घटना)</th>' : ""}
+                <th style="width: 5%; cursor:pointer;" onclick="sortTable('day')">DAY ${getSortIcon("day")}</th>
+                <th style="width: 10%; cursor:pointer;" onclick="sortTable('day')">DATE ${getSortIcon("day")}</th>
+                ${!hideCols ? `<th style="width: 20%; cursor:pointer;" onclick="sortTable('area')">AFFECTED AREA<br>(प्रभावित क्षेत्र) ${getSortIcon("area")}</th>` : ""}
+                ${!hideCols ? `<th style="width: 15%; cursor:pointer;" onclick="sortTable('phenom')">WEATHER PHENOMENON<br>(मौसम घटना) ${getSortIcon("phenom")}</th>` : ""}
                 <th style="width: 20%;">WARNING DESCRIPTION<br>(English)</th>
                 <th style="width: 20%;">चेतावनी विवरण<br>(हिन्दी)</th>
-                ${!hideWarningCol ? '<th style="width: 10%;">WARNING COLOUR<br>(चेतावनी रंग)</th>' : ""}
+                ${!hideWarningCol ? `<th style="width: 10%; cursor:pointer;" onclick="sortTable('color')">WARNING COLOUR<br>(चेतावनी रंग) ${getSortIcon("color")}</th>` : ""}
             </tr>
         </thead>
         <tbody></tbody>
@@ -1465,6 +1490,7 @@ function renderTable() {
         date: dateStr,
         colorClass: "warning-green",
         colorText: "🟢 Green (No Warning)",
+        sortData: { day: i, area: "", phenom: "", color: 0 },
       });
     } else {
       Object.values(groups).forEach((group) => {
@@ -1482,6 +1508,9 @@ function renderTable() {
           colorText = "Red (Warning)";
         }
 
+        const areaText = getAreaText(group.districts);
+        const phenomStr = group.phenomena.map((p) => p).join(", ");
+
         rowDataList.push({
           type: "warning",
           day: i,
@@ -1489,6 +1518,13 @@ function renderTable() {
           group: group,
           colorClass: colorClass,
           colorText: colorText,
+          cachedAreaText: areaText,
+          sortData: {
+            day: i,
+            area: areaText.english,
+            phenom: phenomStr,
+            color: group.warningLevel,
+          },
         });
       });
     }
@@ -1500,18 +1536,17 @@ function renderTable() {
   }
 
   // Sort
-  if (sortBySeverity) {
-    const severityScore = {
-      "warning-red": 3,
-      "warning-orange": 2,
-      "warning-yellow": 1,
-      "warning-green": 0,
-    };
+  if (tableSortState.column) {
     rowDataList.sort((a, b) => {
-      const scoreA = severityScore[a.colorClass] || 0;
-      const scoreB = severityScore[b.colorClass] || 0;
-      if (scoreB !== scoreA) return scoreB - scoreA; // Descending severity
-      return a.day - b.day; // Ascending day
+      let valA = a.sortData[tableSortState.column];
+      let valB = b.sortData[tableSortState.column];
+
+      if (typeof valA === "string") valA = valA.toLowerCase();
+      if (typeof valB === "string") valB = valB.toLowerCase();
+
+      if (valA < valB) return tableSortState.direction === "asc" ? -1 : 1;
+      if (valA > valB) return tableSortState.direction === "asc" ? 1 : -1;
+      return 0;
     });
   }
 
@@ -1548,7 +1583,7 @@ function renderTable() {
       tbody.innerHTML += row;
     } else {
       const group = item.group;
-      const areaText = getAreaText(group.districts);
+      const areaText = item.cachedAreaText || getAreaText(group.districts);
       const phenomCount = group.phenomena.length;
 
       group.phenomena.forEach((pId, index) => {
@@ -2774,15 +2809,15 @@ function initMap() {
 
   overlaysContainer.innerHTML = `
       <div id="overlayLeft" style="position:absolute; top:10px; left:10px; z-index:1001; display:flex; flex-direction:column; align-items:center; pointer-events:auto;">
-          <img src="assets/logo.png" class="map-logo-left" style="height:70px; margin-left: 10px;">
+          <img src="assets/logo.png" class="map-logo-left" style="height:90px; margin-left: 10px;">
           <div style="text-align:center; margin-top:5px; display:flex; flex-direction:column; align-items:center;">
-              <div class="map-logo-text" style="margin-top:0; font-size:14px; background:rgba(255,255,255,0.8); padding:2px 5px; border-radius:4px; white-space:nowrap;">मौसम विज्ञान केंद्र, पटना</div>
-              <div id="mapDateOverlay" class="map-date-text" style="margin-top:2px; font-weight:bold; color:#000; background:rgba(255,255,255,0.8); padding:2px 5px; border-radius:4px; font-size:12px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); white-space:nowrap;">Loading...</div>
+              <div class="map-logo-text" style="margin-top:0; font-size:16px; background:rgba(255,255,255,0.8); padding:2px 5px; border-radius:4px; white-space:nowrap;">मौसम विज्ञान केंद्र, पटना</div>
+              <div id="mapDateOverlay" class="map-date-text" style="margin-top:2px; font-weight:bold; color:#000; background:rgba(255,255,255,0.8); padding:2px 5px; border-radius:4px; font-size:14px; box-shadow: 0 1px 3px rgba(0,0,0,0.2); white-space:nowrap;">Loading...</div>
           </div>
       </div>
       <div id="overlayRight" style="position:absolute; top:10px; right:10px; z-index:1001; display:flex; gap:10px; align-items:center; pointer-events:auto;">
-          <img src="assets/IMD_150_Year_Logo.png" style="height:70px;">
-          <img src="assets/North_Arrow.png" style="height:60px;">
+          <img src="assets/IMD_150_Year_Logo.png" style="height:90px;">
+          <img src="assets/North_Arrow.png" style="height:80px;">
       </div>
       <div id="mapLegend" class="info legend" style="position:absolute; bottom:30px; right:10px; z-index:1001; pointer-events:auto; display:none;"></div>
   `;
@@ -3433,10 +3468,10 @@ function updateMapHeaderText() {
 
   el.innerHTML = `
         <div>
-            <div style="text-align:center; color:${modeColor}; font-weight:bold; font-size:1.4em; margin-bottom:5px; white-space:nowrap; line-height: 1.2;">
+            <div style="text-align:center; color:${modeColor}; font-weight:bold; font-size:1.8em; margin-bottom:5px; white-space:nowrap; line-height: 1.2;">
                 ${modeText} ${dayText} के लिए
             </div>
-            <div style="text-align:center; font-size:1.0em; font-weight:bold; color:#333; line-height: 1.2;">
+            <div style="text-align:center; font-size:1.3em; font-weight:bold; color:#333; line-height: 1.2;">
                 (${startStr} के 0830 IST से ${endStr} के 0830 IST तक मान्य)
             </div>
         </div>
@@ -3817,10 +3852,6 @@ function renderTableControls() {
           </select>
       </label>
       <label style="display: flex; align-items: center; gap: 5px; font-weight: bold; cursor: pointer; color: #2c3e50; margin-right: 15px;">
-          <input type="checkbox" id="chkSortSeverity" onchange="renderTable()">
-          Sort by Severity
-      </label>
-      <label style="display: flex; align-items: center; gap: 5px; font-weight: bold; cursor: pointer; color: #2c3e50; margin-right: 15px;">
           <input type="checkbox" id="chkCompactView" onchange="renderTable()">
           Compact View
       </label>
@@ -4060,3 +4091,41 @@ async function copyTableToClipboard() {
   }
 }
 window.copyTableToClipboard = copyTableToClipboard;
+
+function changeAspectRatio(ratio) {
+  const wrapper = document.querySelector(".map-wrapper");
+  if (!wrapper) return;
+
+  if (ratio === "custom") {
+    wrapper.style.aspectRatio = "unset";
+    wrapper.style.resize = "both";
+    wrapper.style.overflow = "hidden"; // Required for resize handle
+    wrapper.style.minHeight = "300px";
+    // Set explicit pixel dimensions to enable smooth resizing from current state
+    wrapper.style.width = wrapper.offsetWidth + "px";
+    wrapper.style.height = wrapper.offsetHeight + "px";
+  } else {
+    wrapper.style.resize = "none";
+    wrapper.style.overflow = "visible";
+    wrapper.style.aspectRatio = ratio;
+    wrapper.style.width = "100%";
+    wrapper.style.height = "auto";
+    wrapper.style.minHeight = "unset";
+  }
+  setTimeout(() => {
+    if (map) {
+      map.invalidateSize();
+      fitMapToWidth();
+    }
+  }, 100);
+}
+window.changeAspectRatio = changeAspectRatio;
+
+function fitMapToWidth() {
+  if (map && geojsonLayer) {
+    const width = map.getSize().x;
+    const padding = width * 0.02; // 2% padding
+    map.fitBounds(geojsonLayer.getBounds(), { padding: [padding, padding] });
+  }
+}
+window.fitMapToWidth = fitMapToWidth;
