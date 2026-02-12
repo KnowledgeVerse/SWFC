@@ -90,7 +90,7 @@
       .map-wrapper {
         width: 100%;
         position: relative;
-        aspect-ratio: 5 / 4;
+        aspect-ratio: 16 / 9;
         min-height: 600px;
         background: #eef2f3; /* Placeholder background */
       }
@@ -178,6 +178,30 @@
               onclick="window.open('temp.html', '_blank')"
             >
               <i class="fas fa-temperature-high"></i>
+            </button>
+            <button
+              id="openWindMap"
+              class="btn-display-anim"
+              title="Live Wind Map"
+              onclick="window.open('wind.html', '_blank')"
+            >
+              <i class="fas fa-wind"></i>
+            </button>
+            <button
+              id="openRainMap"
+              class="btn-display-anim"
+              title="Live Rain Map"
+              onclick="window.open('rain.html', '_blank')"
+            >
+              <i class="fas fa-cloud-showers-heavy"></i>
+            </button>
+            <button
+              id="openHumidityMap"
+              class="btn-display-anim"
+              title="Live Humidity Map"
+              onclick="window.open('humidity.html', '_blank')"
+            >
+              <i class="fas fa-tint"></i>
             </button>
             <button
               id="openDisplayHeader"

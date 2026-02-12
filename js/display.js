@@ -211,6 +211,11 @@ function initDisplay() {
 
         <div class="glass-toolbar">
              <button class="glass-btn small-btn" onclick="window.location.href='index.html'" title="Home"><i class="fas fa-home"></i></button>
+             <button class="glass-btn small-btn" onclick="window.location.href='forecast.html'" title="7-Day Forecast"><i class="fas fa-calendar-day"></i></button>
+             <button class="glass-btn small-btn" onclick="window.location.href='warning.html'" title="7-Day Warning"><i class="fas fa-exclamation-triangle"></i></button>
+             <button class="glass-btn small-btn" onclick="window.location.href='Temperature_Forecast.html'" title="Min/Max Temp"><i class="fas fa-temperature-high"></i></button>
+             <button class="glass-btn small-btn" onclick="window.location.href='bulk_import.html'" title="Import Data"><i class="fas fa-file-import"></i></button>
+             <div class="divider"></div>
              <button class="glass-btn small-btn" onclick="window.location.href='live.html'" title="Live Preview"><i class="fas fa-tower-broadcast"></i></button>
              <button class="glass-btn small-btn" onclick="window.location.href='temp.html'" title="Temperature Map"><i class="fas fa-temperature-high"></i></button>
              <button class="glass-btn small-btn" onclick="window.location.href='wind.html'" title="Wind Map"><i class="fas fa-wind"></i></button>

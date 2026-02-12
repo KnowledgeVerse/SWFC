@@ -2164,6 +2164,7 @@ function generateDemoData() {
     4, // Widespread (Most Places)
     2, // Orange Warning
   );
+
   setDayData(
     weeklyWarningData,
     1,
@@ -2861,13 +2862,6 @@ function initMap() {
                 fillOpacity: 0.7,
               });
               layer.bringToFront();
-
-              // Show phenomena in tooltip on hover
-              if (layer.feature.properties.phenomenaText) {
-                const originalContent = layer.feature.properties.D_NAME;
-                const newContent = `${originalContent}<br><span style="font-size:0.9em; font-weight:normal; color:#333;">${layer.feature.properties.phenomenaText}</span>`;
-                layer.setTooltipContent(newContent);
-              }
             },
             mouseout: () => updateMapStyle(),
             click: () => {
