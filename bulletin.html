@@ -245,6 +245,27 @@
       .btn-secondary:hover {
         background: rgba(255, 255, 255, 0.2);
       }
+      /* Button Blink Animation */
+      .btn-blink-anim {
+        animation: blink-pulse 2s infinite;
+        background-color: #ff9800 !important;
+        color: white !important;
+      }
+
+      @keyframes blink-pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.7);
+          transform: scale(1);
+        }
+        50% {
+          box-shadow: 0 0 0 10px rgba(255, 152, 0, 0);
+          transform: scale(1.05);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(255, 152, 0, 0);
+          transform: scale(1);
+        }
+      }
     </style>
   </head>
   <body>
@@ -259,12 +280,31 @@
             justify-content: center;
           "
         >
-          <a href="index.html" class="toggle-btn" title="Home"
+          <a href="index.html" class="toggle-btn btn-blink-anim" title="Home"
             ><i class="fas fa-home"></i
           ></a>
+          <a href="live.html" class="toggle-btn" title="Live Preview"
+            ><i class="fas fa-tower-broadcast"></i
+          ></a>
+          <a href="temp.html" class="toggle-btn" title="Live Temp"
+            ><i class="fas fa-thermometer-half"></i
+          ></a>
+          <a href="wind.html" class="toggle-btn" title="Wind"
+            ><i class="fas fa-wind"></i
+          ></a>
+          <a href="rain.html" class="toggle-btn" title="Rain"
+            ><i class="fas fa-cloud-showers-heavy"></i
+          ></a>
+          <a href="humidity.html" class="toggle-btn" title="Humidity"
+            ><i class="fas fa-tint"></i
+          ></a>
+          <a href="display.html" class="toggle-btn" title="Display Mode"
+            ><i class="fas fa-tv"></i
+          ></a>
+          <div style="width: 1px; background: #ccc; margin: 0 5px"></div>
           <a
             href="bulletin.html"
-            class="toggle-btn active"
+            class="toggle-btn active btn-blink-anim"
             title="Weather Bulletin"
             ><i class="fas fa-clipboard-list"></i
           ></a>
@@ -283,24 +323,20 @@
           <a href="bulk_import.html" class="toggle-btn" title="Import Data"
             ><i class="fas fa-file-import"></i
           ></a>
-          <div style="width: 1px; background: #ccc; margin: 0 5px"></div>
-          <a href="live.html" class="toggle-btn" title="Live Preview"
-            ><i class="fas fa-tower-broadcast"></i
+          <a href="max_min_rh.html" class="toggle-btn" title="Observed Data"
+            ><i class="fas fa-table"></i
           ></a>
-          <a href="temp.html" class="toggle-btn" title="Live Temp"
-            ><i class="fas fa-thermometer-half"></i
+          <a
+            href="Weather_summary.html"
+            class="toggle-btn"
+            title="Weather Summary"
+            ><i class="fas fa-file-alt"></i
           ></a>
-          <a href="wind.html" class="toggle-btn" title="Wind"
-            ><i class="fas fa-wind"></i
-          ></a>
-          <a href="rain.html" class="toggle-btn" title="Rain"
-            ><i class="fas fa-cloud-showers-heavy"></i
-          ></a>
-          <a href="humidity.html" class="toggle-btn" title="Humidity"
-            ><i class="fas fa-tint"></i
-          ></a>
-          <a href="display.html" class="toggle-btn" title="Display Mode"
-            ><i class="fas fa-tv"></i
+          <a
+            href="Detailed_Weather_Forecast.html"
+            class="toggle-btn"
+            title="Detailed Forecast"
+            ><i class="fas fa-list-alt"></i
           ></a>
         </div>
       </div>
@@ -333,6 +369,27 @@
           </div>
           <h3>Temperature Import</h3>
           <p>Paste Excel data for Temperature Forecast.</p></a
+        >
+        <a href="max_min_rh.html" class="card"
+          ><div class="icon-box icon-forecast" style="color: #6610f2">
+            <i class="fas fa-table"></i>
+          </div>
+          <h3>Observed Data</h3>
+          <p>Generate observed temperature & rainfall table.</p></a
+        >
+        <a href="Weather_summary.html" class="card"
+          ><div class="icon-box icon-forecast" style="color: #17a2b8">
+            <i class="fas fa-file-alt"></i>
+          </div>
+          <h3>Weather Summary</h3>
+          <p>Generate daily weather summary text.</p></a
+        >
+        <a href="Detailed_Weather_Forecast.html" class="card"
+          ><div class="icon-box icon-forecast" style="color: #0056b3">
+            <i class="fas fa-list-alt"></i>
+          </div>
+          <h3>Detailed Forecast</h3>
+          <p>District-wise detailed weather forecast table.</p></a
         >
         <a href="temp.html" class="card"
           ><div class="icon-box icon-temp">

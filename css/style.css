@@ -1438,6 +1438,28 @@ body.logged-in .special-feature {
   margin: 15px 0;
 }
 
+/* Button Blink Animation */
+.btn-blink-anim {
+  animation: blink-pulse 2s infinite;
+  background-color: #ff9800 !important;
+  color: white !important;
+}
+
+@keyframes blink-pulse {
+  0% {
+    box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.7);
+    transform: scale(1);
+  }
+  50% {
+    box-shadow: 0 0 0 10px rgba(255, 152, 0, 0);
+    transform: scale(1.05);
+  }
+  100% {
+    box-shadow: 0 0 0 0 rgba(255, 152, 0, 0);
+    transform: scale(1);
+  }
+}
+
 /* Green Ring for Active Session */
 .user-logo.active-session {
   border: 3px solid #2ecc71;

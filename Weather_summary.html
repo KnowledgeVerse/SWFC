@@ -1,0 +1,684 @@
+<!doctype html>
+<html lang="hi">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weather Summary Generator</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <style>
+      body {
+        font-family: "Arial", sans-serif;
+        background-color: #f4f7f6;
+        padding: 20px;
+        margin: 0;
+      }
+      .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        background: white;
+        padding: 25px;
+        border-radius: 8px;
+        box-shadow: 0 4px 15px rgba(0, 0, 0, 0.1);
+      }
+      h2 {
+        text-align: center;
+        color: #2c3e50;
+        margin-bottom: 10px;
+      }
+      .section {
+        margin-bottom: 25px;
+        padding: 15px;
+        border: 1px solid #e0e0e0;
+        border-radius: 6px;
+        background: #fafafa;
+      }
+      .section h3 {
+        margin-top: 0;
+        color: #0056b3;
+        font-size: 1.1em;
+        border-bottom: 1px dashed #ccc;
+        padding-bottom: 5px;
+      }
+      label {
+        font-weight: bold;
+        display: block;
+        margin-bottom: 5px;
+        color: #333;
+      }
+      select,
+      input[type="text"],
+      input[type="number"],
+      textarea {
+        width: 100%;
+        padding: 8px;
+        border: 1px solid #ccc;
+        border-radius: 4px;
+        margin-bottom: 10px;
+        font-size: 14px;
+        box-sizing: border-box;
+      }
+      .checkbox-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-bottom: 10px;
+      }
+      .checkbox-wrapper input {
+        width: auto;
+        margin: 0;
+      }
+      .checkbox-wrapper label {
+        margin: 0;
+        font-weight: normal;
+        cursor: pointer;
+      }
+      button {
+        padding: 12px 25px;
+        background-color: #28a745;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+        font-size: 16px;
+        font-weight: bold;
+        transition: background 0.3s;
+        display: block;
+        width: 100%;
+      }
+      button:hover {
+        background-color: #218838;
+      }
+      #finalOutput {
+        margin-top: 20px;
+        padding: 20px;
+        border: 2px solid #2c3e50;
+        background: #fff;
+        min-height: 100px;
+        font-family: "Arial", sans-serif; /* Ensure readable Hindi */
+        font-size: 16px;
+        line-height: 1.6;
+        white-space: pre-wrap;
+      }
+      /* Toolbar Styles */
+      .toggle-btn {
+        text-decoration: none;
+        color: #fff;
+        background-color: #6c757d;
+        padding: 8px 15px;
+        border-radius: 5px;
+        font-weight: bold;
+        transition: background 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      .toggle-btn:hover {
+        background-color: #5a6268;
+      }
+      .toggle-btn.active {
+        background-color: #0056b3;
+      }
+      .btn-blink-anim {
+        animation: blink-pulse 2s infinite;
+        background-color: #ff9800 !important;
+        color: white !important;
+      }
+      @keyframes blink-pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.7);
+          transform: scale(1);
+        }
+        50% {
+          box-shadow: 0 0 0 10px rgba(255, 152, 0, 0);
+          transform: scale(1.05);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(255, 152, 0, 0);
+          transform: scale(1);
+        }
+      }
+      .multi-select-box {
+        border: 1px solid #ccc;
+        max-height: 150px;
+        overflow-y: auto;
+        padding: 5px;
+        background: white;
+        border-radius: 4px;
+      }
+      .multi-select-item {
+        display: block;
+        padding: 3px;
+      }
+      .multi-select-item:hover {
+        background-color: #f0f0f0;
+      }
+      .sticky-header {
+        position: sticky;
+        top: 0;
+        background: white;
+        z-index: 1000;
+        padding: 10px 0 5px 0;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+        margin-bottom: 20px;
+        border-bottom: 1px solid #eee;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="container">
+      <div class="sticky-header">
+        <!-- Navigation Toolbar -->
+        <div
+          style="
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            justify-content: center;
+            margin-bottom: 20px;
+          "
+        >
+          <a href="index.html" class="toggle-btn btn-blink-anim" title="Home"
+            ><i class="fas fa-home"></i
+          ></a>
+          <a href="live.html" class="toggle-btn" title="Live Preview"
+            ><i class="fas fa-tower-broadcast"></i
+          ></a>
+          <a href="temp.html" class="toggle-btn" title="Live Temp"
+            ><i class="fas fa-thermometer-half"></i
+          ></a>
+          <a href="wind.html" class="toggle-btn" title="Wind"
+            ><i class="fas fa-wind"></i
+          ></a>
+          <a href="rain.html" class="toggle-btn" title="Rain"
+            ><i class="fas fa-cloud-showers-heavy"></i
+          ></a>
+          <a href="humidity.html" class="toggle-btn" title="Humidity"
+            ><i class="fas fa-tint"></i
+          ></a>
+          <a href="display.html" class="toggle-btn" title="Display Mode"
+            ><i class="fas fa-tv"></i
+          ></a>
+          <div style="width: 1px; background: #ccc; margin: 0 5px"></div>
+          <a
+            href="bulletin.html"
+            class="toggle-btn btn-blink-anim"
+            title="Weather Bulletin"
+            ><i class="fas fa-clipboard-list"></i
+          ></a>
+          <a href="forecast.html" class="toggle-btn" title="7-Day Forecast"
+            ><i class="fas fa-calendar-day"></i
+          ></a>
+          <a href="warning.html" class="toggle-btn" title="7-Day Warning"
+            ><i class="fas fa-exclamation-triangle"></i
+          ></a>
+          <a
+            href="Temperature_Forecast.html"
+            class="toggle-btn"
+            title="Min/Max Temp"
+            ><i class="fas fa-temperature-high"></i
+          ></a>
+          <a href="bulk_import.html" class="toggle-btn" title="Import Data"
+            ><i class="fas fa-file-import"></i
+          ></a>
+          <a href="max_min_rh.html" class="toggle-btn" title="Observed Data"
+            ><i class="fas fa-table"></i
+          ></a>
+          <a
+            href="Weather_summary.html"
+            class="toggle-btn active"
+            style="background-color: #0056b3"
+            title="Weather Summary"
+            ><i class="fas fa-file-alt"></i
+          ></a>
+        </div>
+
+        <h2>Weather Summary Generator</h2>
+      </div>
+
+      <!-- Section 1: General Weather -->
+      <div class="section">
+        <h3>1. General Weather Condition</h3>
+        <select id="generalWeather">
+          <option>विगत 24 घंटों के दौरान राज्य का मौसम शुष्क बना रहा ।</option>
+        </select>
+        <div class="checkbox-wrapper">
+          <input
+            type="checkbox"
+            id="editGeneral"
+            onchange="toggleEditMode('generalWeather', this.checked)"
+          />
+          <label for="editGeneral">Edit Mode</label>
+        </div>
+      </div>
+
+      <!-- Section 2: Maximum Temperature -->
+      <div class="section">
+        <h3>2. Maximum Temperature</h3>
+        <div
+          id="maxTempInfo"
+          style="margin-bottom: 10px; font-size: 0.9em; color: #555"
+        >
+          Loading Data...
+        </div>
+        <label>Trend Description:</label>
+        <select id="maxTempTrend">
+          <option>
+            पिछले 24 घंटों के दौरान राज्य के अनेक भागो के अधिकतम तापमान में कोई
+            विशेष परिवर्तन नहीं दर्ज की गयी।
+          </option>
+        </select>
+        <div class="checkbox-wrapper">
+          <input
+            type="checkbox"
+            id="editMaxTrend"
+            onchange="toggleEditMode('maxTempTrend', this.checked)"
+          />
+          <label for="editMaxTrend">Edit Mode</label>
+        </div>
+      </div>
+
+      <!-- Section 3: Minimum Temperature -->
+      <div class="section">
+        <h3>3. Minimum Temperature</h3>
+        <div
+          id="minTempInfo"
+          style="margin-bottom: 10px; font-size: 0.9em; color: #555"
+        >
+          Loading Data...
+        </div>
+        <label>Trend Description:</label>
+        <select id="minTempTrend">
+          <option>
+            पिछले 24 घंटों के दौरान राज्य के अनेक भागो के न्यूनतम तापमान में कोई
+            विशेष परिवर्तन नहीं दर्ज की गयी।
+          </option>
+        </select>
+        <div class="checkbox-wrapper">
+          <input
+            type="checkbox"
+            id="editMinTrend"
+            onchange="toggleEditMode('minTempTrend', this.checked)"
+          />
+          <label for="editMinTrend">Edit Mode</label>
+        </div>
+      </div>
+
+      <!-- Section 4: Visibility -->
+      <div class="section">
+        <h3>4. Visibility (Fog)</h3>
+        <div id="visibilityRowsContainer"></div>
+        <button
+          onclick="addVisibilityRow()"
+          class="btn-secondary"
+          style="
+            margin-top: 10px;
+            width: auto;
+            padding: 8px 15px;
+            font-size: 14px;
+            background-color: #17a2b8;
+          "
+        >
+          + Add Visibility Group
+        </button>
+      </div>
+
+      <!-- Section 5: Rainfall -->
+      <div class="section">
+        <h3>5. Rainfall</h3>
+        <div class="checkbox-wrapper">
+          <input
+            type="checkbox"
+            id="hasRainfall"
+            onchange="toggleRainfallInput(this.checked)"
+          />
+          <label for="hasRainfall">Rainfall Recorded?</label>
+        </div>
+        <div id="rainfallInputArea" style="display: none">
+          <label>Paste Data (Station RainValue):</label>
+          <textarea
+            id="rainDataInput"
+            rows="4"
+            placeholder="Patna 12.4&#10;Gaya 5.2"
+          ></textarea>
+        </div>
+      </div>
+
+      <button onclick="generateSummary()">Generate Summary</button>
+
+      <div id="finalOutput" contenteditable="true"></div>
+    </div>
+
+    <script>
+      let observedData = [];
+      let reportDate = null;
+      let stationList = [];
+
+      document.addEventListener("DOMContentLoaded", () => {
+        loadData();
+      });
+
+      function loadData() {
+        const rawData = localStorage.getItem("bihar_observed_data");
+        const rawDate = localStorage.getItem("bihar_observed_report_date");
+
+        if (rawData) {
+          observedData = JSON.parse(rawData);
+          reportDate = rawDate ? new Date(rawDate) : new Date();
+
+          updateMaxTempInfo();
+          updateMinTempInfo();
+          initVisibilitySection();
+        } else {
+          document.getElementById("maxTempInfo").innerText =
+            "No data found. Please generate table in Observed Data page first.";
+          document.getElementById("minTempInfo").innerText = "No data found.";
+        }
+      }
+
+      // --- Helper Functions ---
+
+      function formatHindiName(rawStr) {
+        // Input: "FORBESGANJ/फॉरबिसगंज" -> Output: "फॉरबिसगंज"
+        if (!rawStr) return "";
+        const parts = rawStr.split("/");
+        return parts.length > 1 ? parts[1].trim() : rawStr.trim();
+      }
+
+      function getStationDistrictName(stationRaw, districtRaw) {
+        // Format: "स्टेशन (जिला)"
+        const sHindi = formatHindiName(stationRaw);
+        const dHindi = formatHindiName(districtRaw);
+        return `${sHindi} (${dHindi})`;
+      }
+
+      function joinNames(names) {
+        const list = [...names]; // Create a copy to avoid mutating original array
+        if (list.length === 0) return "";
+        if (list.length === 1) return list[0];
+        if (list.length === 2) return `${list[0]} एवं ${list[1]}`;
+
+        const last = list.pop();
+        return `${list.join(", ")} एवं ${last}`;
+      }
+
+      function formatDate(dateObj) {
+        const d = String(dateObj.getDate()).padStart(2, "0");
+        const m = String(dateObj.getMonth() + 1).padStart(2, "0");
+        const y = dateObj.getFullYear();
+        return `${d}.${m}.${y}`;
+      }
+
+      function toggleEditMode(elementId, isEditable) {
+        const el = document.getElementById(elementId);
+        if (isEditable) {
+          // Replace select with input for editing
+          const val = el.value;
+          const input = document.createElement("input");
+          input.type = "text";
+          input.id = elementId;
+          input.value = val;
+          el.parentNode.replaceChild(input, el);
+        } else {
+          // Revert logic could be complex, for now we assume user keeps edit mode if they want custom text
+          // Or we can just make the select contenteditable? No, select can't be.
+          // Simple approach: Just keep it as input if switched.
+          // To revert to dropdown, reload page or implement complex swap back.
+          // For this requirement, "text becomes contenteditable" usually implies a div/span,
+          // but for a form input, switching to text input is best.
+        }
+      }
+
+      function toggleRainfallInput(checked) {
+        document.getElementById("rainfallInputArea").style.display = checked
+          ? "block"
+          : "none";
+      }
+
+      // --- Logic Sections ---
+
+      function updateMaxTempInfo() {
+        const maxData = getMaxData();
+        if (!maxData) return;
+
+        const div = document.getElementById("maxTempInfo");
+        div.innerHTML = `
+            <strong>Highest:</strong> ${maxData.highestVal}°C at ${maxData.stationNames}<br>
+            <strong>Range:</strong> ${maxData.minVal} – ${maxData.maxVal}°C
+        `;
+      }
+
+      function updateMinTempInfo() {
+        const minData = getMinData();
+        if (!minData) return;
+
+        const div = document.getElementById("minTempInfo");
+        div.innerHTML = `
+            <strong>Lowest:</strong> ${minData.lowestVal}°C at ${minData.stationNames}<br>
+            <strong>Range:</strong> ${minData.minVal} – ${minData.maxVal}°C
+        `;
+      }
+
+      function initVisibilitySection() {
+        // Sort stations alphabetically by Hindi name
+        stationList = observedData
+          .map((d) => ({
+            rawS: d.station,
+            rawD: d.district,
+            name: getStationDistrictName(d.station, d.district),
+          }))
+          .sort((a, b) => a.name.localeCompare(b.name));
+
+        const container = document.getElementById("visibilityRowsContainer");
+        container.innerHTML = "";
+        addVisibilityRow(); // Add first row by default
+      }
+
+      function addVisibilityRow() {
+        const container = document.getElementById("visibilityRowsContainer");
+        const div = document.createElement("div");
+        div.className = "visibility-row";
+        div.style.border = "1px solid #ddd";
+        div.style.padding = "10px";
+        div.style.marginBottom = "10px";
+        div.style.borderRadius = "4px";
+        div.style.background = "#fff";
+        div.style.position = "relative";
+
+        let stationsHtml = "";
+        stationList.forEach((s) => {
+          stationsHtml += `<label class="multi-select-item"><input type="checkbox" value="${s.name}"> ${s.name}</label>`;
+        });
+
+        div.innerHTML = `
+            <button onclick="this.parentElement.remove()" style="position:absolute; top:5px; right:5px; background:#dc3545; color:white; border:none; border-radius:3px; padding:2px 8px; cursor:pointer; width:auto; font-size:12px;" title="Remove Row">X</button>
+            <label>Lowest Visibility (Meters):</label>
+            <input type="number" class="vis-val" placeholder="e.g. 50">
+            <label>Select Stations:</label>
+            <div class="multi-select-box" style="max-height: 150px; overflow-y: auto; border: 1px solid #ccc; padding: 5px;">
+                ${stationsHtml}
+            </div>
+        `;
+        container.appendChild(div);
+      }
+
+      function getMaxData() {
+        let validData = observedData.filter(
+          (d) => d.max && !isNaN(parseFloat(d.max)),
+        );
+        if (validData.length === 0) return null;
+
+        let maxVal = -Infinity;
+        let minVal = Infinity;
+
+        validData.forEach((d) => {
+          const val = parseFloat(d.max);
+          if (val > maxVal) maxVal = val;
+          if (val < minVal) minVal = val;
+        });
+
+        const highestStations = validData.filter(
+          (d) => parseFloat(d.max) === maxVal,
+        );
+        const names = highestStations.map((d) =>
+          getStationDistrictName(d.station, d.district),
+        );
+
+        return {
+          highestVal: maxVal,
+          minVal: minVal,
+          maxVal: maxVal, // Same as highestVal
+          stationNames: joinNames(names),
+        };
+      }
+
+      function getMinData() {
+        let validData = observedData.filter(
+          (d) => d.min && !isNaN(parseFloat(d.min)),
+        );
+        if (validData.length === 0) return null;
+
+        let maxVal = -Infinity;
+        let minVal = Infinity;
+
+        validData.forEach((d) => {
+          const val = parseFloat(d.min);
+          if (val > maxVal) maxVal = val;
+          if (val < minVal) minVal = val;
+        });
+
+        const lowestStations = validData.filter(
+          (d) => parseFloat(d.min) === minVal,
+        );
+        const names = lowestStations.map((d) =>
+          getStationDistrictName(d.station, d.district),
+        );
+
+        return {
+          lowestVal: minVal,
+          minVal: minVal, // Same as lowestVal
+          maxVal: maxVal,
+          stationNames: joinNames(names),
+        };
+      }
+
+      // --- Generator ---
+
+      function generateSummary() {
+        if (!reportDate) {
+          alert(
+            "No data loaded. Please go to Observed Data page and Generate Table first.",
+          );
+          return;
+        }
+
+        let summary = "";
+
+        // 1. General Weather
+        const generalCond = document.getElementById("generalWeather").value;
+        summary += `${generalCond}\n\n`;
+
+        // 2. Max Temp
+        const maxData = getMaxData();
+        if (maxData) {
+          const prevDate = new Date(reportDate);
+          prevDate.setDate(reportDate.getDate() - 1);
+          const dateStr = formatDate(prevDate);
+
+          summary += `सर्वाधिक अधिकतम तापमान ${maxData.highestVal}°C (${dateStr}) ${maxData.stationNames} में दर्ज किया गया ।\n`;
+          summary += `राज्य का अधिकतम तापमान ${maxData.minVal} – ${maxData.maxVal}°C के बीच रहा।\n`;
+
+          const maxTrend = document.getElementById("maxTempTrend").value;
+          summary += `${maxTrend}\n\n`;
+        }
+
+        // 3. Min Temp
+        const minData = getMinData();
+        if (minData) {
+          const dateStr = formatDate(reportDate);
+
+          summary += `सबसे कम न्यूनतम तापमान ${minData.lowestVal}°C (${dateStr}) ${minData.stationNames} में दर्ज किया गया ।\n`;
+          summary += `राज्य का न्यूनतम तापमान ${minData.minVal} – ${minData.maxVal}°C के बीच रहा।\n`;
+
+          const minTrend = document.getElementById("minTempTrend").value;
+          summary += `${minTrend}\n\n`;
+        }
+
+        // 4. Visibility
+        const visRows = document.querySelectorAll(
+          "#visibilityRowsContainer .visibility-row",
+        );
+        visRows.forEach((row) => {
+          const visVal = row.querySelector(".vis-val").value.trim();
+          const visCheckboxes = row.querySelectorAll(
+            ".multi-select-box input:checked",
+          );
+          if (visVal && visCheckboxes.length > 0) {
+            const names = Array.from(visCheckboxes).map((cb) => cb.value);
+            const joinedNames = joinNames(names);
+            summary += `सबसे कम न्यूनतम दृश्यता ${visVal} मीटर ${joinedNames} में दर्ज किया गया ।\n`;
+          }
+        });
+        if (visRows.length > 0) summary += "\n";
+
+        // 5. Rainfall
+        const hasRain = document.getElementById("hasRainfall").checked;
+        if (!hasRain) {
+          summary += "वर्षा की मुख्य मात्रा (मिमी में):– NIL.";
+        } else {
+          const rawText = document.getElementById("rainDataInput").value.trim();
+          if (rawText) {
+            // Parse pasted text: "Station Value" or "Station\tValue"
+            // We need to map Station Name to Hindi District if possible
+            const lines = rawText.split(/\n/);
+            const rainParts = [];
+
+            lines.forEach((line) => {
+              // Try to split by last space or tab
+              const match = line.match(/^(.*)[\s\t]+([\d.]+)$/);
+              if (match) {
+                const sName = match[1].trim();
+                const val = match[2].trim();
+
+                // Find district for this station from observedData
+                const found = observedData.find(
+                  (d) =>
+                    d.station.toLowerCase().includes(sName.toLowerCase()) ||
+                    formatHindiName(d.station) === sName,
+                );
+
+                let displayName = sName;
+                if (found) {
+                  displayName = getStationDistrictName(
+                    found.station,
+                    found.district,
+                  );
+                } else {
+                  // If not found, assume user typed Hindi or English name directly
+                  // Try to format if it looks like "Name/Hindi"
+                  displayName = formatHindiName(sName);
+                }
+
+                rainParts.push(`${displayName} – ${val} मिमी`);
+              }
+            });
+
+            if (rainParts.length > 0) {
+              summary +=
+                "वर्षा की मुख्य मात्रा (मिमी में):– " +
+                rainParts.join(", ") +
+                ".";
+            }
+          }
+        }
+
+        document.getElementById("finalOutput").innerText = summary;
+      }
+    </script>
+  </body>
+</html>

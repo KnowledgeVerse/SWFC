@@ -253,8 +253,12 @@ function processAndSave() {
     localStorage.setItem("bihar_forecast_date", new Date().toISOString());
   }
 
-  alert("Temperature Data processed and saved successfully!");
-  window.location.href = "Temperature_Forecast.html";
+  // Generate Table instead of redirecting
+  generateDistrictForecastTable(weeklyMaxTemp, weeklyMinTemp);
+  document.getElementById("generatedTableSection").style.display = "block";
+
+  alert("Data saved and Forecast Table generated successfully!");
+  // window.location.href = "Temperature_Forecast.html"; // Redirect removed
 }
 
 function identifyPhenomenon(text) {
@@ -276,4 +280,178 @@ function identifyWarning(text) {
   if (lower.includes("yellow") || lower.includes("pila"))
     return { level: 1, color: warningColors.yellow };
   return { level: 0, color: warningColors.green };
+}
+
+// ---------- New Table Generation & Export Logic ----------
+
+function generateDistrictForecastTable(maxData, minData) {
+  const container = document.getElementById("forecastTableContainer");
+  if (!container) return;
+
+  const today = new Date();
+  const dateHeaders = [];
+
+  // Helper for date suffix (17th, 18th etc.)
+  const getDaySuffix = (n) => {
+    if (n > 3 && n < 21) return "th";
+    switch (n % 10) {
+      case 1:
+        return "st";
+      case 2:
+        return "nd";
+      case 3:
+        return "rd";
+      default:
+        return "th";
+    }
+  };
+
+  for (let i = 0; i < 7; i++) {
+    const d = new Date(today);
+    d.setDate(today.getDate() + i);
+    const dayNum = d.getDate();
+    const month = d.toLocaleString("default", { month: "short" });
+    dateHeaders.push(`${dayNum}${getDaySuffix(dayNum)} ${month}`);
+  }
+
+  let html = `
+    <div style="text-align:center; font-weight:bold; font-size:16px; margin-bottom:10px; font-family:Arial, sans-serif;">
+        जिलावार तापमान पूर्वानुमान सारणी / District Wise Temperature Forecast Table
+    </div>
+    <table class="gen-table" id="exportTable">
+        <thead>
+            <tr>
+                <th style="width:10%;">METEOROLOGICAL<br>SECTOR</th>
+                <th style="width:25%;">NAME OF THE DISTRICTS</th>
+                <th style="width:10%;">Tmax (°C) /<br>Tmin (°C)</th>
+                ${dateHeaders.map((d) => `<th>${d}</th>`).join("")}
+            </tr>
+        </thead>
+        <tbody>
+  `;
+
+  regions.forEach((region) => {
+    // Get districts for this region
+    const districtIds = subRegionDistricts[region.code] || [];
+    const districtNames = districtIds
+      .map((id) => {
+        const d = districtsData.find((x) => x.id === id);
+        return d ? `${d.name} (${d.hindi})` : id;
+      })
+      .join(", ");
+
+    // Get data for the first district of the region (assuming uniform data per region from grid)
+    const sampleId = String(districtIds[0]);
+
+    // Row 1: Max Temp
+    html += `
+        <tr class="row-max-temp region-${region.code}">
+            <td rowspan="2" style="font-weight:bold; vertical-align:middle;">${region.name}</td>
+            <td rowspan="2" style="vertical-align:middle; text-align:left;">${districtNames}</td>
+            <td style="font-weight:bold; color:#d35400;">Max Temp</td>
+            ${Array(7)
+              .fill(0)
+              .map((_, i) => {
+                const item = maxData[i][sampleId];
+                const display = item?.range || item?.val || "-";
+                return `<td>${display}</td>`;
+              })
+              .join("")}
+        </tr>
+      `;
+
+    // Row 2: Min Temp
+    html += `
+        <tr class="row-min-temp region-${region.code}">
+            <td style="font-weight:bold; color:#2980b9;">Min Temp</td>
+            ${Array(7)
+              .fill(0)
+              .map((_, i) => {
+                const item = minData[i][sampleId];
+                const display = item?.range || item?.val || "-";
+                return `<td>${display}</td>`;
+              })
+              .join("")}
+        </tr>
+      `;
+  });
+
+  html += `</tbody></table>`;
+  container.innerHTML = html;
+}
+
+function exportToImage() {
+  const element = document.getElementById("forecastTableContainer");
+  html2canvas(element, { backgroundColor: "#ffffff" }).then((canvas) => {
+    const link = document.createElement("a");
+    link.download = `Temperature_Forecast_Table_${new Date().toISOString().split("T")[0]}.png`;
+    link.href = canvas.toDataURL();
+    link.click();
+  });
+}
+
+function exportToPDF() {
+  const element = document.getElementById("forecastTableContainer");
+  html2canvas(element, { backgroundColor: "#ffffff", scale: 2 }).then(
+    (canvas) => {
+      const imgData = canvas.toDataURL("image/png");
+      const { jsPDF } = window.jspdf;
+      // Landscape A4
+      const pdf = new jsPDF("l", "mm", "a4");
+      const pdfWidth = pdf.internal.pageSize.getWidth();
+      const pdfHeight = pdf.internal.pageSize.getHeight();
+
+      const imgProps = pdf.getImageProperties(imgData);
+      const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+      // If image height is greater than page height, scale it down
+      let finalHeight = imgHeight;
+      let finalWidth = pdfWidth;
+
+      if (imgHeight > pdfHeight) {
+        finalHeight = pdfHeight - 20;
+        finalWidth = (imgProps.width * finalHeight) / imgProps.height;
+      }
+
+      pdf.addImage(imgData, "PNG", 10, 10, finalWidth - 20, finalHeight);
+      pdf.save(
+        `Temperature_Forecast_Table_${new Date().toISOString().split("T")[0]}.pdf`,
+      );
+    },
+  );
+}
+
+function exportToWord() {
+  const html = document.getElementById("forecastTableContainer").innerHTML;
+  const header =
+    "<html xmlns:o='urn:schemas-microsoft-com:office:office' " +
+    "xmlns:w='urn:schemas-microsoft-com:office:word' " +
+    "xmlns='http://www.w3.org/TR/REC-html40'>" +
+    "<head><meta charset='utf-8'><title>Export HTML to Word Document with JavaScript</title></head><body>";
+  const footer = "</body></html>";
+  const sourceHTML = header + html + footer;
+
+  const source =
+    "data:application/vnd.ms-word;charset=utf-8," +
+    encodeURIComponent(sourceHTML);
+  const fileDownload = document.createElement("a");
+  document.body.appendChild(fileDownload);
+  fileDownload.href = source;
+  fileDownload.download = `Temperature_Forecast_Table_${new Date().toISOString().split("T")[0]}.doc`;
+  fileDownload.click();
+  document.body.removeChild(fileDownload);
+}
+
+function exportToExcel() {
+  const html = document.getElementById("exportTable").outerHTML;
+  const blob = new Blob(["\ufeff", html], {
+    type: "application/vnd.ms-excel",
+  });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement("a");
+  a.href = url;
+  a.download = `Temperature_Forecast_Table_${new Date().toISOString().split("T")[0]}.xls`;
+  document.body.appendChild(a);
+  a.click();
+  document.body.removeChild(a);
 }

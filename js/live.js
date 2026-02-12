@@ -352,18 +352,20 @@ function initLiveDisplay() {
         </div>
         
         <div class="live-controls-row">
-            <button class="layer-btn" onclick="window.location.href='index.html'" title="Home"><i class="fas fa-home"></i></button>
-            <button class="layer-btn" onclick="window.location.href='forecast.html'" title="7-Day Forecast"><i class="fas fa-calendar-day"></i></button>
-            <button class="layer-btn" onclick="window.location.href='warning.html'" title="7-Day Warning"><i class="fas fa-exclamation-triangle"></i></button>
-            <button class="layer-btn" onclick="window.location.href='Temperature_Forecast.html'" title="Min/Max Temp"><i class="fas fa-temperature-high"></i></button>
-            <button class="layer-btn" onclick="window.location.href='bulk_import.html'" title="Import Data"><i class="fas fa-file-import"></i></button>
-            <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
+            <button class="layer-btn btn-blink-anim" onclick="window.location.href='index.html'" title="Home"><i class="fas fa-home"></i></button>
             <button class="layer-btn active" onclick="window.location.href='live.html'" title="Live Preview"><i class="fas fa-tower-broadcast"></i></button>
             <button class="layer-btn" onclick="window.location.href='temp.html'" title="Temperature Map"><i class="fas fa-temperature-high"></i></button>
             <button class="layer-btn" onclick="window.location.href='wind.html'" title="Wind Map"><i class="fas fa-wind"></i></button>
             <button class="layer-btn" onclick="window.location.href='rain.html'" title="Rain Map"><i class="fas fa-cloud-showers-heavy"></i></button>
             <button class="layer-btn" onclick="window.location.href='humidity.html'" title="Humidity Map"><i class="fas fa-tint"></i></button>
             <button class="layer-btn" onclick="window.location.href='display.html'" title="Display Mode"><i class="fas fa-tv"></i></button>
+            <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
+            <button class="layer-btn btn-blink-anim" onclick="window.location.href='bulletin.html'" title="Weather Bulletin"><i class="fas fa-clipboard-list"></i></button>
+            <button class="layer-btn" onclick="window.location.href='forecast.html'" title="7-Day Forecast"><i class="fas fa-calendar-day"></i></button>
+            <button class="layer-btn" onclick="window.location.href='warning.html'" title="7-Day Warning"><i class="fas fa-exclamation-triangle"></i></button>
+            <button class="layer-btn" onclick="window.location.href='Temperature_Forecast.html'" title="Min/Max Temp"><i class="fas fa-temperature-high"></i></button>
+            <button class="layer-btn" onclick="window.location.href='bulk_import.html'" title="Import Data"><i class="fas fa-file-import"></i></button>
+            <button class="layer-btn" onclick="window.location.href='max_min_rh.html'" title="Observed Data"><i class="fas fa-table"></i></button>
             <div style="width:1px; height:20px; background:#ccc; margin:0 5px;"></div>
             <button class="layer-btn active" onclick="setLayer('street')" id="btnStreet">Street</button>
             <button class="layer-btn" onclick="setLayer('satellite')" id="btnSat">Satellite</button>
