@@ -17,43 +17,54 @@
         font-family: "Roboto", sans-serif;
         background-color: #f0f2f5;
         margin: 0;
-        padding: 20px;
+        padding: 0;
         color: #333;
       }
       .container {
         max-width: 1200px;
         margin: 0 auto;
+        padding: 20px;
+        min-height: 80vh;
       }
       .header {
         display: flex;
+        flex-direction: column;
         align-items: center;
         justify-content: center;
-        position: relative;
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        background-color: #f0f2f5;
+        padding-top: 10px;
         margin-bottom: 40px;
         padding-bottom: 20px;
         border-bottom: 2px solid #ddd;
+        gap: 15px;
       }
       .header h1 {
         margin: 0;
         color: #2c3e50;
         font-size: 2.5em;
       }
-      .home-btn {
-        position: absolute;
-        left: 0;
+      .toggle-btn {
         text-decoration: none;
         color: #fff;
-        background-color: #0056b3;
-        padding: 10px 20px;
+        background-color: #6c757d;
+        padding: 8px 15px;
         border-radius: 5px;
         font-weight: bold;
         transition: background 0.3s;
         display: flex;
         align-items: center;
         gap: 8px;
+        border: none;
+        cursor: pointer;
       }
-      .home-btn:hover {
-        background-color: #004494;
+      .toggle-btn:hover {
+        background-color: #5a6268;
+      }
+      .toggle-btn.active {
+        background-color: #0056b3;
       }
       .grid {
         display: grid;
@@ -150,15 +161,148 @@
           box-shadow: 0 0 10px rgba(40, 167, 69, 0.5);
         }
       }
+      /* Footer Styles */
+      .footer-wrapper {
+        width: 100%;
+        margin-top: 50px;
+      }
+      .footer-wave {
+        display: block;
+        width: 100%;
+        height: 120px;
+        margin-bottom: -1px;
+        vertical-align: bottom;
+      }
+      .footer-wave path {
+        transform-origin: bottom;
+      }
+      .footer-wave path:nth-of-type(1) {
+        animation: wave-flow 6s infinite ease-in-out;
+        animation-delay: -3s;
+      }
+      .footer-wave path:nth-of-type(2) {
+        animation: wave-flow 4s infinite ease-in-out;
+      }
+      @keyframes wave-flow {
+        0%,
+        100% {
+          transform: scaleY(1) skewX(0deg);
+        }
+        50% {
+          transform: scaleY(1.1) skewX(-2deg);
+        }
+      }
+      .main-footer {
+        background-color: #0a2540;
+        color: white;
+        padding: 20px 0 40px;
+        width: 100%;
+        box-sizing: border-box;
+      }
+      .footer-content {
+        max-width: 1200px;
+        margin: 0 auto;
+        padding: 0 20px;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        text-align: center;
+      }
+      .main-footer h3 {
+        color: #fff;
+        margin-bottom: 15px;
+        font-size: 1.2em;
+        border-bottom: 2px solid #667eea;
+        display: inline-block;
+        padding-bottom: 5px;
+      }
+      .main-footer p {
+        color: #b0c4de;
+        margin: 8px 0;
+        line-height: 1.6;
+      }
+      .visitor-count {
+        margin-top: 10px;
+        font-size: 1.1em;
+        font-weight: bold;
+        color: #b0c4de;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        gap: 5px;
+      }
+      .btn-secondary {
+        background: rgba(255, 255, 255, 0.1);
+        border: 1px solid rgba(255, 255, 255, 0.2);
+        color: white;
+        padding: 10px 20px;
+        border-radius: 5px;
+        cursor: pointer;
+        font-weight: bold;
+        transition: background 0.3s;
+        margin-top: 20px;
+      }
+      .btn-secondary:hover {
+        background: rgba(255, 255, 255, 0.2);
+      }
     </style>
   </head>
   <body>
     <div class="container">
       <div class="header">
-        <a href="index.html" class="home-btn"
-          ><i class="fas fa-home"></i> Home</a
-        >
         <h1>Weather Bulletin</h1>
+        <div
+          style="
+            display: flex;
+            gap: 5px;
+            flex-wrap: wrap;
+            justify-content: center;
+          "
+        >
+          <a href="index.html" class="toggle-btn" title="Home"
+            ><i class="fas fa-home"></i
+          ></a>
+          <a
+            href="bulletin.html"
+            class="toggle-btn active"
+            title="Weather Bulletin"
+            ><i class="fas fa-clipboard-list"></i
+          ></a>
+          <a href="forecast.html" class="toggle-btn" title="7-Day Forecast"
+            ><i class="fas fa-calendar-day"></i
+          ></a>
+          <a href="warning.html" class="toggle-btn" title="7-Day Warning"
+            ><i class="fas fa-exclamation-triangle"></i
+          ></a>
+          <a
+            href="Temperature_Forecast.html"
+            class="toggle-btn"
+            title="Min/Max Temp"
+            ><i class="fas fa-temperature-high"></i
+          ></a>
+          <a href="bulk_import.html" class="toggle-btn" title="Import Data"
+            ><i class="fas fa-file-import"></i
+          ></a>
+          <div style="width: 1px; background: #ccc; margin: 0 5px"></div>
+          <a href="live.html" class="toggle-btn" title="Live Preview"
+            ><i class="fas fa-tower-broadcast"></i
+          ></a>
+          <a href="temp.html" class="toggle-btn" title="Live Temp"
+            ><i class="fas fa-thermometer-half"></i
+          ></a>
+          <a href="wind.html" class="toggle-btn" title="Wind"
+            ><i class="fas fa-wind"></i
+          ></a>
+          <a href="rain.html" class="toggle-btn" title="Rain"
+            ><i class="fas fa-cloud-showers-heavy"></i
+          ></a>
+          <a href="humidity.html" class="toggle-btn" title="Humidity"
+            ><i class="fas fa-tint"></i
+          ></a>
+          <a href="display.html" class="toggle-btn" title="Display Mode"
+            ><i class="fas fa-tv"></i
+          ></a>
+        </div>
       </div>
 
       <div class="grid">
@@ -221,5 +365,81 @@
         >
       </div>
     </div>
+
+    <div class="footer-wrapper">
+      <svg
+        class="footer-wave"
+        xmlns="http://www.w3.org/2000/svg"
+        viewBox="0 0 1440 320"
+        preserveAspectRatio="none"
+      >
+        <defs>
+          <linearGradient id="wave-grad" x1="0%" y1="0%" x2="0%" y2="100%">
+            <stop offset="0%" style="stop-color: #667eea; stop-opacity: 1" />
+            <stop offset="100%" style="stop-color: #0a2540; stop-opacity: 1" />
+          </linearGradient>
+        </defs>
+        <path
+          fill="url(#wave-grad)"
+          fill-opacity="0.6"
+          d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1152,160C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
+        ></path>
+        <path
+          fill="url(#wave-grad)"
+          fill-opacity="1"
+          d="M0,96L48,112C96,128,192,160,288,160C384,160,480,128,576,112C672,96,768,96,864,112C960,128,1056,160,1152,160C1248,160,1344,128,1392,112L1440,96L1440,320L1392,320C1344,320,1248,320,1152,320C1056,320,960,320,864,320C768,320,672,320,576,320C480,320,384,320,288,320C192,320,96,320,48,320L0,320Z"
+        ></path>
+      </svg>
+      <footer class="main-footer">
+        <div class="footer-content">
+          <h3>Bihar Weather Forecast</h3>
+          <p>
+            डेटा स्रोत: India Meteorological Department (IMD), Meteorological
+            Centre, Patna.
+          </p>
+          <br />
+          <p>बिहार मौसम पूर्वानुमान प्रणाली: विश्लेषण एवं प्रस्तुतीकरण</p>
+          <br />
+          <div style="margin-top: 15px; margin-bottom: 5px">
+            <span style="font-size: 1.8em; font-weight: 800; color: #ff9966"
+              >@ Lal Kamal</span
+            >
+          </div>
+          <p
+            style="
+              margin-top: 5px;
+              margin-bottom: 15px;
+              font-size: 0.9em;
+              color: #666;
+            "
+          >
+            All Rights Reserved.
+          </p>
+          <p class="visitor-count" title="Total Views">
+            <i class="fas fa-eye"></i> Visitors:
+            <span id="visitorCount">...</span>
+          </p>
+
+          <button id="backToTop" class="btn-secondary">
+            Back to Top <i class="fas fa-arrow-up"></i>
+          </button>
+        </div>
+      </footer>
+    </div>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        // Visitor Count Display
+        let count = localStorage.getItem("page_views");
+        if (!count) count = 1117;
+        const el = document.getElementById("visitorCount");
+        if (el) el.innerText = count;
+
+        // Back to Top functionality
+        const btn = document.getElementById("backToTop");
+        if (btn) {
+          btn.onclick = () => window.scrollTo({ top: 0, behavior: "smooth" });
+        }
+      });
+    </script>
   </body>
 </html>
