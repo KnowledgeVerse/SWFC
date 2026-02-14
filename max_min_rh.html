@@ -441,6 +441,13 @@
         >
           Table for Bulletin
         </button>
+        <button
+          class="btn-secondary"
+          onclick="clearData()"
+          style="background-color: #dc3545; color: white; margin-left: 10px"
+        >
+          <i class="fas fa-trash"></i> Clear Data
+        </button>
       </div>
 
       <div class="export-controls" id="exportControls" style="display: none">
@@ -470,11 +477,29 @@
       }
 
       function initPage() {
-        // Set default date to today
+        // Load saved date
+        const savedDate = localStorage.getItem("bihar_observed_report_date");
         const dateInput = document.getElementById("reportDate");
-        if (dateInput) dateInput.valueAsDate = new Date();
+        if (savedDate) {
+          dateInput.value = savedDate;
+        } else {
+          if (dateInput) dateInput.valueAsDate = new Date();
+        }
 
-        addInputRows(40); // Start with 40 rows
+        // Load saved data
+        const savedData = localStorage.getItem("bihar_observed_data");
+        if (savedData) {
+          try {
+            const data = JSON.parse(savedData);
+            populateGrid(data);
+          } catch (e) {
+            console.error("Error parsing saved data", e);
+            addInputRows(40);
+          }
+        } else {
+          addInputRows(40); // Start with 40 rows
+        }
+
         setupPasteListener();
       }
 
@@ -489,6 +514,52 @@
           updateButtonSelection("generateBulletinBtn");
           generateTable(true);
         });
+
+      function populateGrid(data) {
+        const tbody = document.getElementById("inputBody");
+        tbody.innerHTML = "";
+        data.forEach((row) => {
+          const tr = document.createElement("tr");
+          // district, station, max, min, rh, rain
+          const values = [
+            row.district,
+            row.station,
+            row.max,
+            row.min,
+            row.rh,
+            row.rain,
+          ];
+          values.forEach((val) => {
+            const td = document.createElement("td");
+            const div = document.createElement("div");
+            div.contentEditable = "true";
+            div.className = "cell-input";
+            div.innerText = val || "";
+            td.appendChild(div);
+            tr.appendChild(td);
+          });
+          tbody.appendChild(tr);
+        });
+        // Add some extra empty rows for editing
+        addInputRows(5);
+      }
+
+      function clearData() {
+        if (
+          confirm(
+            "Are you sure you want to clear all data? This will remove saved data.",
+          )
+        ) {
+          localStorage.removeItem("bihar_observed_data");
+          localStorage.removeItem("bihar_observed_report_date");
+          document.getElementById("inputBody").innerHTML = "";
+          addInputRows(40);
+          const dateInput = document.getElementById("reportDate");
+          if (dateInput) dateInput.valueAsDate = new Date();
+          document.getElementById("tableContainer").innerHTML = "";
+          document.getElementById("exportControls").style.display = "none";
+        }
+      }
 
       function addInputRows(count) {
         const tbody = document.getElementById("inputBody");

@@ -705,7 +705,105 @@
           }
         }
 
+        // 6. Append Observed Data Table
+        summary += generateObservedTableHtml(observedData, reportDate);
+
         document.getElementById("finalOutput").innerHTML = summary;
+      }
+
+      function generateObservedTableHtml(data, dateObj) {
+        if (!data || data.length === 0) return "";
+
+        const prevDateObj = new Date(dateObj);
+        prevDateObj.setDate(dateObj.getDate() - 1);
+
+        const dateStr = formatDate(dateObj); // Uses existing formatDate (dd.mm.yyyy)
+        // We need dd/mm/yyyy for table header to match max_min_rh style exactly if desired,
+        // but let's stick to the format used in max_min_rh.html which is dd/mm/yyyy
+        const formatDateSlash = (d) => {
+          const day = String(d.getDate()).padStart(2, "0");
+          const month = String(d.getMonth() + 1).padStart(2, "0");
+          const year = d.getFullYear();
+          return `${day}/${month}/${year}`;
+        };
+
+        const dStr = formatDateSlash(dateObj);
+        const pdStr = formatDateSlash(prevDateObj);
+
+        // Calculate Extremes
+        let maxVals = [];
+        let minVals = [];
+        data.forEach((d) => {
+          const max = parseFloat(d.max);
+          const min = parseFloat(d.min);
+          if (!isNaN(max)) maxVals.push(max);
+          if (!isNaN(min)) minVals.push(min);
+        });
+        const highestMax = maxVals.length ? Math.max(...maxVals) : null;
+        const lowestMin = minVals.length ? Math.min(...minVals) : null;
+
+        // Inline styles for the table to ensure it looks correct in the summary editor
+        let html = `<br><br>
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px; border: 2px solid #000; background: white; font-family: Arial, sans-serif;">
+            <thead>
+                <tr>
+                    <th colspan="6" style="border: 1px solid #000; padding: 12px; text-align: center; background-color: #e6b07d; font-size: 18px; color: #000; text-transform: uppercase;">Observed Temperature & Rainfall – 08:30 IST</th>
+                </tr>
+                <tr>
+                    <th style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #e6b07d; font-weight: bold; color: #000;">DISTRICT/जिला</th>
+                    <th style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #e6b07d; font-weight: bold; color: #000;">STATION/स्टेशन</th>
+                    <th style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #e6b07d; font-weight: bold; color: #000;">Max.Tem/ अधिकतम<br>तापमान(°C) observed on<br>${pdStr}</th>
+                    <th style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #e6b07d; font-weight: bold; color: #000;">Min.Temp/न्यूनतम<br>तापमान(°C) observed on<br>${dStr}</th>
+                    <th style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #e6b07d; font-weight: bold; color: #000;">R/H (%) at 08:30 IST /<br>०८:३० पर सापेक्षिक आर्द्रता<br>${dStr}</th>
+                    <th style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #e6b07d; font-weight: bold; color: #000;">24 Hrs Rainfall ending at 08:30 IST/<br>०८:३० पर दर्ज़ वर्षा (मिली मीटर)<br>${dStr}</th>
+                </tr>
+            </thead>
+            <tbody>`;
+
+        data.forEach((d) => {
+          // Skip empty rows if any
+          if (!d.district && !d.station) return;
+
+          const maxNum = parseFloat(d.max);
+          const minNum = parseFloat(d.min);
+          const rhNum = parseFloat(d.rh);
+          const rainNum = parseFloat(d.rain);
+
+          // Styles
+          const maxStyle =
+            highestMax !== null && maxNum === highestMax
+              ? "color: red; font-weight: 900;"
+              : "";
+          const minStyle =
+            lowestMin !== null && minNum === lowestMin
+              ? "color: blue; font-weight: 900;"
+              : "";
+          const rhStyle =
+            rhNum === 100 ? "color: darkblue; font-weight: 900;" : "";
+          const rainStyle = rainNum > 0 ? "color: red; font-weight: 900;" : "";
+
+          const valOrNA = (v, style) => {
+            if (!v || v === "" || v.toUpperCase() === "NA")
+              return '<span style="color: black; font-weight: normal;">NA</span>';
+            return `<span style="${style}">${v}</span>`;
+          };
+
+          html += `<tr>
+                <td style="border: 1px solid #000; padding: 8px; text-align: left; background-color: #cfd8b6; font-weight: bold; color: #000;">${d.district || "NA"}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: left; background-color: #cfd8b6; font-weight: bold; color: #000;">${d.station || "NA"}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #ffff00;">${valOrNA(d.max, maxStyle)}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #dfe8c6;">${valOrNA(d.min, minStyle)}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #9fd0df;">${valOrNA(d.rh, rhStyle)}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #00b050; font-weight: bold;">${valOrNA(d.rain, rainStyle)}</td>
+            </tr>`;
+        });
+
+        html += `<tr>
+            <td colspan="6" style="text-align: left; font-size: 11px; border: none; padding: 8px; background: white;">*NA- (data not available), (AWS) - Automatic weather station</td>
+        </tr>`;
+
+        html += `</tbody></table>`;
+        return html;
       }
     </script>
   </body>
