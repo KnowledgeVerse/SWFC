@@ -609,7 +609,7 @@
 
         // 1. General Weather
         const generalCond = document.getElementById("generalWeather").value;
-        summary += `${generalCond}\n\n`;
+        summary += `${generalCond}<br><br>`;
 
         // 2. Max Temp
         const maxData = getMaxData();
@@ -618,11 +618,11 @@
           prevDate.setDate(reportDate.getDate() - 1);
           const dateStr = formatDate(prevDate);
 
-          summary += `सर्वाधिक अधिकतम तापमान ${maxData.highestVal}°C (${dateStr}) ${maxData.stationNames} में दर्ज किया गया ।\n`;
-          summary += `राज्य का अधिकतम तापमान ${maxData.minVal} – ${maxData.maxVal}°C के बीच रहा।\n`;
+          summary += `सर्वाधिक अधिकतम तापमान <b>${maxData.highestVal}°C (${dateStr}) ${maxData.stationNames}</b> में दर्ज किया गया ।<br>`;
+          summary += `राज्य का अधिकतम तापमान <b>${maxData.minVal} – ${maxData.maxVal}°C</b> के बीच रहा।<br>`;
 
           const maxTrend = document.getElementById("maxTempTrend").value;
-          summary += `${maxTrend}\n\n`;
+          summary += `${maxTrend}<br><br>`;
         }
 
         // 3. Min Temp
@@ -630,11 +630,11 @@
         if (minData) {
           const dateStr = formatDate(reportDate);
 
-          summary += `सबसे कम न्यूनतम तापमान ${minData.lowestVal}°C (${dateStr}) ${minData.stationNames} में दर्ज किया गया ।\n`;
-          summary += `राज्य का न्यूनतम तापमान ${minData.minVal} – ${minData.maxVal}°C के बीच रहा।\n`;
+          summary += `सबसे कम न्यूनतम तापमान <b>${minData.lowestVal}°C (${dateStr}) ${minData.stationNames}</b> में दर्ज किया गया ।<br>`;
+          summary += `राज्य का न्यूनतम तापमान <b>${minData.minVal} – ${minData.maxVal}°C</b> के बीच रहा।<br>`;
 
           const minTrend = document.getElementById("minTempTrend").value;
-          summary += `${minTrend}\n\n`;
+          summary += `${minTrend}<br><br>`;
         }
 
         // 4. Visibility
@@ -649,10 +649,10 @@
           if (visVal && visCheckboxes.length > 0) {
             const names = Array.from(visCheckboxes).map((cb) => cb.value);
             const joinedNames = joinNames(names);
-            summary += `सबसे कम न्यूनतम दृश्यता ${visVal} मीटर ${joinedNames} में दर्ज किया गया ।\n`;
+            summary += `सबसे कम न्यूनतम दृश्यता <b>${visVal} मीटर ${joinedNames}</b> में दर्ज किया गया ।<br>`;
           }
         });
-        if (visRows.length > 0) summary += "\n";
+        if (visRows.length > 0) summary += "<br>";
 
         // 5. Rainfall
         const hasRain = document.getElementById("hasRainfall").checked;
@@ -705,7 +705,7 @@
           }
         }
 
-        document.getElementById("finalOutput").innerText = summary;
+        document.getElementById("finalOutput").innerHTML = summary;
       }
     </script>
   </body>
