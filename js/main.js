@@ -1496,7 +1496,31 @@ function renderTable() {
       Object.values(groups).forEach((group) => {
         let colorClass = "warning-green";
         let colorText = "Green (No Warning)";
-        const w = group.warningLevel;
+        let w = group.warningLevel;
+
+        // Fallback: Infer warning level from color if not explicitly set
+        if (!w && group.color) {
+          const c = group.color.toLowerCase();
+          if (
+            c.includes("255, 0, 0") ||
+            c.includes("#dc3545") ||
+            c.includes("red")
+          )
+            w = 3;
+          else if (
+            c.includes("255, 192, 0") ||
+            c.includes("#fd7e14") ||
+            c.includes("orange")
+          )
+            w = 2;
+          else if (
+            c.includes("255, 255, 0") ||
+            c.includes("#ffc107") ||
+            c.includes("yellow")
+          )
+            w = 1;
+        }
+
         if (w === 1) {
           colorClass = "warning-yellow";
           colorText = "Yellow (Watch)";

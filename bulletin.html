@@ -266,6 +266,40 @@
           transform: scale(1);
         }
       }
+
+      /* Additional Tools Styling */
+      .section-divider {
+        width: 100%;
+        text-align: left;
+        border-bottom: 2px solid #ddd;
+        line-height: 0.1em;
+        margin: 50px 0 30px;
+      }
+      .section-divider span {
+        background: #f0f2f5;
+        padding-right: 15px;
+        color: #6c757d;
+        font-weight: bold;
+        font-size: 1.2em;
+        text-transform: uppercase;
+        letter-spacing: 1px;
+      }
+      .additional-card {
+        padding: 20px !important;
+      }
+      .additional-card .icon-box {
+        width: 60px !important;
+        height: 60px !important;
+        font-size: 24px !important;
+        margin-bottom: 15px !important;
+      }
+      .additional-card h3 {
+        font-size: 1.2em !important;
+        margin-bottom: 8px !important;
+      }
+      .additional-card p {
+        font-size: 0.85em !important;
+      }
     </style>
   </head>
   <body>
@@ -308,20 +342,11 @@
             title="Weather Bulletin"
             ><i class="fas fa-clipboard-list"></i
           ></a>
-          <a href="forecast.html" class="toggle-btn" title="7-Day Forecast"
-            ><i class="fas fa-calendar-day"></i
-          ></a>
-          <a href="warning.html" class="toggle-btn" title="7-Day Warning"
-            ><i class="fas fa-exclamation-triangle"></i
-          ></a>
           <a
-            href="Temperature_Forecast.html"
+            href="Generate_Weather_Bulletin.html"
             class="toggle-btn"
-            title="Min/Max Temp"
-            ><i class="fas fa-temperature-high"></i
-          ></a>
-          <a href="bulk_import.html" class="toggle-btn" title="Import Data"
-            ><i class="fas fa-file-import"></i
+            title="Generate_Weather_Bulletin"
+            ><i class="fas fa-file-lines"></i
           ></a>
           <a href="max_min_rh.html" class="toggle-btn" title="Observed Data"
             ><i class="fas fa-table"></i
@@ -338,88 +363,156 @@
             title="Detailed Forecast"
             ><i class="fas fa-list-alt"></i
           ></a>
+          <a
+            href="Weather_Warning_Table.html"
+            class="toggle-btn"
+            title="Warning Table"
+            ><i class="fas fa-table"></i
+          ></a>
+          <a href="bulk_import.html" class="toggle-btn" title="Import Data"
+            ><i class="fas fa-file-import"></i
+          ></a>
+          <a
+            href="Temperature_Forecast.html"
+            class="toggle-btn"
+            title="Min/Max Temp"
+            ><i class="fas fa-temperature-high"></i
+          ></a>
+          <a href="forecast.html" class="toggle-btn" title="7-Day Forecast"
+            ><i class="fas fa-calendar-day"></i
+          ></a>
+          <a href="warning.html" class="toggle-btn" title="7-Day Warning"
+            ><i class="fas fa-exclamation-triangle"></i
+          ></a>
+          <a
+            href="bulletin_footer.html"
+            class="toggle-btn"
+            title="Bulletin Footer"
+            ><i class="fas fa-file-signature"></i
+          ></a>
         </div>
       </div>
 
+      <!-- Primary Modules -->
       <div class="grid">
-        <a href="forecast.html" class="card"
-          ><div class="icon-box icon-forecast" style="color: #0056b3">
-            <i class="fas fa-calendar-day"></i>
+        <!-- 1. Generate_Weather_Bulletin -->
+        <a href="Generate_Weather_Bulletin.html" class="card">
+          <div class="icon-box icon-forecast" style="color: #6f42c1">
+            <i class="fas fa-file-lines"></i>
           </div>
-          <h3>7-Day Forecast</h3>
-          <p>View daily weather forecast maps for the next 7 days.</p></a
-        >
-        <a href="warning.html" class="card"
-          ><div class="icon-box icon-warning" style="color: #dc3545">
-            <i class="fas fa-exclamation-triangle"></i>
-          </div>
-          <h3>7-Day Warning</h3>
-          <p>View daily weather warning maps for the next 7 days.</p></a
-        >
-        <a href="Temperature_Forecast.html" class="card"
-          ><div class="icon-box icon-temp">
-            <i class="fas fa-temperature-high"></i>
-          </div>
-          <h3>Min/Max Temperature</h3>
-          <p>Daily minimum and maximum temperature reports.</p></a
-        >
-        <a href="bulk_import.html" class="card blink-card"
-          ><div class="icon-box icon-forecast" style="color: #28a745">
-            <i class="fas fa-file-import"></i>
-          </div>
-          <h3>Temperature Import</h3>
-          <p>Paste Excel data for Temperature Forecast.</p></a
-        >
-        <a href="max_min_rh.html" class="card"
-          ><div class="icon-box icon-forecast" style="color: #6610f2">
+          <h3>Generate_Weather_Bulletin</h3>
+          <p>Generate Official Header with Date & Time.</p>
+        </a>
+        <!-- 2. Observed Data -->
+        <a href="max_min_rh.html" class="card">
+          <div class="icon-box icon-forecast" style="color: #6610f2">
             <i class="fas fa-table"></i>
           </div>
           <h3>Observed Data</h3>
-          <p>Generate observed temperature & rainfall table.</p></a
-        >
-        <a href="Weather_summary.html" class="card"
-          ><div class="icon-box icon-forecast" style="color: #17a2b8">
+          <p>Generate observed temperature & rainfall table.</p>
+        </a>
+        <!-- 3. Weather Summary -->
+        <a href="Weather_summary.html" class="card">
+          <div class="icon-box icon-forecast" style="color: #17a2b8">
             <i class="fas fa-file-alt"></i>
           </div>
           <h3>Weather Summary</h3>
-          <p>Generate daily weather summary text.</p></a
-        >
-        <a href="Detailed_Weather_Forecast.html" class="card"
-          ><div class="icon-box icon-forecast" style="color: #0056b3">
+          <p>Generate daily weather summary text.</p>
+        </a>
+        <!-- 4. Detailed Forecast -->
+        <a href="Detailed_Weather_Forecast.html" class="card">
+          <div class="icon-box icon-forecast" style="color: #0056b3">
             <i class="fas fa-list-alt"></i>
           </div>
           <h3>Detailed Forecast</h3>
-          <p>District-wise detailed weather forecast table.</p></a
-        >
-        <a href="temp.html" class="card"
-          ><div class="icon-box icon-temp">
+          <p>District-wise detailed weather forecast table.</p>
+        </a>
+        <!-- 5. Warning Table -->
+        <a href="Weather_Warning_Table.html" class="card">
+          <div class="icon-box icon-warning" style="color: #dc3545">
+            <i class="fas fa-table"></i>
+          </div>
+          <h3>Warning Table</h3>
+          <p>View 7-Day Weather Warning Table.</p>
+        </a>
+        <!-- 6. Temperature Import -->
+        <a href="bulk_import.html" class="card blink-card">
+          <div class="icon-box icon-forecast" style="color: #28a745">
+            <i class="fas fa-file-import"></i>
+          </div>
+          <h3>Temperature Import</h3>
+          <p>Paste Excel data for Temperature Forecast.</p>
+        </a>
+        <!-- 7. Min/Max Temperature -->
+        <a href="Temperature_Forecast.html" class="card">
+          <div class="icon-box icon-temp">
+            <i class="fas fa-temperature-high"></i>
+          </div>
+          <h3>Min/Max Temperature</h3>
+          <p>Daily minimum and maximum temperature reports.</p>
+        </a>
+        <!-- 8. 7-Day Forecast -->
+        <a href="forecast.html" class="card">
+          <div class="icon-box icon-forecast" style="color: #0056b3">
+            <i class="fas fa-calendar-day"></i>
+          </div>
+          <h3>7-Day Forecast</h3>
+          <p>View daily weather forecast maps for the next 7 days.</p>
+        </a>
+        <!-- 9. 7-Day Warning -->
+        <a href="warning.html" class="card">
+          <div class="icon-box icon-warning" style="color: #dc3545">
+            <i class="fas fa-exclamation-triangle"></i>
+          </div>
+          <h3>7-Day Warning</h3>
+          <p>View daily weather warning maps for the next 7 days.</p>
+        </a>
+        <!-- 10. Bulletin Footer -->
+        <a href="bulletin_footer.html" class="card">
+          <div class="icon-box icon-forecast" style="color: #28a745">
+            <i class="fas fa-file-signature"></i>
+          </div>
+          <h3>Bulletin Footer</h3>
+          <p>Impact, Suggestions & Terminology.</p>
+        </a>
+      </div>
+
+      <!-- Divider -->
+      <div class="section-divider">
+        <span>Additional Tools</span>
+      </div>
+
+      <!-- Additional Tools -->
+      <div class="grid">
+        <a href="temp.html" class="card additional-card">
+          <div class="icon-box icon-temp">
             <i class="fas fa-thermometer-half"></i>
           </div>
           <h3>Live Temperature</h3>
-          <p>Real-time temperature map visualization.</p></a
-        >
-        <a href="rain.html" class="card"
-          ><div class="icon-box icon-rain">
+          <p>Real-time temperature map visualization.</p>
+        </a>
+        <a href="rain.html" class="card additional-card">
+          <div class="icon-box icon-rain">
             <i class="fas fa-cloud-showers-heavy"></i>
           </div>
           <h3>Rainfall Map</h3>
-          <p>Live rainfall distribution and intensity.</p></a
-        >
-        <a href="wind.html" class="card"
-          ><div class="icon-box icon-wind"><i class="fas fa-wind"></i></div>
+          <p>Live rainfall distribution and intensity.</p>
+        </a>
+        <a href="wind.html" class="card additional-card">
+          <div class="icon-box icon-wind"><i class="fas fa-wind"></i></div>
           <h3>Wind Speed</h3>
-          <p>Current wind speed and direction analysis.</p></a
-        >
-        <a href="humidity.html" class="card"
-          ><div class="icon-box icon-humidity"><i class="fas fa-tint"></i></div>
+          <p>Current wind speed and direction analysis.</p>
+        </a>
+        <a href="humidity.html" class="card additional-card">
+          <div class="icon-box icon-humidity"><i class="fas fa-tint"></i></div>
           <h3>Humidity</h3>
-          <p>Relative humidity levels across districts.</p></a
-        >
-        <a href="display.html" class="card"
-          ><div class="icon-box icon-display"><i class="fas fa-tv"></i></div>
+          <p>Relative humidity levels across districts.</p>
+        </a>
+        <a href="display.html" class="card additional-card">
+          <div class="icon-box icon-display"><i class="fas fa-tv"></i></div>
           <h3>Display Mode</h3>
-          <p>Full-screen presentation mode for displays.</p></a
-        >
+          <p>Full-screen presentation mode for displays.</p>
+        </a>
       </div>
     </div>
 

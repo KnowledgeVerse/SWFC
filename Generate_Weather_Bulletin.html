@@ -1,0 +1,461 @@
+<!doctype html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <title>Weather Bulletin Header</title>
+    <link
+      rel="stylesheet"
+      href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    />
+    <style>
+      /* CSS Variables */
+      :root {
+        --text-color: #000;
+        --bg-color: #f4f4f4;
+        --header-bg: #fff;
+        --border-color: #000;
+        --font-family: "Arial", sans-serif;
+      }
+
+      body {
+        font-family: var(--font-family);
+        background-color: var(--bg-color);
+        margin: 0;
+        padding: 20px;
+        color: var(--text-color);
+      }
+
+      .container {
+        max-width: 1000px;
+        margin: 0 auto;
+        background: var(--header-bg);
+        padding: 20px 40px;
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        border: 1px solid #ddd;
+      }
+
+      /* Header Layout */
+      .header-top {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        border-bottom: 2px solid var(--border-color);
+        padding-bottom: 15px;
+        margin-bottom: 15px;
+      }
+
+      .logo-container {
+        flex: 0 0 120px; /* Fixed width for logos */
+        display: flex;
+        justify-content: center;
+        align-items: center;
+      }
+
+      .logo {
+        max-width: 100%;
+        height: auto;
+        max-height: 100px;
+      }
+
+      .header-text {
+        flex: 1;
+        text-align: center;
+        font-weight: bold;
+        line-height: 1.5;
+        font-size: 16px;
+        color: #000;
+      }
+
+      .header-text div {
+        margin: 2px 0;
+      }
+
+      .season-title {
+        text-align: center;
+        font-weight: bold;
+        font-size: 18px;
+        margin: 20px 0;
+        text-decoration: underline;
+        text-transform: uppercase;
+      }
+
+      /* Date Time Row */
+      .date-time-row {
+        display: flex;
+        justify-content: space-between;
+        font-weight: bold;
+        font-size: 16px;
+        margin-bottom: 10px;
+        padding: 0 10px;
+      }
+
+      /* Controls Section (Hidden in Print) */
+      .controls {
+        max-width: 1000px;
+        margin: 20px auto 0;
+        padding: 15px;
+        background: #e9ecef;
+        border-radius: 8px;
+        text-align: center;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        gap: 20px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
+      }
+
+      .control-group {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+      }
+
+      input[type="time"] {
+        padding: 5px;
+        border-radius: 4px;
+        border: 1px solid #ccc;
+      }
+
+      .btn-back {
+        text-decoration: none;
+        background: #6c757d;
+        color: white;
+        padding: 8px 15px;
+        border-radius: 4px;
+        font-size: 14px;
+      }
+
+      /* Navigation Toolbar */
+      .toggle-btn {
+        text-decoration: none;
+        color: #fff;
+        background-color: #6c757d;
+        padding: 8px 15px;
+        border-radius: 5px;
+        font-weight: bold;
+        transition: background 0.3s;
+        display: flex;
+        align-items: center;
+        gap: 8px;
+        border: none;
+        cursor: pointer;
+        font-size: 14px;
+      }
+      .toggle-btn:hover {
+        background-color: #5a6268;
+      }
+      .toggle-btn.active {
+        background-color: #0056b3;
+      }
+      .btn-blink-anim {
+        animation: blink-pulse 2s infinite;
+        background-color: #ff9800 !important;
+        color: white !important;
+      }
+      @keyframes blink-pulse {
+        0% {
+          box-shadow: 0 0 0 0 rgba(255, 152, 0, 0.7);
+          transform: scale(1);
+        }
+        50% {
+          box-shadow: 0 0 0 10px rgba(255, 152, 0, 0);
+          transform: scale(1.05);
+        }
+        100% {
+          box-shadow: 0 0 0 0 rgba(255, 152, 0, 0);
+          transform: scale(1);
+        }
+      }
+
+      /* Print Styles */
+      @media print {
+        body {
+          background: white;
+          padding: 0;
+        }
+        .container {
+          box-shadow: none;
+          border: none;
+          padding: 0;
+          width: 100%;
+          max-width: 100%;
+        }
+        .controls {
+          display: none;
+        }
+        .nav-toolbar {
+          display: none !important;
+        }
+      }
+
+      /* Responsive */
+      @media (max-width: 768px) {
+        .header-top {
+          flex-direction: column;
+          gap: 15px;
+        }
+        .header-text {
+          order: 2;
+        }
+        .logo-container {
+          order: 1;
+        }
+        .date-time-row {
+          flex-direction: column;
+          align-items: center;
+          gap: 10px;
+        }
+      }
+    </style>
+  </head>
+  <body>
+    <div
+      class="nav-toolbar"
+      style="
+        display: flex;
+        gap: 5px;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 10px;
+        margin-bottom: 10px;
+      "
+    >
+      <a href="index.html" class="toggle-btn btn-blink-anim" title="Home"
+        ><i class="fas fa-home"></i
+      ></a>
+      <a href="live.html" class="toggle-btn" title="Live Preview"
+        ><i class="fas fa-tower-broadcast"></i
+      ></a>
+      <a href="temp.html" class="toggle-btn" title="Live Temp"
+        ><i class="fas fa-thermometer-half"></i
+      ></a>
+      <a href="wind.html" class="toggle-btn" title="Wind"
+        ><i class="fas fa-wind"></i
+      ></a>
+      <a href="rain.html" class="toggle-btn" title="Rain"
+        ><i class="fas fa-cloud-showers-heavy"></i
+      ></a>
+      <a href="humidity.html" class="toggle-btn" title="Humidity"
+        ><i class="fas fa-tint"></i
+      ></a>
+      <a href="display.html" class="toggle-btn" title="Display Mode"
+        ><i class="fas fa-tv"></i
+      ></a>
+      <div style="width: 1px; background: #ccc; margin: 0 5px"></div>
+      <a
+        href="bulletin.html"
+        class="toggle-btn btn-blink-anim"
+        title="Weather Bulletin"
+        ><i class="fas fa-clipboard-list"></i
+      ></a>
+      <a
+        href="Generate_Weather_Bulletin.html"
+        class="toggle-btn active"
+        title="Generate_Weather_Bulletin"
+        ><i class="fas fa-file-lines"></i
+      ></a>
+      <a href="max_min_rh.html" class="toggle-btn" title="Observed Data"
+        ><i class="fas fa-table"></i
+      ></a>
+      <a href="Weather_summary.html" class="toggle-btn" title="Weather Summary"
+        ><i class="fas fa-file-alt"></i
+      ></a>
+      <a
+        href="Detailed_Weather_Forecast.html"
+        class="toggle-btn"
+        title="Detailed Forecast"
+        ><i class="fas fa-list-alt"></i
+      ></a>
+      <a
+        href="Weather_Warning_Table.html"
+        class="toggle-btn"
+        title="Warning Table"
+        ><i class="fas fa-table"></i
+      ></a>
+      <a href="bulk_import.html" class="toggle-btn" title="Import Data"
+        ><i class="fas fa-file-import"></i
+      ></a>
+      <a
+        href="Temperature_Forecast.html"
+        class="toggle-btn"
+        title="Min/Max Temp"
+        ><i class="fas fa-temperature-high"></i
+      ></a>
+      <a href="forecast.html" class="toggle-btn" title="7-Day Forecast"
+        ><i class="fas fa-calendar-day"></i
+      ></a>
+      <a href="warning.html" class="toggle-btn" title="7-Day Warning"
+        ><i class="fas fa-exclamation-triangle"></i
+      ></a>
+      <a href="bulletin_footer.html" class="toggle-btn" title="Bulletin Footer"
+        ><i class="fas fa-file-signature"></i
+      ></a>
+    </div>
+
+    <div class="container">
+      <!-- Header Section -->
+      <div class="header-top">
+        <div class="logo-container" style="justify-content: flex-start">
+          <!-- Placeholder Left Logo -->
+          <img
+            src="left_logo.png"
+            alt="Gov Logo"
+            class="logo"
+            onerror="this.src = 'assets/logo.png'"
+          />
+        </div>
+
+        <div class="header-text">
+          <div>भारत सरकार</div>
+          <div>पृथ्वी विज्ञान मंत्रालय</div>
+          <div>भारत मौसम विज्ञान विभाग</div>
+          <div>मौसम विज्ञान केंद्र, पटना</div>
+          <div>पटना – 800002</div>
+          <div style="font-weight: normal; font-size: 14px">
+            Website: https://mausam.imd.gov.in/patna
+          </div>
+          <div style="font-weight: normal; font-size: 14px">
+            ई-मेल: mc.patna@imd.gov.in
+          </div>
+        </div>
+
+        <div class="logo-container" style="justify-content: flex-end">
+          <!-- Placeholder Right Logo -->
+          <img
+            src="right_logo.png"
+            alt="IMD Logo"
+            class="logo"
+            onerror="this.src = 'assets/IMD_150_Year_Logo.png'"
+          />
+        </div>
+      </div>
+
+      <!-- Season Title -->
+      <div class="season-title">मानसूनोत्तर-ऋतु / POST-MONSOON SEASON</div>
+
+      <!-- Date & Time -->
+      <div class="date-time-row">
+        <div id="dateDisplay">DATE: --.--.----</div>
+        <div id="timeDisplay">TIME OF ISSUE: --:-- HRS IST</div>
+      </div>
+    </div>
+
+    <!-- Controls -->
+    <div class="controls">
+      <div class="control-group">
+        <label style="font-weight: bold">Time Mode:</label>
+        <label
+          ><input
+            type="radio"
+            name="timeMode"
+            value="auto"
+            checked
+            onchange="toggleTimeMode()"
+          />
+          Auto</label
+        >
+        <label
+          ><input
+            type="radio"
+            name="timeMode"
+            value="manual"
+            onchange="toggleTimeMode()"
+          />
+          Manual</label
+        >
+      </div>
+      <div class="control-group" id="manualTimeContainer" style="display: none">
+        <input type="time" id="manualTimeInput" onchange="updateManualTime()" />
+      </div>
+    </div>
+
+    <script>
+      // --- Date Logic ---
+      function loadDate() {
+        // Try to get date from localStorage (set by index.html)
+        const storedDate = localStorage.getItem("bihar_forecast_date");
+        let dateObj = new Date();
+
+        if (storedDate) {
+          dateObj = new Date(storedDate);
+        }
+
+        // Format: DD.MM.YYYY
+        const day = String(dateObj.getDate()).padStart(2, "0");
+        const month = String(dateObj.getMonth() + 1).padStart(2, "0");
+        const year = dateObj.getFullYear();
+
+        document.getElementById("dateDisplay").innerText =
+          `DATE: ${day}.${month}.${year}`;
+      }
+
+      // --- Time Logic ---
+      function getRoundedTime() {
+        const now = new Date();
+        let h = now.getHours();
+        let m = now.getMinutes();
+
+        // Round to nearest 15 minutes
+        const remainder = m % 15;
+        if (remainder >= 8) {
+          m += 15 - remainder;
+        } else {
+          m -= remainder;
+        }
+
+        // Handle overflow
+        if (m === 60) {
+          m = 0;
+          h += 1;
+          if (h === 24) h = 0;
+        }
+
+        return `${String(h).padStart(2, "0")}:${String(m).padStart(2, "0")}`;
+      }
+
+      function updateTimeDisplay(timeStr) {
+        document.getElementById("timeDisplay").innerText =
+          `TIME OF ISSUE: ${timeStr} HRS IST`;
+      }
+
+      function toggleTimeMode() {
+        const mode = document.querySelector(
+          'input[name="timeMode"]:checked',
+        ).value;
+        const manualContainer = document.getElementById("manualTimeContainer");
+
+        if (mode === "manual") {
+          manualContainer.style.display = "flex";
+          // Set current rounded time as default value for input
+          const rounded = getRoundedTime();
+          document.getElementById("manualTimeInput").value = rounded;
+          updateTimeDisplay(rounded);
+        } else {
+          manualContainer.style.display = "none";
+          updateTimeDisplay(getRoundedTime());
+        }
+      }
+
+      function updateManualTime() {
+        const val = document.getElementById("manualTimeInput").value;
+        if (val) {
+          updateTimeDisplay(val);
+        }
+      }
+
+      // Initialize
+      document.addEventListener("DOMContentLoaded", () => {
+        loadDate();
+        updateTimeDisplay(getRoundedTime());
+
+        // Listen for storage changes to auto-update date if changed in other tab
+        window.addEventListener("storage", (e) => {
+          if (e.key === "bihar_forecast_date") {
+            loadDate();
+          }
+        });
+      });
+    </script>
+  </body>
+</html>
