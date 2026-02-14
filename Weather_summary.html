@@ -411,13 +411,17 @@
         // Input: "FORBESGANJ/फॉरबिसगंज" -> Output: "फॉरबिसगंज"
         if (!rawStr) return "";
         const parts = rawStr.split("/");
-        return parts.length > 1 ? parts[1].trim() : rawStr.trim();
+        let hindiPart = parts.length > 1 ? parts[1].trim() : rawStr.trim();
+        // Remove (AWS) or AWS (case insensitive)
+        hindiPart = hindiPart.replace(/\s*\(?AWS\)?\s*/gi, "").trim();
+        return hindiPart;
       }
 
       function getStationDistrictName(stationRaw, districtRaw) {
-        // Format: "स्टेशन (जिला)"
         const sHindi = formatHindiName(stationRaw);
         const dHindi = formatHindiName(districtRaw);
+
+        if (sHindi === dHindi) return dHindi;
         return `${sHindi} (${dHindi})`;
       }
 
