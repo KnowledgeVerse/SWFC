@@ -283,7 +283,31 @@
           >
         </div>
 
-        <label>Weather Condition:</label>
+        <div
+          style="
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 5px;
+          "
+        >
+          <label style="margin-bottom: 0">Weather Condition:</label>
+          <button
+            onclick="setDryWeather()"
+            style="
+              background-color: #ffc107;
+              color: #000;
+              border: none;
+              padding: 4px 8px;
+              border-radius: 4px;
+              cursor: pointer;
+              font-size: 12px;
+              width: auto;
+            "
+          >
+            Set Dry Weather
+          </button>
+        </div>
         <input
           type="text"
           id="weatherConditionInput"
@@ -738,6 +762,11 @@ Or paste table..."
         container.appendChild(div);
       }
 
+      function setDryWeather() {
+        document.getElementById("weatherConditionInput").value =
+          "विगत 24 घंटों के दौरान राज्य का मौसम शुष्क बना रहा ।";
+      }
+
       // --- Section 4 Logic ---
       function updateSpecialSectionUI() {
         const heading = document.getElementById("specialHeadingSelect").value;
@@ -1076,8 +1105,7 @@ Or paste table..."
 
         if (finalInferenceLines.length > 0) {
           // Page break for print, margin for screen
-          summary += `<div style="page-break-before: always; height: 20px;"></div>`;
-          summary += `<h3 style="color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 5px; margin-bottom: 15px;">बिहार राज्य से संबंधित आज की संक्षिप्त मौसम प्रणाली:-</h3>`;
+          summary += `<h3 style="page-break-before: always; color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 5px; margin-bottom: 15px;">बिहार राज्य से संबंधित आज की संक्षिप्त मौसम प्रणाली:-</h3>`;
 
           const isTranslate = document.getElementById(
             "autoTranslateInference",
@@ -1132,6 +1160,9 @@ Or paste table..."
         }
 
         document.getElementById("finalOutput").innerHTML = summary;
+
+        // Save summary to localStorage for Bulletin page
+        localStorage.setItem("bihar_generated_summary", summary);
       }
 
       function parseRainPart(str, arr) {

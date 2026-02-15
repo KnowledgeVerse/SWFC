@@ -62,10 +62,7 @@ let editingCell = { r: -1, c: -1 };
 document.addEventListener("DOMContentLoaded", () => {
   initDate();
   initData();
-  // Note: We do NOT call renderTable() here automatically as per previous request,
-  // but user said "agar mai fill all dry pe click karoon to simple wo table bankar aa jaaye"
-  // which implies manual generation. However, if data exists, we might want to show it?
-  // For now, sticking to "Generate Table" button logic, but Fill All Dry will trigger render.
+  renderTable(); // Automatically render and save table HTML on load
 });
 
 function initDate() {
@@ -281,6 +278,9 @@ function renderTable() {
 
   html += `</tbody></table>`;
   container.innerHTML = html;
+
+  // Save generated HTML for Bulletin
+  localStorage.setItem("bihar_detailed_forecast_html", html);
 }
 
 // --- Interactions ---

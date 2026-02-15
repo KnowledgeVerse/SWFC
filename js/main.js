@@ -1670,6 +1670,17 @@ function renderTable() {
       });
     }
   });
+
+  // Save Table HTML for Bulletin (with Header)
+  const tableEl = document.getElementById("imdTable");
+  if (tableEl) {
+    const tableClone = tableEl.cloneNode(true);
+    // Add the export header to the clone
+    if (typeof addExportHeader === "function") {
+      addExportHeader(tableClone);
+    }
+    localStorage.setItem("bihar_warning_table_html", tableClone.outerHTML);
+  }
 }
 
 async function download7DaysPDF() {

@@ -8,6 +8,15 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/html2canvas/1.4.1/html2canvas.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/jspdf/2.5.1/jspdf.umd.min.js"></script>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/dom-to-image/2.6.0/dom-to-image.min.js"></script>
+    <link
+      rel="stylesheet"
+      href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
+    />
+    <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+    <script src="https://unpkg.com/shpjs@latest/dist/shp.js"></script>
     <style>
       /* CSS Variables */
       :root {
@@ -92,8 +101,7 @@
 
       /* Controls Section (Hidden in Print) */
       .controls {
-        max-width: 1000px;
-        margin: 20px auto 0;
+        margin: 0 auto;
         padding: 15px;
         background: #e9ecef;
         border-radius: 8px;
@@ -101,7 +109,7 @@
         display: flex;
         justify-content: center;
         align-items: center;
-        gap: 20px;
+        gap: 15px;
         box-shadow: 0 2px 5px rgba(0, 0, 0, 0.1);
       }
 
@@ -168,6 +176,16 @@
         }
       }
 
+      /* Sticky Wrapper */
+      .sticky-wrapper {
+        position: sticky;
+        top: 0;
+        z-index: 1000;
+        background: var(--bg-color);
+        padding-bottom: 10px;
+        border-bottom: 1px solid #ccc;
+      }
+
       /* Print Styles */
       @media print {
         body {
@@ -184,8 +202,14 @@
         .controls {
           display: none;
         }
+        .sticky-wrapper {
+          position: static;
+        }
         .nav-toolbar {
           display: none !important;
+        }
+        #summaryContent {
+          border: none !important;
         }
       }
 
@@ -207,90 +231,412 @@
           gap: 10px;
         }
       }
+
+      /* Forecast Table Styles (Imported for Bulletin) */
+      .forecast-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        margin-top: 10px;
+      }
+      .forecast-table th,
+      .forecast-table td {
+        border: 1px solid #333;
+        padding: 5px;
+        text-align: center;
+        vertical-align: middle;
+      }
+      .forecast-table th {
+        background-color: #0056b3;
+        color: white;
+        text-transform: uppercase;
+      }
+      .bg-dry {
+        background-color: #ffffff;
+        color: #000;
+      }
+      .bg-isol {
+        background-color: #28a745;
+        color: #fff;
+      }
+      .bg-sct {
+        background-color: #90ee90;
+        color: #000;
+      }
+      .bg-fws {
+        background-color: #007bff;
+        color: #fff;
+      }
+      .bg-ws {
+        background-color: #00008b;
+        color: #fff;
+      }
+      .bg-na {
+        background-color: #000000;
+        color: #fff;
+      }
+
+      /* Warning Table Styles (Imported) */
+      .imd-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 12px;
+        margin-top: 10px;
+      }
+      .imd-table th,
+      .imd-table td {
+        border: 1px solid #333;
+        padding: 5px;
+        text-align: left;
+        vertical-align: top;
+      }
+      .imd-table th {
+        background-color: #0056b3;
+        color: white;
+        font-weight: bold;
+        text-transform: uppercase;
+      }
+      .warning-green {
+        background-color: #28a745 !important;
+        color: white;
+        font-weight: bold;
+        text-align: center;
+      }
+      .warning-yellow {
+        background-color: #ffc107 !important;
+        color: black;
+        font-weight: bold;
+        text-align: center;
+      }
+      .warning-orange {
+        background-color: #fd7e14 !important;
+        color: white;
+        font-weight: bold;
+        text-align: center;
+      }
+      .warning-red {
+        background-color: #dc3545 !important;
+        color: white;
+        font-weight: bold;
+        text-align: center;
+      }
+
+      /* Temp Forecast Table Styles (Imported) */
+      .gen-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-family: "Arial", sans-serif;
+        font-size: 12px;
+        background: white;
+        margin-top: 10px;
+      }
+      .gen-table th,
+      .gen-table td {
+        border: 1px solid #000;
+        padding: 8px;
+        text-align: center;
+      }
+      .gen-table th {
+        background-color: #e0e0e0;
+      }
+      .row-max-temp td {
+        background-color: #fde2e4; /* Light Pink */
+      }
+      .row-min-temp td {
+        background-color: #e3f2fd; /* Light Blue */
+      }
+
+      /* --- Sector Specific Styling (First 3 Columns Only) --- */
+
+      /* Header Row */
+      .gen-table thead th:nth-child(1),
+      .gen-table thead th:nth-child(2),
+      .gen-table thead th:nth-child(3) {
+        background-color: #d9d9d9 !important;
+      }
+
+      /* Light Cream Regions: NW (West), NE (North East), SC (South Central) */
+      tr.region-nw.row-max-temp td:nth-child(1),
+      tr.region-nw.row-max-temp td:nth-child(2),
+      tr.region-nw.row-max-temp td:nth-child(3),
+      tr.region-nw.row-min-temp td:nth-child(1),
+      tr.region-ne.row-max-temp td:nth-child(1),
+      tr.region-ne.row-max-temp td:nth-child(2),
+      tr.region-ne.row-max-temp td:nth-child(3),
+      tr.region-ne.row-min-temp td:nth-child(1),
+      tr.region-sc.row-max-temp td:nth-child(1),
+      tr.region-sc.row-max-temp td:nth-child(2),
+      tr.region-sc.row-max-temp td:nth-child(3),
+      tr.region-sc.row-min-temp td:nth-child(1) {
+        background-color: #f4efe6 !important;
+      }
+
+      /* Light Blue Regions: NC (North Central), SW (South West), SE (South East) */
+      tr.region-nc.row-max-temp td:nth-child(1),
+      tr.region-nc.row-max-temp td:nth-child(2),
+      tr.region-nc.row-max-temp td:nth-child(3),
+      tr.region-nc.row-min-temp td:nth-child(1),
+      tr.region-sw.row-max-temp td:nth-child(1),
+      tr.region-sw.row-max-temp td:nth-child(2),
+      tr.region-sw.row-max-temp td:nth-child(3),
+      tr.region-sw.row-min-temp td:nth-child(1),
+      tr.region-se.row-max-temp td:nth-child(1),
+      tr.region-se.row-max-temp td:nth-child(2),
+      tr.region-se.row-max-temp td:nth-child(3),
+      tr.region-se.row-min-temp td:nth-child(1) {
+        background-color: #dce6f5 !important;
+      }
+
+      /* Export Buttons */
+      .export-btn {
+        background-color: #17a2b8;
+        color: white;
+        border: none;
+        padding: 8px 12px;
+        border-radius: 4px;
+        cursor: pointer;
+        font-weight: bold;
+        font-size: 13px;
+        display: flex;
+        align-items: center;
+        gap: 5px;
+      }
+      .export-btn:hover {
+        background-color: #138496;
+      }
+
+      /* Map Grid Styles */
+      .map-grid {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        gap: 10px;
+        width: 100%;
+        margin-top: 10px;
+      }
+      .map-cell {
+        height: 300px;
+        border: 1px solid #333;
+        position: relative;
+        background: #f2f2f2;
+      }
+      .map-cell-header {
+        position: absolute;
+        top: 5px;
+        left: 50%;
+        transform: translateX(-50%);
+        background: rgba(255, 255, 255, 0.9);
+        padding: 2px 10px;
+        border-radius: 10px;
+        z-index: 1000;
+        font-weight: bold;
+        font-size: 12px;
+        border: 1px solid #333;
+        white-space: nowrap;
+      }
+      .map-legend-box {
+        background: rgba(255, 255, 255, 0.9);
+        padding: 5px;
+        border-radius: 4px;
+        font-size: 10px;
+        line-height: 1.2;
+        border: 1px solid #ccc;
+      }
+      .legend-item {
+        display: flex;
+        align-items: center;
+        gap: 5px;
+        margin-bottom: 2px;
+      }
+      .color-box {
+        width: 12px;
+        height: 12px;
+        border: 1px solid #333;
+      }
+
+      /* Visual Page Break for Screen Preview */
+      @media screen {
+        [style*="page-break-before: always"]::before {
+          content: "✂ PAGE BREAK (New Page Starts Here) ✂";
+          display: block;
+          text-align: center;
+          color: #dc3545;
+          font-size: 12px;
+          font-weight: bold;
+          border-top: 2px dashed #dc3545;
+          margin: 20px 0 10px 0;
+          padding-top: 5px;
+          background-color: rgba(220, 53, 69, 0.05);
+        }
+        [style*="page-break-after: always"]::after {
+          content: "✂ PAGE BREAK (Page Ends Here) ✂";
+          display: block;
+          text-align: center;
+          color: #dc3545;
+          font-size: 12px;
+          font-weight: bold;
+          border-bottom: 2px dashed #dc3545;
+          margin: 10px 0 20px 0;
+          padding-bottom: 5px;
+          background-color: rgba(220, 53, 69, 0.05);
+        }
+      }
     </style>
   </head>
   <body>
-    <div
-      class="nav-toolbar"
-      style="
-        display: flex;
-        gap: 5px;
-        flex-wrap: wrap;
-        justify-content: center;
-        padding: 10px;
-        margin-bottom: 10px;
-      "
-    >
-      <a href="index.html" class="toggle-btn btn-blink-anim" title="Home"
-        ><i class="fas fa-home"></i
-      ></a>
-      <a href="live.html" class="toggle-btn" title="Live Preview"
-        ><i class="fas fa-tower-broadcast"></i
-      ></a>
-      <a href="temp.html" class="toggle-btn" title="Live Temp"
-        ><i class="fas fa-thermometer-half"></i
-      ></a>
-      <a href="wind.html" class="toggle-btn" title="Wind"
-        ><i class="fas fa-wind"></i
-      ></a>
-      <a href="rain.html" class="toggle-btn" title="Rain"
-        ><i class="fas fa-cloud-showers-heavy"></i
-      ></a>
-      <a href="humidity.html" class="toggle-btn" title="Humidity"
-        ><i class="fas fa-tint"></i
-      ></a>
-      <a href="display.html" class="toggle-btn" title="Display Mode"
-        ><i class="fas fa-tv"></i
-      ></a>
-      <div style="width: 1px; background: #ccc; margin: 0 5px"></div>
-      <a
-        href="bulletin.html"
-        class="toggle-btn btn-blink-anim"
-        title="Weather Bulletin"
-        ><i class="fas fa-clipboard-list"></i
-      ></a>
-      <a
-        href="Generate_Weather_Bulletin.html"
-        class="toggle-btn active"
-        title="Generate_Bulletin"
-        ><i class="fas fa-file-lines"></i
-      ></a>
-      <a href="max_min_rh.html" class="toggle-btn" title="Observed Data"
-        ><i class="fas fa-table"></i
-      ></a>
-      <a href="Weather_summary.html" class="toggle-btn" title="Weather Summary"
-        ><i class="fas fa-file-alt"></i
-      ></a>
-      <a
-        href="Detailed_Weather_Forecast.html"
-        class="toggle-btn"
-        title="Detailed Forecast"
-        ><i class="fas fa-list-alt"></i
-      ></a>
-      <a
-        href="Weather_Warning_Table.html"
-        class="toggle-btn"
-        title="Warning Table"
-        ><i class="fas fa-table"></i
-      ></a>
-      <a href="bulk_import.html" class="toggle-btn" title="Import Data"
-        ><i class="fas fa-file-import"></i
-      ></a>
-      <a
-        href="Temperature_Forecast.html"
-        class="toggle-btn"
-        title="Min/Max Temp"
-        ><i class="fas fa-temperature-high"></i
-      ></a>
-      <a href="forecast.html" class="toggle-btn" title="7-Day Forecast"
-        ><i class="fas fa-calendar-day"></i
-      ></a>
-      <a href="warning.html" class="toggle-btn" title="7-Day Warning"
-        ><i class="fas fa-exclamation-triangle"></i
-      ></a>
-      <a href="bulletin_footer.html" class="toggle-btn" title="Bulletin Footer"
-        ><i class="fas fa-file-signature"></i
-      ></a>
+    <div class="sticky-wrapper">
+      <div
+        class="nav-toolbar"
+        style="
+          display: flex;
+          gap: 5px;
+          flex-wrap: wrap;
+          justify-content: center;
+          padding: 10px;
+          margin-bottom: 10px;
+        "
+      >
+        <a href="index.html" class="toggle-btn btn-blink-anim" title="Home"
+          ><i class="fas fa-home"></i
+        ></a>
+        <a href="live.html" class="toggle-btn" title="Live Preview"
+          ><i class="fas fa-tower-broadcast"></i
+        ></a>
+        <a href="temp.html" class="toggle-btn" title="Live Temp"
+          ><i class="fas fa-thermometer-half"></i
+        ></a>
+        <a href="wind.html" class="toggle-btn" title="Wind"
+          ><i class="fas fa-wind"></i
+        ></a>
+        <a href="rain.html" class="toggle-btn" title="Rain"
+          ><i class="fas fa-cloud-showers-heavy"></i
+        ></a>
+        <a href="humidity.html" class="toggle-btn" title="Humidity"
+          ><i class="fas fa-tint"></i
+        ></a>
+        <a href="display.html" class="toggle-btn" title="Display Mode"
+          ><i class="fas fa-tv"></i
+        ></a>
+        <div style="width: 1px; background: #ccc; margin: 0 5px"></div>
+        <a
+          href="bulletin.html"
+          class="toggle-btn btn-blink-anim"
+          title="Weather Bulletin"
+          ><i class="fas fa-clipboard-list"></i
+        ></a>
+        <a
+          href="Generate_Weather_Bulletin.html"
+          class="toggle-btn active"
+          title="Generate_Bulletin"
+          ><i class="fas fa-file-lines"></i
+        ></a>
+        <a href="max_min_rh.html" class="toggle-btn" title="Observed Data"
+          ><i class="fas fa-table"></i
+        ></a>
+        <a
+          href="Weather_summary.html"
+          class="toggle-btn"
+          title="Weather Summary"
+          ><i class="fas fa-file-alt"></i
+        ></a>
+        <a
+          href="Detailed_Weather_Forecast.html"
+          class="toggle-btn"
+          title="Detailed Forecast"
+          ><i class="fas fa-list-alt"></i
+        ></a>
+        <a
+          href="Weather_Warning_Table.html"
+          class="toggle-btn"
+          title="Warning Table"
+          ><i class="fas fa-table"></i
+        ></a>
+        <a href="bulk_import.html" class="toggle-btn" title="Import Data"
+          ><i class="fas fa-file-import"></i
+        ></a>
+        <a
+          href="Temperature_Forecast.html"
+          class="toggle-btn"
+          title="Min/Max Temp"
+          ><i class="fas fa-temperature-high"></i
+        ></a>
+        <a href="forecast.html" class="toggle-btn" title="7-Day Forecast"
+          ><i class="fas fa-calendar-day"></i
+        ></a>
+        <a href="warning.html" class="toggle-btn" title="7-Day Warning"
+          ><i class="fas fa-exclamation-triangle"></i
+        ></a>
+        <a
+          href="bulletin_footer.html"
+          class="toggle-btn"
+          title="Bulletin Footer"
+          ><i class="fas fa-file-signature"></i
+        ></a>
+      </div>
+
+      <!-- Controls (Moved to Top) -->
+      <div class="controls" style="flex-wrap: wrap">
+        <div class="control-group">
+          <label style="font-weight: bold">Date:</label>
+          <input
+            type="date"
+            id="manualDateInput"
+            onchange="updateManualDate()"
+          />
+        </div>
+
+        <div class="control-group">
+          <label style="font-weight: bold">Time Mode:</label>
+          <label
+            ><input
+              type="radio"
+              name="timeMode"
+              value="auto"
+              checked
+              onchange="toggleTimeMode()"
+            />
+            Auto</label
+          >
+          <label
+            ><input
+              type="radio"
+              name="timeMode"
+              value="manual"
+              onchange="toggleTimeMode()"
+            />
+            Manual</label
+          >
+        </div>
+        <div
+          class="control-group"
+          id="manualTimeContainer"
+          style="display: none"
+        >
+          <input
+            type="time"
+            id="manualTimeInput"
+            onchange="updateManualTime()"
+          />
+        </div>
+
+        <!-- Export Buttons -->
+        <div
+          class="control-group"
+          style="border-left: 1px solid #ccc; padding-left: 15px"
+        >
+          <button class="export-btn" onclick="exportBulletinImages()">
+            <i class="fas fa-image"></i> Export Images
+          </button>
+          <button class="export-btn" onclick="exportBulletinPDF()">
+            <i class="fas fa-file-pdf"></i> Export PDF
+          </button>
+          <button class="export-btn" onclick="exportBulletinWord()">
+            <i class="fas fa-file-word"></i> Export Word
+          </button>
+          <button class="export-btn" onclick="exportBulletinExcel()">
+            <i class="fas fa-file-excel"></i> Export Excel
+          </button>
+        </div>
+      </div>
     </div>
 
     <div class="container">
@@ -339,35 +685,21 @@
         <div id="dateDisplay">DATE: --.--.----</div>
         <div id="timeDisplay">TIME OF ISSUE: --:-- HRS IST</div>
       </div>
-    </div>
 
-    <!-- Controls -->
-    <div class="controls">
-      <div class="control-group">
-        <label style="font-weight: bold">Time Mode:</label>
-        <label
-          ><input
-            type="radio"
-            name="timeMode"
-            value="auto"
-            checked
-            onchange="toggleTimeMode()"
-          />
-          Auto</label
-        >
-        <label
-          ><input
-            type="radio"
-            name="timeMode"
-            value="manual"
-            onchange="toggleTimeMode()"
-          />
-          Manual</label
-        >
-      </div>
-      <div class="control-group" id="manualTimeContainer" style="display: none">
-        <input type="time" id="manualTimeInput" onchange="updateManualTime()" />
-      </div>
+      <!-- Summary Content Area -->
+      <div
+        id="summaryContent"
+        contenteditable="true"
+        style="
+          min-height: 500px;
+          padding: 10px;
+          border: 1px dashed #ccc;
+          margin-top: 10px;
+          font-family: &quot;Arial&quot;, sans-serif;
+          font-size: 16px;
+          line-height: 1.5;
+        "
+      ></div>
     </div>
 
     <script>
@@ -388,6 +720,14 @@
 
         document.getElementById("dateDisplay").innerText =
           `DATE: ${day}.${month}.${year}`;
+
+        const dateInput = document.getElementById("manualDateInput");
+        if (dateInput) {
+          const yyyy = dateObj.getFullYear();
+          const mm = String(dateObj.getMonth() + 1).padStart(2, "0");
+          const dd = String(dateObj.getDate()).padStart(2, "0");
+          dateInput.value = `${yyyy}-${mm}-${dd}`;
+        }
       }
 
       // --- Time Logic ---
@@ -444,10 +784,287 @@
         }
       }
 
+      function updateManualDate() {
+        const val = document.getElementById("manualDateInput").value;
+        if (val) {
+          const dateObj = new Date(val);
+          localStorage.setItem("bihar_forecast_date", dateObj.toISOString());
+          loadDate();
+        }
+      }
+
+      // --- Export Logic ---
+
+      function getFormattedDate() {
+        const dateInput = document.getElementById("manualDateInput");
+        if (dateInput && dateInput.value) {
+          const parts = dateInput.value.split("-"); // yyyy-mm-dd
+          return `${parts[2]}-${parts[1]}-${parts[0]}`; // dd-mm-yyyy
+        }
+        return "Date";
+      }
+
+      async function getBulletinPages() {
+        const container = document.querySelector(".container");
+        const summaryContent = document.getElementById("summaryContent");
+
+        // Clone container to avoid modifying live DOM
+        const clone = container.cloneNode(true);
+        clone.style.width = "1000px"; // Enforce width for consistent rendering
+
+        // Separate Header parts (everything before summaryContent)
+        const cloneSummary = clone.querySelector("#summaryContent");
+        const headerNodes = [];
+
+        while (clone.firstChild && clone.firstChild !== cloneSummary) {
+          headerNodes.push(clone.firstChild);
+          clone.removeChild(clone.firstChild);
+        }
+
+        const pages = [];
+
+        // --- Page 1 Setup ---
+        let currentPage = document.createElement("div");
+        currentPage.className = "container export-page";
+        currentPage.style.background = "white";
+        currentPage.style.padding = "20px 40px";
+        currentPage.style.width = "1000px";
+        currentPage.style.border = "none";
+        currentPage.style.boxShadow = "none";
+
+        // Add Header to Page 1
+        headerNodes.forEach((node) =>
+          currentPage.appendChild(node.cloneNode(true)),
+        );
+
+        // Process Content
+        const children = Array.from(cloneSummary.childNodes);
+
+        for (let i = 0; i < children.length; i++) {
+          const child = children[i];
+          let isBreak = false;
+
+          if (child.nodeType === 1) {
+            // Element
+            // Check for page break markers
+            if (
+              child.style.pageBreakBefore === "always" ||
+              child.outerHTML.includes("page-break-before: always")
+            ) {
+              // Push current page
+              pages.push(currentPage);
+
+              // Start new page
+              currentPage = document.createElement("div");
+              currentPage.className = "container export-page";
+              currentPage.style.background = "white";
+              currentPage.style.padding = "20px 40px";
+              currentPage.style.width = "1000px";
+              currentPage.style.border = "none";
+              currentPage.style.boxShadow = "none";
+
+              // If the break element has content (e.g. heading), add it to new page
+              if (
+                child.innerText.trim() !== "" ||
+                child.tagName === "H3" ||
+                child.tagName === "TABLE"
+              ) {
+                currentPage.appendChild(child.cloneNode(true));
+              }
+              continue;
+            }
+
+            if (
+              child.style.pageBreakAfter === "always" ||
+              child.outerHTML.includes("page-break-after: always")
+            ) {
+              currentPage.appendChild(child.cloneNode(true));
+              pages.push(currentPage);
+
+              currentPage = document.createElement("div");
+              currentPage.className = "container export-page";
+              currentPage.style.background = "white";
+              currentPage.style.padding = "20px 40px";
+              currentPage.style.width = "1000px";
+              currentPage.style.border = "none";
+              currentPage.style.boxShadow = "none";
+              continue;
+            }
+          }
+
+          currentPage.appendChild(child.cloneNode(true));
+        }
+
+        if (currentPage.hasChildNodes()) {
+          pages.push(currentPage);
+        }
+
+        return pages;
+      }
+
+      async function exportBulletinImages() {
+        const pages = await getBulletinPages();
+        const dateStr = getFormattedDate();
+
+        // Create hidden container
+        const hiddenDiv = document.createElement("div");
+        hiddenDiv.style.position = "absolute";
+        hiddenDiv.style.left = "-9999px";
+        hiddenDiv.style.top = "0";
+        document.body.appendChild(hiddenDiv);
+
+        for (let i = 0; i < pages.length; i++) {
+          hiddenDiv.innerHTML = ""; // Clear previous
+          hiddenDiv.appendChild(pages[i]);
+
+          try {
+            const dataUrl = await domtoimage.toPng(pages[i], {
+              bgcolor: "#ffffff",
+            });
+            const link = document.createElement("a");
+            link.download = `Weather_Bulletin_Page_${i + 1}_${dateStr}.png`;
+            link.href = dataUrl;
+            link.click();
+          } catch (e) {
+            console.error("Image export failed", e);
+          }
+        }
+        document.body.removeChild(hiddenDiv);
+      }
+
+      async function exportBulletinPDF() {
+        const pages = await getBulletinPages();
+        const dateStr = getFormattedDate();
+        const { jsPDF } = window.jspdf;
+        const doc = new jsPDF("p", "mm", "a4");
+        const pdfWidth = doc.internal.pageSize.getWidth();
+        const pdfHeight = doc.internal.pageSize.getHeight();
+
+        // Create hidden container
+        const hiddenDiv = document.createElement("div");
+        hiddenDiv.style.position = "absolute";
+        hiddenDiv.style.left = "-9999px";
+        hiddenDiv.style.top = "0";
+        document.body.appendChild(hiddenDiv);
+
+        for (let i = 0; i < pages.length; i++) {
+          hiddenDiv.innerHTML = "";
+          hiddenDiv.appendChild(pages[i]);
+
+          const canvas = await html2canvas(pages[i], {
+            scale: 2,
+            backgroundColor: "#ffffff",
+          });
+          const imgData = canvas.toDataURL("image/png");
+          const imgProps = doc.getImageProperties(imgData);
+          const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+
+          if (i > 0) doc.addPage();
+          doc.addImage(imgData, "PNG", 0, 0, pdfWidth, imgHeight);
+        }
+
+        document.body.removeChild(hiddenDiv);
+        doc.save(
+          `बिहार_राज्य_के_लिए_दैनिक_मौसम_विज्ञप्ति_एवं_मौसम_चेतावनी_${dateStr}.pdf`,
+        );
+      }
+
+      function exportBulletinWord() {
+        exportToWord(
+          document.querySelector(".container").innerHTML,
+          `Weather_Bulletin_${getFormattedDate()}.doc`,
+        );
+      }
+
+      function exportBulletinExcel() {
+        exportToExcel(
+          document.querySelector(".container").outerHTML,
+          `Weather_Bulletin_${getFormattedDate()}.xls`,
+        );
+      }
+
+      // Helper Export Functions (Reused)
+      function exportToWord(html, filename) {
+        const header =
+          "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export<\/title><\/head><body>";
+        const footer = "<\/body><\/html>";
+        const sourceHTML = header + html + footer;
+        const source =
+          "data:application/vnd.ms-word;charset=utf-8," +
+          encodeURIComponent(sourceHTML);
+        const fileDownload = document.createElement("a");
+        document.body.appendChild(fileDownload);
+        fileDownload.href = source;
+        fileDownload.download = filename;
+        fileDownload.click();
+        document.body.removeChild(fileDownload);
+      }
+
+      function exportToExcel(html, filename) {
+        const blob = new Blob(["\ufeff", html], {
+          type: "application/vnd.ms-excel",
+        });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement("a");
+        a.href = url;
+        a.download = filename;
+        document.body.appendChild(a);
+        a.click();
+        document.body.removeChild(a);
+      }
+
       // Initialize
       document.addEventListener("DOMContentLoaded", () => {
         loadDate();
         updateTimeDisplay(getRoundedTime());
+
+        let finalContent = "";
+
+        // Load generated summary from Weather_summary.html
+        const savedSummary = localStorage.getItem("bihar_generated_summary");
+        if (savedSummary) {
+          finalContent += savedSummary;
+        }
+
+        // Load detailed forecast table from Detailed_Weather_Forecast.html
+        const savedForecastTable = localStorage.getItem(
+          "bihar_detailed_forecast_html",
+        );
+        if (savedForecastTable) {
+          finalContent += `<div style="height: 20px;"></div>`;
+          finalContent += `<h3 style="text-align:center; margin-bottom:10px; color:#2c3e50;">District Wise Detailed Weather Forecast</h3>`;
+          finalContent += savedForecastTable;
+          finalContent += `<div style="page-break-after: always;"></div>`;
+        }
+
+        // Load Warning Table from Weather_Warning_Table.html (via main.js)
+        const savedWarningTable = localStorage.getItem(
+          "bihar_warning_table_html",
+        );
+        if (savedWarningTable) {
+          // Removed Page Break before Warning Table as requested
+          finalContent += `<div style="height: 20px;"></div>`;
+          finalContent += savedWarningTable;
+        }
+
+        // Load Temp Forecast Table from bulk_import.html
+        const savedTempTable = localStorage.getItem(
+          "bihar_temp_forecast_table_html",
+        );
+        if (savedTempTable) {
+          finalContent += `<div style="height: 20px;"></div>`;
+          finalContent += savedTempTable;
+          // Page Break after Temp Table
+          finalContent += `<div style="page-break-after: always;"></div>`;
+        }
+
+        // Render Min Temp Maps (Placeholder for async content)
+        finalContent += `<div id="minTempMapsContainer"></div>`;
+
+        document.getElementById("summaryContent").innerHTML = finalContent;
+
+        // Trigger Map Rendering
+        setTimeout(renderMinTempMaps, 100);
 
         // Listen for storage changes to auto-update date if changed in other tab
         window.addEventListener("storage", (e) => {
@@ -456,6 +1073,181 @@
           }
         });
       });
+
+      // --- Min Temp Map Rendering Logic ---
+      function renderMinTempMaps() {
+        const container = document.getElementById("minTempMapsContainer");
+        if (!container) return;
+
+        const rawData = localStorage.getItem("bihar_temperature_data");
+        if (!rawData) return;
+
+        let weeklyData = { min: [] };
+        try {
+          const parsed = JSON.parse(rawData);
+          if (parsed.min) weeklyData.min = parsed.min;
+        } catch (e) {
+          console.error(e);
+          return;
+        }
+
+        // Date & Season
+        const storedDate = localStorage.getItem("bihar_forecast_date");
+        const baseDate = storedDate ? new Date(storedDate) : new Date();
+        const month = baseDate.getMonth();
+        const season = month >= 9 || month <= 1 ? "Winter" : "Summer";
+
+        const dateOptions = {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        };
+        const dateStr = baseDate
+          .toLocaleDateString("en-GB", dateOptions)
+          .replace(/\//g, ".");
+
+        // Header
+        let html = `<div style="page-break-before: always; height: 20px;"></div>`;
+        html += `<h3 style="text-align:center; margin-bottom:10px; color:#2c3e50;">अगले सात दिनों के लिए न्यूनतम तापमान का पूर्वानुमान ${dateStr}</h3>`;
+
+        // Grid
+        html += `<div class="map-grid">`;
+        for (let i = 0; i < 7; i++) {
+          html += `<div class="map-cell" id="minMap${i}"></div>`;
+        }
+        // Legend Cell (8th)
+        html += `<div class="map-cell" id="minMapLegend" style="background:white; display:flex; flex-direction:column; align-items:center; justify-content:center;"></div>`;
+        html += `</div>`;
+
+        container.innerHTML = html;
+
+        // Load Shapefile and Render Maps
+        const basePath = "data/Bihar_Districts_Shapefile/Bihar";
+        shp(basePath).then((geojson) => {
+          for (let i = 0; i < 7; i++) {
+            const dayDate = new Date(baseDate);
+            dayDate.setDate(baseDate.getDate() + i);
+            const dayStr = dayDate.toLocaleDateString("en-IN", {
+              day: "2-digit",
+              month: "short",
+            });
+
+            const mapDiv = document.getElementById(`minMap${i}`);
+            // Add Header Overlay
+            const headerDiv = document.createElement("div");
+            headerDiv.className = "map-cell-header";
+            headerDiv.innerText = `Day ${i + 1} - ${dayStr}`;
+            mapDiv.appendChild(headerDiv);
+
+            const map = L.map(`minMap${i}`, {
+              zoomControl: false,
+              attributionControl: false,
+              dragging: false,
+              scrollWheelZoom: false,
+              doubleClickZoom: false,
+              boxZoom: false,
+              touchZoom: false,
+            }).setView([25.6, 85.6], 6);
+
+            L.geoJSON(geojson, {
+              style: (feature) => {
+                const oid = String(feature.properties.OBJECTID);
+                const distData = weeklyData.min[i]
+                  ? weeklyData.min[i][oid]
+                  : null;
+                let color = "#ffffff";
+                if (distData && distData.val !== undefined) {
+                  color = getTempColor(distData.val, "min", season);
+                }
+                return {
+                  fillColor: color,
+                  weight: 1,
+                  opacity: 1,
+                  color: "#333",
+                  fillOpacity: 0.8,
+                };
+              },
+              onEachFeature: (feature, layer) => {
+                if (feature.properties.D_NAME) {
+                  layer.bindTooltip(feature.properties.D_NAME, {
+                    permanent: true,
+                    direction: "center",
+                    className: "map-label",
+                    offset: [0, 0],
+                  });
+                }
+              },
+            }).addTo(map);
+
+            map.fitBounds(L.geoJSON(geojson).getBounds());
+          }
+        });
+
+        // Render Legend
+        const legendDiv = document.getElementById("minMapLegend");
+        const scales = getScaleData(season, "min");
+        let legendHtml = `<strong style="font-size:16px; margin-bottom:10px;">LEGEND / संकेत</strong>`;
+        legendHtml += `<strong style="font-size:14px; margin-bottom:10px;">Minimum Temperature (${season})</strong>`;
+        legendHtml += `<div style="display:grid; grid-template-columns: 1fr 1fr; gap: 5px 20px; text-align:left;">`;
+        [...scales].reverse().forEach((l) => {
+          legendHtml += `<div class="legend-item"><div class="color-box" style="background:${l.color}"></div><span>${l.label} °C</span></div>`;
+        });
+        legendHtml += `</div>`;
+        legendDiv.innerHTML = legendHtml;
+      }
+
+      function getScaleData(season, type) {
+        if (season === "Winter") {
+          return [
+            { label: "0 – 2", color: "#6A00A8" },
+            { label: "2 – 4", color: "#4B00FF" },
+            { label: "4 – 6", color: "#007BFF" },
+            { label: "6 – 8", color: "#00C8C8" },
+            { label: "8 – 10", color: "#00E676" },
+            { label: "10 – 12", color: "#00C853" },
+            { label: "12 – 14", color: "#7CFC00" },
+            { label: "14 – 16", color: "#CDDC39" },
+            { label: "16 – 18", color: "#FFD54F" },
+            { label: "18 – 20", color: "#FF9800" },
+            { label: "20 – 22", color: "#F44336" },
+            { label: "> 22", color: "#E91E63" },
+          ];
+        } else {
+          // Summer Min
+          return [
+            { label: "10 – 12", color: "#6A00A8" },
+            { label: "12 – 14", color: "#4B00FF" },
+            { label: "14 – 16", color: "#007BFF" },
+            { label: "16 – 18", color: "#00C8C8" },
+            { label: "18 – 20", color: "#00E676" },
+            { label: "20 – 22", color: "#00C853" },
+            { label: "22 – 24", color: "#7CFC00" },
+            { label: "24 – 26", color: "#CDDC39" },
+            { label: "26 – 28", color: "#FFD54F" },
+            { label: "28 – 30", color: "#FF9800" },
+            { label: "30 – 32", color: "#F44336" },
+            { label: "> 32", color: "#E91E63" },
+          ];
+        }
+      }
+
+      function getTempColor(val, type, season) {
+        const scales = getScaleData(season, type);
+        for (const item of scales) {
+          if (item.label.includes(">")) {
+            const limit = parseFloat(item.label.replace(">", "").trim());
+            if (val > limit) return item.color;
+          } else {
+            const parts = item.label.split("–");
+            if (parts.length === 2) {
+              const min = parseFloat(parts[0].trim());
+              const max = parseFloat(parts[1].trim());
+              if (val >= min && val < max) return item.color;
+            }
+          }
+        }
+        return "#ffffff";
+      }
     </script>
   </body>
 </html>

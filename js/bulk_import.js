@@ -378,6 +378,9 @@ function generateDistrictForecastTable(maxData, minData) {
 
   html += `</tbody></table>`;
   container.innerHTML = html;
+
+  // Save generated HTML for Bulletin
+  localStorage.setItem("bihar_temp_forecast_table_html", html);
 }
 
 function exportToImage() {
