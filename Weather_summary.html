@@ -169,6 +169,7 @@
         border-bottom: 1px solid #eee;
       }
     </style>
+    <script src="js/districts.js"></script>
   </head>
   <body>
     <div class="container">
@@ -265,19 +266,82 @@
         <h2>Weather Summary Generator</h2>
       </div>
 
-      <!-- Section 1: General Weather -->
+      <!-- Section 1: Fixed Header & Rainfall Summary -->
       <div class="section">
-        <h3>1. General Weather Condition</h3>
-        <select id="generalWeather">
-          <option>विगत 24 घंटों के दौरान राज्य का मौसम शुष्क बना रहा ।</option>
-        </select>
-        <div class="checkbox-wrapper">
-          <input
-            type="checkbox"
-            id="editGeneral"
-            onchange="toggleEditMode('generalWeather', this.checked)"
-          />
-          <label for="editGeneral">Edit Mode</label>
+        <h3>1. Weather Summary (Fixed Header)</h3>
+        <div
+          style="
+            margin-bottom: 15px;
+            padding: 10px;
+            background: #e9ecef;
+            border-radius: 4px;
+          "
+        >
+          <strong>Fixed Heading Preview:</strong><br />
+          <span style="color: #2c3e50"
+            >पिछले 24 घंटों का राज्य में दर्ज किया गया मौसम सारांश:-</span
+          >
+        </div>
+
+        <label>Weather Condition:</label>
+        <input
+          type="text"
+          id="weatherConditionInput"
+          list="weatherOptions"
+          value="	विगत 24 घंटों के दौरान राज्य का मौसम शुष्क बना रहा ।"
+          placeholder="Select or Type..."
+        />
+        <datalist id="weatherOptions">
+          <option
+            value="	विगत 24 घंटों के दौरान राज्य का मौसम शुष्क बना रहा ।"
+          ></option>
+          <option value="विगत 24 घंटों के दौरान मॉनसून सक्रिय रही।"></option>
+        </datalist>
+
+        <label style="margin-top: 15px">Rainfall Distribution Groups:</label>
+        <div id="rainfallGroupsContainer"></div>
+        <button
+          onclick="addRainfallGroup()"
+          class="btn-secondary"
+          style="
+            width: auto;
+            padding: 5px 10px;
+            font-size: 13px;
+            margin-bottom: 15px;
+            background-color: #17a2b8;
+          "
+        >
+          + Add District Group
+        </button>
+
+        <div style="border-top: 1px dashed #ccc; padding-top: 10px">
+          <label>General Area Distribution (Optional):</label>
+          <div style="display: flex; gap: 10px; flex-wrap: wrap">
+            <select id="areaSelect" style="flex: 1">
+              <option value="">-- Select Area Coverage --</option>
+              <option value="राज्य के अधिकांश स्थानों">
+                राज्य के अधिकांश स्थानों
+              </option>
+              <option value="राज्य के अनेक स्थानों">
+                राज्य के अनेक स्थानों
+              </option>
+              <option value="राज्य के कुछ स्थानों">राज्य के कुछ स्थानों</option>
+              <option value="राज्य के एक या दो स्थानों">
+                राज्य के एक या दो स्थानों
+              </option>
+            </select>
+            <select id="areaCategorySelect" style="flex: 1">
+              <option value="">-- Select Rainfall Category --</option>
+              <option value="अत्यधिक वर्षा">अत्यधिक वर्षा</option>
+              <option value="अति भारी वर्षा">अति भारी वर्षा</option>
+              <option value="भारी वर्षा">भारी वर्षा</option>
+              <option value="मध्यम से भारी स्तर की वर्षा">
+                मध्यम से भारी स्तर की वर्षा
+              </option>
+              <option value="हल्की से मध्यम वर्षा">हल्की से मध्यम वर्षा</option>
+              <option value="हल्की वर्षा">हल्की वर्षा</option>
+            </select>
+          </div>
         </div>
       </div>
 
@@ -333,43 +397,221 @@
         </div>
       </div>
 
-      <!-- Section 4: Visibility -->
+      <!-- Section 4: Dynamic Heading Section -->
       <div class="section">
-        <h3>4. Visibility (Fog)</h3>
-        <div id="visibilityRowsContainer"></div>
-        <button
-          onclick="addVisibilityRow()"
-          class="btn-secondary"
+        <h3>4. Special Weather / Warnings</h3>
+        <label>Select Heading:</label>
+        <div
           style="
-            margin-top: 10px;
-            width: auto;
-            padding: 8px 15px;
-            font-size: 14px;
-            background-color: #17a2b8;
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            margin-bottom: 10px;
           "
         >
-          + Add Visibility Group
-        </button>
+          <select
+            id="specialHeadingSelect"
+            onchange="updateSpecialSectionUI()"
+            style="flex: 1; margin-bottom: 0"
+          >
+            <option value="अधिकतम हवा का बहाव">अधिकतम हवा का बहाव</option>
+            <option value="गरज के साथ वर्षा की संभावना">
+              गरज के साथ वर्षा की संभावना
+            </option>
+            <option value="विशेष मौसम चेतावनी">विशेष मौसम चेतावनी</option>
+            <option value="अन्य महत्वपूर्ण मौसम घटना">
+              अन्य महत्वपूर्ण मौसम घटना
+            </option>
+            <option value="कोहरा/ न्यूनतम दृश्यता">
+              कोहरा/ न्यूनतम दृश्यता :
+            </option>
+          </select>
+          <input
+            type="text"
+            id="customSpecialHeading"
+            placeholder="Edit Heading..."
+            style="flex: 1; margin-bottom: 0"
+          />
+        </div>
+
+        <div
+          id="specialContentArea"
+          style="
+            margin-top: 15px;
+            padding: 10px;
+            background: #fff;
+            border: 1px solid #ddd;
+          "
+        >
+          <!-- Dynamic Content Injected Here -->
+        </div>
       </div>
 
-      <!-- Section 5: Rainfall -->
+      <!-- Section 5: Rainfall Quantity -->
       <div class="section">
-        <h3>5. Rainfall</h3>
-        <div class="checkbox-wrapper">
-          <input
-            type="checkbox"
-            id="hasRainfall"
-            onchange="toggleRainfallInput(this.checked)"
-          />
-          <label for="hasRainfall">Rainfall Recorded?</label>
+        <h3>5. Rainfall Quantity (वर्षा की मुख्य मात्रा)</h3>
+        <label>Paste Rainfall Data (Name Value):</label>
+        <p style="font-size: 12px; color: #666; margin-top: 0">
+          Paste from Excel (2 columns) or type "Station Value" (comma or newline
+          separated).
+        </p>
+        <textarea
+          id="rainInput"
+          rows="6"
+          placeholder="Example:
+Patna 12.4
+Gaya 5.2
+Or paste table..."
+        ></textarea>
+      </div>
+
+      <!-- Section 6: Inference -->
+      <div class="section">
+        <h3>6. Inference & Forecast</h3>
+        <label
+          >Paste Inference Text (Bullet points will be created per line):</label
+        >
+        <textarea
+          id="inferenceInput"
+          rows="4"
+          placeholder="Paste text here..."
+        ></textarea>
+        <div
+          style="
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-top: 5px;
+            margin-bottom: 10px;
+          "
+        >
+          <button
+            onclick="formatInferenceText()"
+            style="
+              background-color: #17a2b8;
+              width: auto;
+              padding: 8px 15px;
+              font-size: 14px;
+            "
+          >
+            Format & Preview Selection
+          </button>
+          <button
+            onclick="translateSelectionWithGoogle()"
+            style="
+              background-color: #4285f4;
+              color: white;
+              width: auto;
+              padding: 8px 15px;
+              font-size: 14px;
+            "
+          >
+            <i class="fas fa-language"></i> Translate Selected (Google)
+          </button>
+          <button
+            onclick="confirmSelection()"
+            style="
+              background-color: #28a745;
+              color: white;
+              width: auto;
+              padding: 8px 15px;
+              font-size: 14px;
+            "
+          >
+            <i class="fas fa-check"></i> Confirm & Edit Text
+          </button>
         </div>
-        <div id="rainfallInputArea" style="display: none">
-          <label>Paste Data (Station RainValue):</label>
-          <textarea
-            id="rainDataInput"
-            rows="4"
-            placeholder="Patna 12.4&#10;Gaya 5.2"
-          ></textarea>
+
+        <div
+          id="inferenceSelectionContainer"
+          style="
+            margin-top: 10px;
+            border: 1px solid #ccc;
+            padding: 10px;
+            background: #fff;
+            max-height: 400px;
+            overflow-y: auto;
+            display: none;
+          "
+        >
+          <!-- Checkboxes will go here -->
+        </div>
+
+        <div class="checkbox-wrapper">
+          <input type="checkbox" id="autoTranslateInference" />
+          <label for="autoTranslateInference"
+            >Auto Translate to Hindi (Dictionary - Fallback)</label
+          >
+        </div>
+
+        <!-- Dynamic Sections -->
+        <h4
+          style="
+            margin-top: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+          "
+        >
+          Additional Sections
+        </h4>
+        <div id="dynamicSectionsContainer"></div>
+
+        <div
+          style="margin-top: 10px; display: flex; gap: 10px; flex-wrap: wrap"
+        >
+          <button
+            onclick="addDynamicSection()"
+            class="btn-secondary"
+            style="width: auto; background-color: #17a2b8"
+          >
+            + Add New Section
+          </button>
+          <button
+            onclick="addFogWarningSection()"
+            class="btn-secondary"
+            style="width: auto; background-color: #6c757d"
+          >
+            + Insert Dense Fog Warning
+          </button>
+        </div>
+
+        <!-- Temperature Trend Section -->
+        <h4
+          style="
+            margin-top: 20px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 5px;
+          "
+        >
+          Temperature Trend Forecast
+        </h4>
+        <div
+          style="
+            background: #fff;
+            padding: 15px;
+            border: 1px solid #ccc;
+            border-radius: 4px;
+          "
+        >
+          <label>Forecast Duration:</label>
+          <select
+            id="tempTrendDays"
+            onchange="updateTempTrendTemplate()"
+            style="max-width: 200px"
+          >
+            <option value="5">5 दिन</option>
+            <option value="3">3 दिन</option>
+            <option value="2">2 दिन</option>
+          </select>
+
+          <div style="margin-top: 15px">
+            <div
+              id="tempTrendContent"
+              style="display: flex; flex-direction: column; gap: 10px"
+            >
+              <!-- Content injected by JS -->
+            </div>
+          </div>
         </div>
       </div>
 
@@ -385,6 +627,8 @@
 
       document.addEventListener("DOMContentLoaded", () => {
         loadData();
+        updateSpecialSectionUI(); // Init Section 4
+        initTempTrend(); // Init Temp Trend
       });
 
       function loadData() {
@@ -397,7 +641,15 @@
 
           updateMaxTempInfo();
           updateMinTempInfo();
-          initVisibilitySection();
+
+          // Populate station list for visibility section
+          stationList = observedData
+            .map((d) => ({
+              rawS: d.station,
+              rawD: d.district,
+              name: getStationDistrictName(d.station, d.district),
+            }))
+            .sort((a, b) => a.name.localeCompare(b.name));
         } else {
           document.getElementById("maxTempInfo").innerText =
             "No data found. Please generate table in Observed Data page first.";
@@ -442,30 +694,124 @@
         return `${d}.${m}.${y}`;
       }
 
+      // --- Section 1 Logic ---
+      function addRainfallGroup() {
+        const id = Date.now();
+        const container = document.getElementById("rainfallGroupsContainer");
+
+        const div = document.createElement("div");
+        div.id = `rg-${id}`;
+        div.style.border = "1px solid #ddd";
+        div.style.padding = "10px";
+        div.style.marginBottom = "10px";
+        div.style.background = "#fff";
+        div.style.position = "relative";
+
+        // District Checkboxes
+        let distCheckboxes = "";
+        if (typeof districtsData !== "undefined") {
+          districtsData.forEach((d) => {
+            distCheckboxes += `
+                <label style="display: inline-block; width: 48%; margin-bottom: 2px; font-weight: normal; font-size: 13px;">
+                    <input type="checkbox" value="${d.hindi}" style="width:auto; margin-right:5px;">${d.hindi}
+                </label>`;
+          });
+        }
+
+        div.innerHTML = `
+              <button onclick="document.getElementById('rg-${id}').remove()" style="position:absolute; top:5px; right:5px; background:#dc3545; color:white; border:none; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; padding: 0; cursor:pointer; font-size:12px; border-radius: 3px;">X</button>
+              <label>Select Districts:</label>
+              <div class="rg-districts-container" style="max-height: 150px; overflow-y: auto; border: 1px solid #ccc; padding: 5px; background: #f9f9f9;">
+                  ${distCheckboxes}
+              </div>
+              <label style="margin-top:5px;">Rainfall Category:</label>
+              <select class="rg-category">
+                   <option value="">-- Select Category --</option>
+                   <option value="अत्यधिक वर्षा">अत्यधिक वर्षा</option>
+                   <option value="अति भारी वर्षा">अति भारी वर्षा</option>
+                   <option value="भारी वर्षा">भारी वर्षा</option>
+                   <option value="मध्यम से भारी स्तर की वर्षा">मध्यम से भारी स्तर की वर्षा</option>
+                   <option value="हल्की से मध्यम वर्षा">हल्की से मध्यम वर्षा</option>
+                   <option value="हल्की वर्षा">हल्की वर्षा</option>
+              </select>
+          `;
+        container.appendChild(div);
+      }
+
+      // --- Section 4 Logic ---
+      function updateSpecialSectionUI() {
+        const heading = document.getElementById("specialHeadingSelect").value;
+        const container = document.getElementById("specialContentArea");
+
+        // Update the custom input with the dropdown value
+        document.getElementById("customSpecialHeading").value = heading;
+
+        container.innerHTML = "";
+
+        if (heading === "अधिकतम हवा का बहाव") {
+          let distOptions = '<option value="">-- Select District --</option>';
+          if (typeof districtsData !== "undefined") {
+            districtsData.forEach((d) => {
+              distOptions += `<option value="${d.hindi}">${d.hindi}</option>`;
+            });
+          }
+          container.innerHTML = `
+                  <label>Select District:</label>
+                  <select id="specialDistrict">${distOptions}</select>
+                  <label>Wind Speed (km/h):</label>
+                  <input type="number" id="specialWindSpeed" placeholder="e.g. 40">
+              `;
+        } else if (heading === "कोहरा/ न्यूनतम दृश्यता") {
+          container.innerHTML = `
+                  <div id="visRowsContainer"></div>
+                  <button onclick="addVisRow()" class="btn-secondary" style="width:auto; padding:5px 10px; font-size:12px; background-color:#17a2b8;">+ Add Visibility Row</button>
+              `;
+          addVisRow(); // Add first row by default
+        } else {
+          container.innerHTML = `
+                  <label>Description:</label>
+                  <textarea id="specialText" rows="2" placeholder="Enter details..."></textarea>
+              `;
+        }
+      }
+
+      function addVisRow() {
+        const container = document.getElementById("visRowsContainer");
+        if (!container) return;
+
+        const div = document.createElement("div");
+        div.className = "visibility-row";
+        div.style.border = "1px solid #eee";
+        div.style.padding = "10px";
+        div.style.marginBottom = "10px";
+        div.style.background = "#f9f9f9";
+        div.style.position = "relative";
+
+        let stationsHtml = "";
+        stationList.forEach((s) => {
+          stationsHtml += `<label class="multi-select-item"><input type="checkbox" value="${s.name}"> ${s.name}</label>`;
+        });
+
+        div.innerHTML = `
+              <button onclick="this.parentElement.remove()" style="position:absolute; top:5px; right:5px; background:#dc3545; color:white; border:none; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; padding: 0; cursor:pointer; font-size:12px; border-radius: 3px;">X</button>
+              <label>Lowest Visibility (Meters):</label>
+              <input type="number" class="vis-val" placeholder="e.g. 50" style="margin-bottom:5px;">
+              <label>Select Stations:</label>
+              <div class="multi-select-box" style="height:100px;">${stationsHtml}</div>
+          `;
+        container.appendChild(div);
+      }
+
       function toggleEditMode(elementId, isEditable) {
         const el = document.getElementById(elementId);
         if (isEditable) {
-          // Replace select with input for editing
           const val = el.value;
           const input = document.createElement("input");
           input.type = "text";
           input.id = elementId;
           input.value = val;
           el.parentNode.replaceChild(input, el);
-        } else {
-          // Revert logic could be complex, for now we assume user keeps edit mode if they want custom text
-          // Or we can just make the select contenteditable? No, select can't be.
-          // Simple approach: Just keep it as input if switched.
-          // To revert to dropdown, reload page or implement complex swap back.
-          // For this requirement, "text becomes contenteditable" usually implies a div/span,
-          // but for a form input, switching to text input is best.
         }
-      }
-
-      function toggleRainfallInput(checked) {
-        document.getElementById("rainfallInputArea").style.display = checked
-          ? "block"
-          : "none";
       }
 
       // --- Logic Sections ---
@@ -490,49 +836,6 @@
             <strong>Lowest:</strong> ${minData.lowestVal}°C at ${minData.stationNames}<br>
             <strong>Range:</strong> ${minData.minVal} – ${minData.maxVal}°C
         `;
-      }
-
-      function initVisibilitySection() {
-        // Sort stations alphabetically by Hindi name
-        stationList = observedData
-          .map((d) => ({
-            rawS: d.station,
-            rawD: d.district,
-            name: getStationDistrictName(d.station, d.district),
-          }))
-          .sort((a, b) => a.name.localeCompare(b.name));
-
-        const container = document.getElementById("visibilityRowsContainer");
-        container.innerHTML = "";
-        addVisibilityRow(); // Add first row by default
-      }
-
-      function addVisibilityRow() {
-        const container = document.getElementById("visibilityRowsContainer");
-        const div = document.createElement("div");
-        div.className = "visibility-row";
-        div.style.border = "1px solid #ddd";
-        div.style.padding = "10px";
-        div.style.marginBottom = "10px";
-        div.style.borderRadius = "4px";
-        div.style.background = "#fff";
-        div.style.position = "relative";
-
-        let stationsHtml = "";
-        stationList.forEach((s) => {
-          stationsHtml += `<label class="multi-select-item"><input type="checkbox" value="${s.name}"> ${s.name}</label>`;
-        });
-
-        div.innerHTML = `
-            <button onclick="this.parentElement.remove()" style="position:absolute; top:5px; right:5px; background:#dc3545; color:white; border:none; border-radius:3px; padding:2px 8px; cursor:pointer; width:auto; font-size:12px;" title="Remove Row">X</button>
-            <label>Lowest Visibility (Meters):</label>
-            <input type="number" class="vis-val" placeholder="e.g. 50">
-            <label>Select Stations:</label>
-            <div class="multi-select-box" style="max-height: 150px; overflow-y: auto; border: 1px solid #ccc; padding: 5px;">
-                ${stationsHtml}
-            </div>
-        `;
-        container.appendChild(div);
       }
 
       function getMaxData() {
@@ -607,108 +910,250 @@
 
         let summary = "";
 
-        // 1. General Weather
-        const generalCond = document.getElementById("generalWeather").value;
-        summary += `${generalCond}<br><br>`;
+        // --- SECTION 1 ---
+        summary += `<p><b>पिछले 24 घंटों का राज्य में दर्ज किया गया मौसम सारांश:-</b></p>`;
 
-        // 2. Max Temp
+        const weatherCond = document.getElementById(
+          "weatherConditionInput",
+        ).value;
+        summary += `${weatherCond}<br>`;
+
+        // Process Groups
+        const groupDivs = document.querySelectorAll(
+          "#rainfallGroupsContainer > div",
+        );
+        let rainSentences = [];
+
+        groupDivs.forEach((div) => {
+          const container = div.querySelector(".rg-districts-container");
+          const category = div.querySelector(".rg-category").value;
+          const selectedOpts = Array.from(
+            container.querySelectorAll('input[type="checkbox"]:checked'),
+          ).map((cb) => cb.value);
+
+          if (selectedOpts.length > 0 && category) {
+            const distList = joinNames(selectedOpts);
+            rainSentences.push(`राज्य के ${distList} में ${category}`);
+          }
+        });
+
+        // Process Area
+        const areaVal = document.getElementById("areaSelect").value;
+        const areaCat = document.getElementById("areaCategorySelect").value;
+
+        let rainSummary = rainSentences.join(", ");
+        if (areaVal && areaCat) {
+          if (rainSummary)
+            rainSummary += `, और साथ ही ${areaVal} में ${areaCat} दर्ज की गयी।`;
+          else rainSummary = `${areaVal} में ${areaCat} दर्ज की गयी।`;
+        } else if (rainSummary) {
+          rainSummary += " दर्ज की गयी।";
+        }
+
+        if (rainSummary) summary += rainSummary;
+        summary += "<br>"; // Minimal gap
+
+        // --- SECTION 2 (Max Temp) ---
         const maxData = getMaxData();
         if (maxData) {
           const prevDate = new Date(reportDate);
           prevDate.setDate(reportDate.getDate() - 1);
           const dateStr = formatDate(prevDate);
 
+          summary += `<p><b>अधिकतम तापमान : </b></p>`;
           summary += `सर्वाधिक अधिकतम तापमान <b>${maxData.highestVal}°C (${dateStr}) ${maxData.stationNames}</b> में दर्ज किया गया ।<br>`;
           summary += `राज्य का अधिकतम तापमान <b>${maxData.minVal} – ${maxData.maxVal}°C</b> के बीच रहा।<br>`;
 
           const maxTrend = document.getElementById("maxTempTrend").value;
-          summary += `${maxTrend}<br><br>`;
+          summary += `${maxTrend}<br>`; // Minimal gap
         }
 
-        // 3. Min Temp
+        // --- SECTION 3 (Min Temp) ---
         const minData = getMinData();
         if (minData) {
           const dateStr = formatDate(reportDate);
 
+          summary += `<p><b>न्यूनतम तापमान : </b></p>`;
           summary += `सबसे कम न्यूनतम तापमान <b>${minData.lowestVal}°C (${dateStr}) ${minData.stationNames}</b> में दर्ज किया गया ।<br>`;
           summary += `राज्य का न्यूनतम तापमान <b>${minData.minVal} – ${minData.maxVal}°C</b> के बीच रहा।<br>`;
 
           const minTrend = document.getElementById("minTempTrend").value;
-          summary += `${minTrend}<br><br>`;
+          summary += `${minTrend}<br>`; // Minimal gap
         }
 
-        // 4. Visibility
-        const visRows = document.querySelectorAll(
-          "#visibilityRowsContainer .visibility-row",
-        );
-        visRows.forEach((row) => {
-          const visVal = row.querySelector(".vis-val").value.trim();
-          const visCheckboxes = row.querySelectorAll(
-            ".multi-select-box input:checked",
+        // --- SECTION 4 (Dynamic Heading) ---
+        // Use the custom input value
+        const heading =
+          document.getElementById("customSpecialHeading").value ||
+          document.getElementById("specialHeadingSelect").value;
+        summary += `<p><b>${heading} :</b></p>`;
+
+        if (heading === "अधिकतम हवा का बहाव") {
+          const dist = document.getElementById("specialDistrict").value;
+          const speed = document.getElementById("specialWindSpeed").value;
+          if (dist && speed) {
+            summary += `राज्य के ${dist} जिले में ${speed} किलोमीटर/घंटा तक की हवा दर्ज की गई।`;
+          }
+        } else if (heading === "कोहरा/ न्यूनतम दृश्यता") {
+          const visRows = document.querySelectorAll(
+            "#visRowsContainer .visibility-row",
           );
-          if (visVal && visCheckboxes.length > 0) {
-            const names = Array.from(visCheckboxes).map((cb) => cb.value);
-            const joinedNames = joinNames(names);
-            summary += `सबसे कम न्यूनतम दृश्यता <b>${visVal} मीटर ${joinedNames}</b> में दर्ज किया गया ।<br>`;
-          }
-        });
-        if (visRows.length > 0) summary += "<br>";
-
-        // 5. Rainfall
-        const hasRain = document.getElementById("hasRainfall").checked;
-        if (!hasRain) {
-          summary += "वर्षा की मुख्य मात्रा (मिमी में):– NIL.";
-        } else {
-          const rawText = document.getElementById("rainDataInput").value.trim();
-          if (rawText) {
-            // Parse pasted text: "Station Value" or "Station\tValue"
-            // We need to map Station Name to Hindi District if possible
-            const lines = rawText.split(/\n/);
-            const rainParts = [];
-
-            lines.forEach((line) => {
-              // Try to split by last space or tab
-              const match = line.match(/^(.*)[\s\t]+([\d.]+)$/);
-              if (match) {
-                const sName = match[1].trim();
-                const val = match[2].trim();
-
-                // Find district for this station from observedData
-                const found = observedData.find(
-                  (d) =>
-                    d.station.toLowerCase().includes(sName.toLowerCase()) ||
-                    formatHindiName(d.station) === sName,
-                );
-
-                let displayName = sName;
-                if (found) {
-                  displayName = getStationDistrictName(
-                    found.station,
-                    found.district,
-                  );
-                } else {
-                  // If not found, assume user typed Hindi or English name directly
-                  // Try to format if it looks like "Name/Hindi"
-                  displayName = formatHindiName(sName);
-                }
-
-                rainParts.push(`${displayName} – ${val} मिमी`);
-              }
-            });
-
-            if (rainParts.length > 0) {
-              summary +=
-                "वर्षा की मुख्य मात्रा (मिमी में):– " +
-                rainParts.join(", ") +
-                ".";
+          visRows.forEach((row) => {
+            const visVal = row.querySelector(".vis-val").value.trim();
+            const visCheckboxes = row.querySelectorAll(
+              ".multi-select-box input:checked",
+            );
+            if (visVal && visCheckboxes.length > 0) {
+              const names = Array.from(visCheckboxes).map((cb) => cb.value);
+              const joinedNames = joinNames(names);
+              summary += `सबसे कम न्यूनतम दृश्यता <b>${visVal} मीटर ${joinedNames}</b> में दर्ज किया गया ।<br>`;
             }
-          }
+          });
+        } else {
+          const text = document.getElementById("specialText").value;
+          if (text) summary += text;
+        }
+        summary += "<br>"; // Minimal gap
+
+        // --- SECTION 5 (Rainfall Quantity) ---
+        summary += `<p><b>वर्षा की मुख्य मात्रा (मिमी में :-</b></p>`;
+
+        // Parse Rainfall Textarea
+        const rainText = document.getElementById("rainInput").value.trim();
+        let rainfallStations = [];
+
+        if (rainText) {
+          // Split by newlines first
+          const lines = rainText.split(/\n/);
+          lines.forEach((line) => {
+            if (!line.trim()) return;
+            // Check if line has comma
+            if (line.includes(",")) {
+              const parts = line.split(",");
+              parts.forEach((p) => parseRainPart(p, rainfallStations));
+            } else {
+              parseRainPart(line, rainfallStations);
+            }
+          });
+        }
+
+        if (rainfallStations.length > 0) {
+          const str = rainfallStations
+            .map((s) => `${s.name} ${s.value}`)
+            .join(" , ");
+          summary += str;
+        } else {
+          summary += "NIL";
         }
 
         // 6. Append Observed Data Table
         summary += generateObservedTableHtml(observedData, reportDate);
 
+        // 7. Inference Section (New Page)
+        const selectionContainer = document.getElementById(
+          "inferenceSelectionContainer",
+        );
+        let finalInferenceLines = [];
+
+        if (selectionContainer && selectionContainer.style.display !== "none") {
+          const items = selectionContainer.querySelectorAll(".inference-item");
+          items.forEach((item) => {
+            const checkbox = item.querySelector("input[type='checkbox']");
+            const textDiv = item.querySelector("div[contenteditable]");
+            if (checkbox && checkbox.checked && textDiv) {
+              finalInferenceLines.push(textDiv.innerText.trim());
+            }
+          });
+        } else {
+          // Fallback to textarea
+          const inferenceText = document
+            .getElementById("inferenceInput")
+            .value.trim();
+          if (inferenceText) {
+            finalInferenceLines = inferenceText.split(/\n+/); // Split by newlines
+          }
+        }
+
+        if (finalInferenceLines.length > 0) {
+          // Page break for print, margin for screen
+          summary += `<div style="page-break-before: always; height: 20px;"></div>`;
+          summary += `<h3 style="color: #2c3e50; border-bottom: 2px solid #2c3e50; padding-bottom: 5px; margin-bottom: 15px;">बिहार राज्य से संबंधित आज की संक्षिप्त मौसम प्रणाली:-</h3>`;
+
+          const isTranslate = document.getElementById(
+            "autoTranslateInference",
+          ).checked;
+
+          summary += `<ul style="margin-top: 0; padding-left: 20px;">`;
+          finalInferenceLines.forEach((line) => {
+            if (line.trim()) {
+              let text = line.trim();
+              // Remove existing bullet points if any (❖, -, *, •) to avoid double bullets
+              text = text.replace(/^[❖•\-\*]\s*/, "");
+
+              // Only apply dictionary translation if selection list is NOT used (fallback mode)
+              if (selectionContainer.style.display === "none" && isTranslate) {
+                text = translateToHindi(text);
+              }
+              summary += `<li style="margin-bottom: 5px;">${text}</li>`;
+            }
+          });
+          summary += `</ul>`;
+        }
+
+        // 8. Dynamic Sections (Inference Part 2)
+        const dynamicContainer = document.getElementById(
+          "dynamicSectionsContainer",
+        );
+        const dynamicSections =
+          dynamicContainer.querySelectorAll(".dynamic-section");
+
+        dynamicSections.forEach((section) => {
+          const heading = section.querySelector(".ds-heading").value.trim();
+          const content = section.querySelector(".ds-content").innerHTML;
+
+          if (heading || content) {
+            summary += `<br>`;
+            if (heading)
+              summary += `<h4 style="margin-bottom:5px;">${heading}</h4>`;
+            if (content) summary += `<div>${content}</div>`;
+          }
+        });
+
+        // 9. Temperature Trend (Fixed Section)
+        const maxTrendContent =
+          document.getElementById("maxTempTrendBox").innerHTML;
+        const minTrendContent =
+          document.getElementById("minTempTrendBox").innerHTML;
+
+        if (maxTrendContent || minTrendContent) {
+          summary += `<br><h4 style="margin-bottom:5px;">तापमान प्रवृत्ति पूर्वानुमान:-</h4>`;
+          summary += `<div><b>अधिकतम तापमान :</b> ${maxTrendContent}</div>`;
+          summary += `<div style="margin-top:5px;"><b>न्यूनतम तापमान :</b> ${minTrendContent}</div>`;
+        }
+
         document.getElementById("finalOutput").innerHTML = summary;
+      }
+
+      function parseRainPart(str, arr) {
+        str = str.trim();
+        if (!str) return;
+
+        // Try to match "Name Value" or "Name \t Value"
+        // Regex looks for text followed by number at end
+        const match = str.match(/^(.*?)\s+([\d\.]+)$/);
+        if (match) {
+          arr.push({ name: match[1].trim().toUpperCase(), value: match[2] });
+        } else {
+          // Fallback for simple split if regex fails (e.g. tab separated)
+          const parts = str.split(/\s+/);
+          if (parts.length >= 2) {
+            const val = parts.pop();
+            const name = parts.join(" ").toUpperCase();
+            if (!isNaN(parseFloat(val))) {
+              arr.push({ name, value: val });
+            }
+          }
+        }
       }
 
       function generateObservedTableHtml(data, dateObj) {
@@ -804,6 +1249,270 @@
 
         html += `</tbody></table>`;
         return html;
+      }
+
+      function formatInferenceText() {
+        const textarea = document.getElementById("inferenceInput");
+        const text = textarea.value;
+        if (!text) return;
+
+        const lines = text.split(/\r?\n/);
+        const mergedLines = [];
+        let currentBuffer = "";
+
+        // Regex to detect bullet points (❖, -, •, *)
+        const bulletRegex = /^[❖•\-\*]/;
+
+        lines.forEach((line) => {
+          const trimmed = line.trim();
+          if (!trimmed) return;
+
+          if (bulletRegex.test(trimmed)) {
+            if (currentBuffer) mergedLines.push(currentBuffer);
+            currentBuffer = trimmed;
+          } else {
+            if (currentBuffer) currentBuffer += " " + trimmed;
+            else currentBuffer = trimmed;
+          }
+        });
+
+        if (currentBuffer) mergedLines.push(currentBuffer);
+
+        textarea.value = mergedLines.join("\n");
+
+        // Generate Selection List
+        generateSelectionList(mergedLines);
+      }
+
+      // --- Dynamic Sections Logic ---
+      function addDynamicSection(headingVal = "", contentVal = "") {
+        const container = document.getElementById("dynamicSectionsContainer");
+        const div = document.createElement("div");
+        div.className = "dynamic-section";
+        div.style.border = "1px solid #ccc";
+        div.style.padding = "15px";
+        div.style.marginBottom = "15px";
+        div.style.background = "#f8f9fa";
+        div.style.position = "relative";
+        div.style.borderRadius = "4px";
+
+        div.innerHTML = `
+              <button onclick="this.parentElement.remove()" style="position:absolute; top:5px; right:5px; background:#dc3545; color:white; border:none; width: 25px; height: 25px; display: flex; align-items: center; justify-content: center; padding: 0; cursor:pointer; font-size:12px; border-radius: 3px;" title="Remove Section">X</button>
+              <label>Section Heading:</label>
+              <input type="text" class="ds-heading" value="${headingVal}" placeholder="e.g. चेतावनी (Warning)">
+              <label>Content:</label>
+              <div class="ds-content" contenteditable="true" style="border: 1px solid #ccc; padding: 10px; background: white; min-height: 60px; border-radius: 4px;">${contentVal}</div>
+          `;
+        container.appendChild(div);
+      }
+
+      function addFogWarningSection() {
+        const heading = "घना कोहरा की चेतावनी :-";
+        const content =
+          "दिनांक (__ से __): राज्य के उत्तर/दक्षिण/पूर्व/पश्चिमी भागों के जिलों के एक या दो स्थानों पर सुबह के समय घना कोहरा छाए रहने की संभावना है।";
+        addDynamicSection(heading, content);
+      }
+
+      // --- Temperature Trend Logic ---
+      function initTempTrend() {
+        updateTempTrendTemplate();
+      }
+
+      function updateTempTrendTemplate() {
+        const days = document.getElementById("tempTrendDays").value;
+        const container = document.getElementById("tempTrendContent");
+
+        // Preserve existing edits if possible?
+        // For now, we regenerate based on template as requested, user can edit after.
+
+        let maxText = "";
+        let minText = "";
+
+        if (days === "5") {
+          maxText =
+            "अगले 5 दिनों के दौरान राज्य के अधिकांश भागों के अधिकतम तापमान में कोई विशेष परिवर्तन नहीं होने की संभावना है।";
+          minText =
+            "अगले 5 दिनों के दौरान राज्य के अधिकांश भागों के न्यूनतम तापमान में कोई विशेष परिवर्तन नहीं होने की संभावना है।";
+        } else if (days === "3") {
+          maxText =
+            "अगले 3 दिनों के दौरान राज्य के अधिकांश भागों के अधिकतम तापमान में कोई विशेष परिवर्तन नहीं होने की संभावना है।";
+          minText =
+            "अगले 3 दिनों के दौरान राज्य के अधिकांश भागों के न्यूनतम तापमान में कोई विशेष परिवर्तन नहीं होने की संभावना है।";
+        } else if (days === "2") {
+          maxText =
+            "अगले 2 दिनों के दौरान राज्य के अधिकांश भागों के अधिकतम तापमान में कोई विशेष परिवर्तन नहीं होने की संभावना है।";
+          minText =
+            "अगले 2 दिनों के दौरान राज्य के अधिकांश भागों के न्यूनतम तापमान में कोई विशेष परिवर्तन नहीं होने की संभावना है।";
+        }
+
+        // Check if boxes exist to preserve user edits, or just overwrite?
+        // The prompt implies "Based on selection auto-generate base template".
+        // I will overwrite to ensure the template is applied.
+
+        container.innerHTML = `
+              <div>
+                  <label style="font-weight:bold; font-size:13px; color:#555;">अधिकतम तापमान :</label>
+                  <div id="maxTempTrendBox" contenteditable="true" style="border: 1px solid #ccc; padding: 8px; background: white; border-radius: 4px;">${maxText}</div>
+              </div>
+              <div>
+                  <label style="font-weight:bold; font-size:13px; color:#555;">न्यूनतम तापमान :</label>
+                  <div id="minTempTrendBox" contenteditable="true" style="border: 1px solid #ccc; padding: 8px; background: white; border-radius: 4px;">${minText}</div>
+              </div>
+          `;
+      }
+
+      function generateSelectionList(lines) {
+        const container = document.getElementById(
+          "inferenceSelectionContainer",
+        );
+        container.innerHTML = "";
+        container.style.display = "block";
+
+        if (lines.length === 0) {
+          container.style.display = "none";
+          return;
+        }
+
+        lines.forEach((line, index) => {
+          const div = document.createElement("div");
+          div.className = "inference-item";
+          div.style.marginBottom = "8px";
+          div.style.display = "flex";
+          div.style.alignItems = "flex-start";
+          div.style.padding = "5px";
+          div.style.borderBottom = "1px solid #eee";
+
+          const checkbox = document.createElement("input");
+          checkbox.type = "checkbox";
+          checkbox.checked = true; // Default selected
+          checkbox.id = `inf_sel_${index}`;
+          checkbox.style.marginTop = "6px";
+          checkbox.style.marginRight = "10px";
+
+          const textDiv = document.createElement("div");
+          textDiv.contentEditable = true;
+          textDiv.innerText = line;
+          textDiv.style.flex = "1";
+          textDiv.style.padding = "4px";
+          textDiv.style.backgroundColor = "#f9f9f9";
+          textDiv.style.borderRadius = "4px";
+          textDiv.style.border = "1px solid #ddd";
+          textDiv.style.fontSize = "14px";
+
+          div.appendChild(checkbox);
+          div.appendChild(textDiv);
+          container.appendChild(div);
+        });
+      }
+
+      function confirmSelection() {
+        const container = document.getElementById(
+          "inferenceSelectionContainer",
+        );
+        const items = container.querySelectorAll(".inference-item");
+        let selectedLines = [];
+
+        items.forEach((item) => {
+          const checkbox = item.querySelector("input[type='checkbox']");
+          const textDiv = item.querySelector("div[contenteditable]");
+          if (checkbox && checkbox.checked && textDiv) {
+            selectedLines.push(textDiv.innerText.trim());
+          }
+        });
+
+        // Update textarea and hide selection list
+        const textarea = document.getElementById("inferenceInput");
+        textarea.value = selectedLines.join("\n");
+        container.style.display = "none";
+      }
+
+      async function translateSelectionWithGoogle() {
+        const container = document.getElementById(
+          "inferenceSelectionContainer",
+        );
+        const items = container.querySelectorAll(".inference-item");
+
+        // Show loading indicator or change button text?
+        const btn = document.querySelector(
+          "button[onclick='translateSelectionWithGoogle()']",
+        );
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Translating...';
+
+        for (let item of items) {
+          const checkbox = item.querySelector("input[type='checkbox']");
+          const textDiv = item.querySelector("div[contenteditable]");
+
+          if (checkbox && checkbox.checked && textDiv) {
+            const originalText = textDiv.innerText;
+            try {
+              const url = `https://translate.googleapis.com/translate_a/single?client=gtx&sl=auto&tl=hi&dt=t&q=${encodeURIComponent(originalText)}`;
+              const res = await fetch(url);
+              const data = await res.json();
+              if (data && data[0]) {
+                // data[0] is array of sentences
+                const translatedText = data[0].map((x) => x[0]).join("");
+                textDiv.innerText = translatedText;
+              }
+            } catch (e) {
+              console.error("Google Translation failed", e);
+              // Fallback to dictionary
+              textDiv.innerText = translateToHindi(originalText);
+            }
+          }
+        }
+        btn.innerHTML = originalText;
+      }
+
+      function translateToHindi(text) {
+        // Basic dictionary for weather terms
+        const dictionary = {
+          "Cyclonic Circulation": "चक्रवाती परिसंचरण",
+          "cyclonic circulation": "चक्रवाती परिसंचरण",
+          Trough: "ट्रफ रेखा",
+          trough: "ट्रफ रेखा",
+          "Mean Sea Level": "औसत समुद्र तल",
+          "mean sea level": "औसत समुद्र तल",
+          "Sea Level": "समुद्र तल",
+          "sea level": "समुद्र तल",
+          Above: "ऊपर",
+          above: "ऊपर",
+          Extending: "विस्तृत",
+          extending: "विस्तृत",
+          Extends: "विस्तृत है",
+          extends: "विस्तृत है",
+          Associated: "संबद्ध",
+          associated: "संबद्ध",
+          Likely: "संभावना",
+          likely: "संभावना",
+          Move: "बढ़ने",
+          move: "बढ़ने",
+          Towards: "की ओर",
+          towards: "की ओर",
+          Depression: "अवदाब",
+          depression: "अवदाब",
+          "Low Pressure Area": "कम दबाव का क्षेत्र",
+          "low pressure area": "कम दबाव का क्षेत्र",
+          lies: "स्थित है",
+          over: "के ऊपर",
+          runs: "गुजरती है",
+          from: "से",
+          to: "तक",
+          across: "से होकर",
+          between: "के बीच",
+          km: "किमी",
+        };
+
+        let translated = text;
+        const keys = Object.keys(dictionary).sort(
+          (a, b) => b.length - a.length,
+        );
+        keys.forEach((key) => {
+          const regex = new RegExp(`\\b${key}\\b`, "g");
+          translated = translated.replace(regex, dictionary[key]);
+        });
+
+        return translated;
       }
     </script>
   </body>
