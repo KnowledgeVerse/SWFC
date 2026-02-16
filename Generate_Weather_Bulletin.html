@@ -211,6 +211,9 @@
         #summaryContent {
           border: none !important;
         }
+        #uploadPanel {
+          display: none !important;
+        }
       }
 
       /* Responsive */
@@ -480,6 +483,239 @@
           background-color: rgba(220, 53, 69, 0.05);
         }
       }
+
+      /* Hide visual breaks during export */
+      .hide-visual-breaks [style*="page-break-before: always"]::before,
+      .hide-visual-breaks [style*="page-break-after: always"]::after {
+        display: none !important;
+      }
+
+      /* Upload Zone Styles */
+      .upload-zone {
+        border: 2px dashed #ccc;
+        padding: 20px;
+        border-radius: 8px;
+        background: white;
+        cursor: pointer;
+        transition: all 0.3s;
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 120px;
+        position: relative;
+      }
+      .upload-zone:hover {
+        border-color: #667eea;
+        background-color: #f8f9fa;
+      }
+      .upload-zone.dragover {
+        border-color: #28a745;
+        background-color: #eef9f0;
+        transform: scale(1.02);
+      }
+      .upload-zone i {
+        font-size: 2em;
+        color: #6c757d;
+        margin-bottom: 10px;
+      }
+      .upload-zone.success {
+        border-color: #28a745;
+        background-color: #d4edda;
+      }
+      .upload-zone.success i {
+        color: #28a745;
+      }
+
+      /* Footer Tables CSS from bulletin_footer.html */
+      :root {
+        --bg-impact: #ffff00;
+        --bg-suggestion: #90ee90;
+        --bg-no-warning: #90ee90;
+        --bg-watch: #ffff00;
+        --bg-alert: #ffa500;
+        --bg-warning: #ff0000;
+        --bg-rain-1: #e6f7ff;
+        --bg-rain-2: #b3d9ff;
+        --bg-rain-3: #80bfff;
+        --bg-rain-4: #4da6ff;
+        --bg-rain-5: #0080ff;
+      }
+      .table-impact,
+      .table-terminology {
+        width: 100%;
+        border-collapse: collapse;
+        margin-bottom: 20px;
+        border: 1px solid #000;
+        font-size: 14px;
+      }
+      .table-impact th,
+      .table-terminology th,
+      .table-impact td,
+      .table-terminology td {
+        border: 1px solid #000;
+        padding: 8px;
+        vertical-align: middle;
+      }
+      .table-impact th,
+      .table-terminology th {
+        text-align: center;
+        font-weight: bold;
+        background-color: #f0f0f0;
+      }
+      .col-impact {
+        background-color: var(--bg-impact);
+        width: 50%;
+      }
+      .col-suggestion {
+        background-color: var(--bg-suggestion);
+        width: 50%;
+      }
+      .term-cell {
+        text-align: center;
+        font-weight: bold;
+      }
+      .rain-dry {
+        background-color: #fff;
+      }
+      .rain-isol {
+        background-color: var(--bg-rain-2);
+      }
+      .rain-sct {
+        background-color: var(--bg-rain-3);
+      }
+      .rain-fws {
+        background-color: var(--bg-rain-4);
+      }
+      .rain-ws {
+        background-color: var(--bg-rain-5);
+        color: white;
+      }
+      .warn-green {
+        background-color: var(--bg-no-warning);
+      }
+      .warn-yellow {
+        background-color: var(--bg-watch);
+      }
+      .warn-orange {
+        background-color: var(--bg-alert);
+      }
+      .warn-red {
+        background-color: var(--bg-warning);
+        color: white;
+      }
+
+      .signature-section {
+        display: flex;
+        justify-content: space-between;
+        margin-top: 30px;
+        padding-top: 20px;
+        page-break-inside: avoid;
+      }
+      .sig-box {
+        text-align: center;
+        min-width: 200px;
+      }
+      .sig-line {
+        border-bottom: 1px solid #000;
+        margin-bottom: 5px;
+        height: 30px;
+      }
+      .sig-label {
+        font-weight: bold;
+      }
+
+      /* Observed Table CSS (Synced from max_min_rh.html) */
+      .obs-table {
+        width: 100%;
+        border-collapse: collapse;
+        font-size: 14px;
+        border: 2px solid #000;
+        background: white;
+        font-family: Arial, sans-serif;
+        table-layout: fixed;
+      }
+      .obs-table th,
+      .obs-table td {
+        border: 1px solid #000;
+        padding: 4px;
+        text-align: center;
+        vertical-align: middle;
+        word-wrap: break-word;
+      }
+      .obs-table .top-header {
+        background-color: #e6b07d;
+        font-size: 16px;
+        padding: 8px;
+        color: #000;
+      }
+      .obs-table .col-header th {
+        background-color: #e6b07d;
+        font-weight: bold;
+        color: #000;
+        font-size: 9px;
+      }
+
+      /* Column Backgrounds */
+      .obs-table tbody td:nth-child(1),
+      .obs-table tbody td:nth-child(2) {
+        width: 25%;
+        background-color: #cfd8b6;
+        text-align: left;
+        font-weight: bold;
+        color: #000;
+        white-space: nowrap;
+      }
+      .obs-table tbody td:nth-child(3) {
+        width: 12.5%;
+        background-color: #ffff00;
+        font-weight: bold;
+      }
+      .obs-table tbody td:nth-child(4) {
+        width: 12.5%;
+        background-color: #dfe8c6;
+        font-weight: bold;
+      }
+      .obs-table tbody td:nth-child(5) {
+        width: 12.5%;
+        background-color: #9fd0df;
+        font-weight: bold;
+      }
+      .obs-table tbody td:nth-child(6) {
+        width: 12.5%;
+        background-color: #00b050;
+        font-weight: bold;
+      }
+
+      /* Text Colors */
+      .text-red-bold {
+        color: red !important;
+        font-weight: 900 !important;
+      }
+      .text-blue-bold {
+        color: blue !important;
+        font-weight: 900 !important;
+      }
+      .text-darkblue {
+        color: darkblue !important;
+        font-weight: 900 !important;
+      }
+      .text-red {
+        color: red !important;
+        font-weight: 900 !important;
+      }
+      .text-na {
+        color: black !important;
+        font-weight: normal !important;
+      }
+      .highest-max {
+        color: red !important;
+        font-weight: 900 !important;
+      }
+      .lowest-min {
+        color: blue !important;
+        font-weight: 900 !important;
+      }
     </style>
   </head>
   <body>
@@ -618,6 +854,18 @@
           />
         </div>
 
+        <div class="control-group">
+          <label style="font-weight: bold">Page Size:</label>
+          <select
+            id="pageSizeSelect"
+            onchange="updatePageSize()"
+            style="padding: 5px; border-radius: 4px; border: 1px solid #ccc"
+          >
+            <option value="a4">A4 (210mm x 297mm)</option>
+            <option value="legal">Legal (216mm x 356mm)</option>
+          </select>
+        </div>
+
         <!-- Export Buttons -->
         <div
           class="control-group"
@@ -625,6 +873,13 @@
         >
           <button class="export-btn" onclick="exportBulletinImages()">
             <i class="fas fa-image"></i> Export Images
+          </button>
+          <button
+            class="export-btn"
+            onclick="exportBulletinWebImage()"
+            style="background-color: #28a745"
+          >
+            <i class="fas fa-file-image"></i> Export Web Image
           </button>
           <button class="export-btn" onclick="exportBulletinPDF()">
             <i class="fas fa-file-pdf"></i> Export PDF
@@ -635,6 +890,148 @@
           <button class="export-btn" onclick="exportBulletinExcel()">
             <i class="fas fa-file-excel"></i> Export Excel
           </button>
+          <button
+            class="export-btn"
+            onclick="toggleUploadPanel()"
+            style="background-color: #6f42c1"
+          >
+            <i class="fas fa-upload"></i> Manual Uploads
+          </button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Manual Upload Panel -->
+    <div
+      id="uploadPanel"
+      style="
+        display: none;
+        background: #f8f9fa;
+        padding: 15px;
+        border: 1px solid #ddd;
+        margin: 10px auto;
+        max-width: 1000px;
+        border-radius: 8px;
+        text-align: center;
+      "
+    >
+      <h4 style="margin-top: 0; color: #2c3e50; margin-bottom: 15px">
+        Manual Image Upload (Drag & Drop or Click)
+      </h4>
+      <div
+        style="
+          display: grid;
+          grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+          gap: 20px;
+          justify-content: center;
+        "
+      >
+        <!-- Auto Detect Zone -->
+        <div
+          class="upload-zone"
+          style="
+            grid-column: 1 / -1;
+            background: #e3f2fd;
+            border-color: #2196f3;
+          "
+          onclick="document.getElementById('fileAuto').click()"
+        >
+          <i class="fas fa-magic" style="color: #2196f3"></i>
+          <div style="color: #0d47a1">
+            <strong>Auto Detect Images (Select Multiple)</strong>
+          </div>
+          <div style="font-size: 0.8em; color: #555">
+            Select all downloaded maps together. Filenames (e.g., Warning,
+            Forecast, Maximum, Minimum) will be auto-detected.
+          </div>
+          <input
+            type="file"
+            id="fileAuto"
+            multiple
+            accept="image/*"
+            style="display: none"
+            onchange="handleAutoUpload(this)"
+          />
+        </div>
+
+        <!-- Min Temp -->
+        <div
+          class="upload-zone"
+          id="dropZoneMin"
+          onclick="document.getElementById('fileMin').click()"
+        >
+          <i class="fas fa-cloud-download-alt"></i>
+          <div><strong>Min Temp Map</strong></div>
+          <div style="font-size: 0.8em; color: #666">
+            Click or Drag Image Here
+          </div>
+          <input
+            type="file"
+            id="fileMin"
+            accept="image/*"
+            style="display: none"
+            onchange="handleManualUpload('min', this)"
+          />
+        </div>
+
+        <!-- Max Temp -->
+        <div
+          class="upload-zone"
+          id="dropZoneMax"
+          onclick="document.getElementById('fileMax').click()"
+        >
+          <i class="fas fa-cloud-download-alt"></i>
+          <div><strong>Max Temp Map</strong></div>
+          <div style="font-size: 0.8em; color: #666">
+            Click or Drag Image Here
+          </div>
+          <input
+            type="file"
+            id="fileMax"
+            accept="image/*"
+            style="display: none"
+            onchange="handleManualUpload('max', this)"
+          />
+        </div>
+
+        <!-- Forecast -->
+        <div
+          class="upload-zone"
+          id="dropZoneForecast"
+          onclick="document.getElementById('fileForecast').click()"
+        >
+          <i class="fas fa-cloud-download-alt"></i>
+          <div><strong>Forecast Map</strong></div>
+          <div style="font-size: 0.8em; color: #666">
+            Click or Drag Image Here
+          </div>
+          <input
+            type="file"
+            id="fileForecast"
+            accept="image/*"
+            style="display: none"
+            onchange="handleManualUpload('forecast', this)"
+          />
+        </div>
+
+        <!-- Warning -->
+        <div
+          class="upload-zone"
+          id="dropZoneWarning"
+          onclick="document.getElementById('fileWarning').click()"
+        >
+          <i class="fas fa-cloud-download-alt"></i>
+          <div><strong>Warning Map</strong></div>
+          <div style="font-size: 0.8em; color: #666">
+            Click or Drag Image Here
+          </div>
+          <input
+            type="file"
+            id="fileWarning"
+            accept="image/*"
+            style="display: none"
+            onchange="handleManualUpload('warning', this)"
+          />
         </div>
       </div>
     </div>
@@ -793,6 +1190,185 @@
         }
       }
 
+      // --- Manual Upload Logic ---
+      function toggleUploadPanel() {
+        const panel = document.getElementById("uploadPanel");
+        panel.style.display = panel.style.display === "none" ? "block" : "none";
+      }
+
+      function handleManualUpload(type, input) {
+        if (input.files && input.files[0]) {
+          processFile(type, input.files[0]);
+        }
+      }
+
+      function handleAutoUpload(input) {
+        if (!input.files || input.files.length === 0) return;
+
+        const files = Array.from(input.files);
+        const categories = { warning: [], max: [], min: [], forecast: [] };
+
+        // 1. Categorize and Parse
+        files.forEach((file) => {
+          const name = file.name;
+          const lowerName = name.toLowerCase();
+          let type = null;
+
+          if (lowerName.includes("warning")) type = "warning";
+          else if (lowerName.includes("maximum")) type = "max";
+          else if (lowerName.includes("minimum")) type = "min";
+          else if (
+            lowerName.includes("forecast") &&
+            !lowerName.includes("temperature")
+          )
+            type = "forecast";
+
+          if (type) {
+            // Extract Date (YYYY-MM-DD)
+            const dateMatch = name.match(/(\d{4}-\d{2}-\d{2})/);
+            const dateStr = dateMatch ? dateMatch[1] : "0000-00-00";
+
+            // Extract Version (e.g., " (1).png")
+            const verMatch = name.match(/\((\d+)\)\./);
+            const version = verMatch ? parseInt(verMatch[1]) : 0;
+
+            categories[type].push({ file, date: dateStr, version });
+          }
+        });
+
+        // 2. Select Best File per Category & Validate Dates
+        const selectedFiles = {};
+        let commonDate = null;
+        let dateMismatch = false;
+
+        Object.keys(categories).forEach((type) => {
+          const list = categories[type];
+          if (list.length === 0) return;
+
+          // Sort: Latest Date desc, then Version desc
+          list.sort((a, b) => {
+            if (b.date !== a.date) return b.date.localeCompare(a.date);
+            return b.version - a.version;
+          });
+
+          const best = list[0];
+          selectedFiles[type] = best;
+
+          if (commonDate === null) commonDate = best.date;
+          else if (
+            commonDate !== best.date &&
+            best.date !== "0000-00-00" &&
+            commonDate !== "0000-00-00"
+          )
+            dateMismatch = true;
+        });
+
+        if (dateMismatch) {
+          let msg =
+            "Error: Date Mismatch! Selected maps have different dates:\n";
+          Object.entries(selectedFiles).forEach(
+            ([k, v]) => (msg += `${k.toUpperCase()}: ${v.date}\n`),
+          );
+          alert(msg);
+          input.value = "";
+          return;
+        }
+
+        if (Object.keys(selectedFiles).length === 0) {
+          alert("No valid weather maps detected.");
+          input.value = "";
+          return;
+        }
+
+        // 3. Process
+        Object.keys(selectedFiles).forEach((type) =>
+          processFile(type, selectedFiles[type].file),
+        );
+        input.value = "";
+      }
+
+      function processFile(type, file) {
+        const reader = new FileReader();
+        reader.onload = function (e) {
+          const dataUrl = e.target.result;
+          let containerId = "";
+          if (type === "min") containerId = "minTempMapsContainer";
+          else if (type === "max") containerId = "maxTempMapsContainer";
+          else if (type === "forecast") containerId = "forecastMapsContainer";
+          else if (type === "warning") containerId = "warningMapsContainer";
+
+          const container = document.getElementById(containerId);
+          if (container) {
+            container.innerHTML = `<img src="${dataUrl}" style="width:100%; border:1px solid #ccc; margin-top:20px;">`;
+
+            // Update drop zone UI to show success
+            const zoneId =
+              type === "min"
+                ? "dropZoneMin"
+                : type === "max"
+                  ? "dropZoneMax"
+                  : type === "forecast"
+                    ? "dropZoneForecast"
+                    : "dropZoneWarning";
+            const zone = document.getElementById(zoneId);
+            if (zone) {
+              zone.classList.add("success");
+              zone.querySelector("div:last-of-type").innerText =
+                file.name + " Loaded!";
+            }
+          } else {
+            alert(
+              "Error: Target container not found. Please ensure the bulletin content is loaded.",
+            );
+          }
+        };
+        reader.readAsDataURL(file);
+      }
+
+      function setupDragAndDrop() {
+        const zones = ["min", "max", "forecast", "warning"];
+        zones.forEach((type) => {
+          const zoneId =
+            type === "min"
+              ? "dropZoneMin"
+              : type === "max"
+                ? "dropZoneMax"
+                : type === "forecast"
+                  ? "dropZoneForecast"
+                  : "dropZoneWarning";
+          const zone = document.getElementById(zoneId);
+          if (!zone) return;
+
+          zone.addEventListener("dragover", (e) => {
+            e.preventDefault();
+            zone.classList.add("dragover");
+          });
+          zone.addEventListener("dragleave", (e) => {
+            e.preventDefault();
+            zone.classList.remove("dragover");
+          });
+          zone.addEventListener("drop", (e) => {
+            e.preventDefault();
+            zone.classList.remove("dragover");
+            if (e.dataTransfer.files && e.dataTransfer.files[0]) {
+              processFile(type, e.dataTransfer.files[0]);
+            }
+          });
+        });
+      }
+
+      function updatePageSize() {
+        const size = document.getElementById("pageSizeSelect").value;
+        const container = document.querySelector(
+          ".container:not(.export-page)",
+        );
+        if (size === "legal") {
+          container.style.maxWidth = "1029px"; // 216/210 * 1000 approx
+        } else {
+          container.style.maxWidth = "1000px";
+        }
+      }
+
       // --- Export Logic ---
 
       function getFormattedDate() {
@@ -808,13 +1384,69 @@
         const container = document.querySelector(".container");
         const summaryContent = document.getElementById("summaryContent");
 
+        const pageSize = document.getElementById("pageSizeSelect").value;
+        const exportWidth = pageSize === "legal" ? "1029px" : "1000px";
+
         // Clone container to avoid modifying live DOM
         const clone = container.cloneNode(true);
-        clone.style.width = "1000px"; // Enforce width for consistent rendering
+        clone.style.width = exportWidth; // Enforce width for consistent rendering
 
         // Separate Header parts (everything before summaryContent)
         const cloneSummary = clone.querySelector("#summaryContent");
         const headerNodes = [];
+
+        // Capture Map Grid as Image to preserve Leaflet rendering
+        const minMapContainer = document.getElementById("minTempMapsContainer");
+        let minMapImage = null;
+        if (minMapContainer && minMapContainer.offsetHeight > 0) {
+          try {
+            minMapImage = await domtoimage.toPng(minMapContainer, {
+              bgcolor: "#ffffff",
+            });
+          } catch (e) {
+            console.error("Map capture failed", e);
+          }
+        }
+
+        const maxMapContainer = document.getElementById("maxTempMapsContainer");
+        let maxMapImage = null;
+        if (maxMapContainer && maxMapContainer.offsetHeight > 0) {
+          try {
+            maxMapImage = await domtoimage.toPng(maxMapContainer, {
+              bgcolor: "#ffffff",
+            });
+          } catch (e) {
+            console.error("Map capture failed", e);
+          }
+        }
+
+        const forecastMapContainer = document.getElementById(
+          "forecastMapsContainer",
+        );
+        let forecastMapImage = null;
+        if (forecastMapContainer && forecastMapContainer.offsetHeight > 0) {
+          try {
+            forecastMapImage = await domtoimage.toPng(forecastMapContainer, {
+              bgcolor: "#ffffff",
+            });
+          } catch (e) {
+            console.error("Map capture failed", e);
+          }
+        }
+
+        const warningMapContainer = document.getElementById(
+          "warningMapsContainer",
+        );
+        let warningMapImage = null;
+        if (warningMapContainer && warningMapContainer.offsetHeight > 0) {
+          try {
+            warningMapImage = await domtoimage.toPng(warningMapContainer, {
+              bgcolor: "#ffffff",
+            });
+          } catch (e) {
+            console.error("Map capture failed", e);
+          }
+        }
 
         while (clone.firstChild && clone.firstChild !== cloneSummary) {
           headerNodes.push(clone.firstChild);
@@ -825,10 +1457,10 @@
 
         // --- Page 1 Setup ---
         let currentPage = document.createElement("div");
-        currentPage.className = "container export-page";
+        currentPage.className = "container export-page hide-visual-breaks";
         currentPage.style.background = "white";
         currentPage.style.padding = "20px 40px";
-        currentPage.style.width = "1000px";
+        currentPage.style.width = exportWidth;
         currentPage.style.border = "none";
         currentPage.style.boxShadow = "none";
 
@@ -841,8 +1473,37 @@
         const children = Array.from(cloneSummary.childNodes);
 
         for (let i = 0; i < children.length; i++) {
-          const child = children[i];
+          let child = children[i];
           let isBreak = false;
+
+          // Check if this is the map container and replace with captured image
+          if (child.id === "minTempMapsContainer" && minMapImage) {
+            const img = document.createElement("img");
+            img.src = minMapImage;
+            img.style.width = "100%";
+            child = img; // Swap for processing
+          }
+
+          if (child.id === "maxTempMapsContainer" && maxMapImage) {
+            const img = document.createElement("img");
+            img.src = maxMapImage;
+            img.style.width = "100%";
+            child = img; // Swap for processing
+          }
+
+          if (child.id === "forecastMapsContainer" && forecastMapImage) {
+            const img = document.createElement("img");
+            img.src = forecastMapImage;
+            img.style.width = "100%";
+            child = img; // Swap for processing
+          }
+
+          if (child.id === "warningMapsContainer" && warningMapImage) {
+            const img = document.createElement("img");
+            img.src = warningMapImage;
+            img.style.width = "100%";
+            child = img; // Swap for processing
+          }
 
           if (child.nodeType === 1) {
             // Element
@@ -856,10 +1517,11 @@
 
               // Start new page
               currentPage = document.createElement("div");
-              currentPage.className = "container export-page";
+              currentPage.className =
+                "container export-page hide-visual-breaks";
               currentPage.style.background = "white";
               currentPage.style.padding = "20px 40px";
-              currentPage.style.width = "1000px";
+              currentPage.style.width = exportWidth;
               currentPage.style.border = "none";
               currentPage.style.boxShadow = "none";
 
@@ -882,10 +1544,11 @@
               pages.push(currentPage);
 
               currentPage = document.createElement("div");
-              currentPage.className = "container export-page";
+              currentPage.className =
+                "container export-page hide-visual-breaks";
               currentPage.style.background = "white";
               currentPage.style.padding = "20px 40px";
-              currentPage.style.width = "1000px";
+              currentPage.style.width = exportWidth;
               currentPage.style.border = "none";
               currentPage.style.boxShadow = "none";
               continue;
@@ -935,10 +1598,11 @@
       async function exportBulletinPDF() {
         const pages = await getBulletinPages();
         const dateStr = getFormattedDate();
+        const pageSize = document.getElementById("pageSizeSelect").value;
         const { jsPDF } = window.jspdf;
-        const doc = new jsPDF("p", "mm", "a4");
+        const format = pageSize === "legal" ? "legal" : "a4";
+        const doc = new jsPDF("p", "mm", format);
         const pdfWidth = doc.internal.pageSize.getWidth();
-        const pdfHeight = doc.internal.pageSize.getHeight();
 
         // Create hidden container
         const hiddenDiv = document.createElement("div");
@@ -951,22 +1615,62 @@
           hiddenDiv.innerHTML = "";
           hiddenDiv.appendChild(pages[i]);
 
-          const canvas = await html2canvas(pages[i], {
-            scale: 2,
-            backgroundColor: "#ffffff",
-          });
-          const imgData = canvas.toDataURL("image/png");
-          const imgProps = doc.getImageProperties(imgData);
-          const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
+          try {
+            const dataUrl = await domtoimage.toPng(pages[i], {
+              bgcolor: "#ffffff",
+              width: pages[i].offsetWidth,
+              height: pages[i].offsetHeight,
+            });
+            const imgProps = doc.getImageProperties(dataUrl);
+            const imgHeight = (imgProps.height * pdfWidth) / imgProps.width;
 
-          if (i > 0) doc.addPage();
-          doc.addImage(imgData, "PNG", 0, 0, pdfWidth, imgHeight);
+            if (i > 0) doc.addPage();
+            doc.addImage(dataUrl, "PNG", 0, 0, pdfWidth, imgHeight);
+          } catch (e) {
+            console.error("PDF Page capture failed", e);
+          }
         }
 
         document.body.removeChild(hiddenDiv);
         doc.save(
           `बिहार_राज्य_के_लिए_दैनिक_मौसम_विज्ञप्ति_एवं_मौसम_चेतावनी_${dateStr}.pdf`,
         );
+      }
+
+      async function exportBulletinWebImage() {
+        const pages = await getBulletinPages();
+        const dateStr = getFormattedDate();
+
+        const hiddenDiv = document.createElement("div");
+        hiddenDiv.style.position = "absolute";
+        hiddenDiv.style.left = "-9999px";
+        hiddenDiv.style.top = "0";
+        hiddenDiv.style.background = "#ffffff";
+        // Assuming all pages have same width
+        if (pages.length > 0) {
+          hiddenDiv.style.width = pages[0].style.width;
+        }
+
+        pages.forEach((page) => {
+          hiddenDiv.appendChild(page);
+        });
+
+        document.body.appendChild(hiddenDiv);
+
+        try {
+          const dataUrl = await domtoimage.toPng(hiddenDiv, {
+            bgcolor: "#ffffff",
+          });
+          const link = document.createElement("a");
+          link.download = `Weather_Bulletin_Full_${dateStr}.png`;
+          link.href = dataUrl;
+          link.click();
+        } catch (e) {
+          console.error("Web Image Export Failed", e);
+          alert("Export failed.");
+        } finally {
+          document.body.removeChild(hiddenDiv);
+        }
       }
 
       function exportBulletinWord() {
@@ -1023,7 +1727,13 @@
         // Load generated summary from Weather_summary.html
         const savedSummary = localStorage.getItem("bihar_generated_summary");
         if (savedSummary) {
-          finalContent += savedSummary;
+          let summaryContent = savedSummary;
+          // Add page break after the observed table
+          summaryContent = summaryContent.replace(
+            "</tbody></table>",
+            "</tbody></table><div style='page-break-after: always;'></div>",
+          );
+          finalContent += summaryContent;
         }
 
         // Load detailed forecast table from Detailed_Weather_Forecast.html
@@ -1055,29 +1765,297 @@
           finalContent += `<div style="height: 20px;"></div>`;
           finalContent += savedTempTable;
           // Page Break after Temp Table
-          finalContent += `<div style="page-break-after: always;"></div>`;
         }
 
+        finalContent += `<div style="page-break-after: always;"></div>`;
         // Render Min Temp Maps (Placeholder for async content)
         finalContent += `<div id="minTempMapsContainer"></div>`;
+        finalContent += `<div style="page-break-after: always;"></div>`;
+
+        // Render Max Temp Maps
+        finalContent += `<div id="maxTempMapsContainer"></div>`;
+
+        // Render Forecast Maps (Synced Image)
+        finalContent += `<div style="page-break-after: always;"></div>`;
+        finalContent += `<div id="forecastMapsContainer"></div>`;
+        finalContent += `<div style="page-break-after: always;"></div>`;
+
+        // Render Warning Maps (Synced Image)
+        finalContent += `<div id="warningMapsContainer"></div>`;
+        finalContent += `<div style="page-break-after: always;"></div>`;
+
+        const savedDutySel =
+          localStorage.getItem("bihar_selected_duty_officer") || "";
+        const savedIssuedSel =
+          localStorage.getItem("bihar_selected_issued_officer") || "";
+
+        // --- Footer Content (from bulletin_footer.html) ---
+        finalContent += `
+        <table class="table-impact">
+          <thead>
+            <tr>
+              <th colspan="2" style="font-size: 1.1em; padding: 10px">इस मौसम के संभावित प्रभाव / सुझाव (Expected Impact & Action Suggested)</th>
+            </tr>
+            <tr>
+              <th class="col-impact">प्रभाव (Impact)</th>
+              <th class="col-suggestion">सुझाव (Action Suggested)</th>
+            </tr>
+          </thead>
+          <tbody>
+            <tr>
+              <td class="col-impact">
+                <ul>
+                  <li>खड़ी फसलों को नुकसान हो सकता है। (Damage to standing crops likely.)</li>
+                  <li>कच्चे मकानों और झोपड़ियों को नुकसान। (Damage to kutcha houses/huts.)</li>
+                  <li>दृश्यता में कमी। (Reduction in visibility.)</li>
+                  <li>यातायात में बाधा। (Traffic disruption.)</li>
+                </ul>
+              </td>
+              <td class="col-suggestion">
+                <ul>
+                  <li>खेतों में काम करने से बचें। (Avoid working in fields.)</li>
+                  <li>पेड़ों के नीचे शरण न लें। (Do not take shelter under trees.)</li>
+                  <li>मौसम की जानकारी से अपडेट रहें। (Stay updated with weather info.)</li>
+                  <li>सुरक्षित स्थानों पर रहें। (Stay in safe places.)</li>
+                </ul>
+              </td>
+            </tr>
+          </tbody>
+        </table>
+
+        <table class="table-terminology">
+          <thead>
+            <tr><th colspan="4" style="font-size: 1.1em; padding: 10px">पूर्वानुमान में प्रयुक्त शब्दावली / Terminology used in forecast</th></tr>
+          </thead>
+          <tbody>
+            <tr><th colspan="2" style="width: 50%">वर्षा का वितरण (Rainfall Distribution)</th><th colspan="2" style="width: 50%">चेतावनी रंग (Warning Colour Codes)</th></tr>
+            <tr><td class="term-cell rain-ws">Widespread (WS) / अधिकांश स्थानों पर</td><td class="term-cell">76 - 100 %</td><td class="term-cell warn-red">Red (Warning)</td><td class="term-cell">Take Action (कार्रवाई करें)</td></tr>
+            <tr><td class="term-cell rain-fws">Fairly Widespread (FWS) / अनेक स्थानों पर</td><td class="term-cell">51 - 75 %</td><td class="term-cell warn-orange">Orange (Alert)</td><td class="term-cell">Be Prepared (तैयार रहें)</td></tr>
+            <tr><td class="term-cell rain-sct">Scattered (SCT) / कुछ स्थानों पर</td><td class="term-cell">26 - 50 %</td><td class="term-cell warn-yellow">Yellow (Watch)</td><td class="term-cell">Be Updated (अपडेट रहें)</td></tr>
+            <tr><td class="term-cell rain-isol">Isolated (ISOL) / एक या दो स्थानों पर</td><td class="term-cell">1 - 25 %</td><td class="term-cell warn-green">Green (No Warning)</td><td class="term-cell">No Action (कोई कार्रवाई नहीं)</td></tr>
+            <tr><td class="term-cell rain-dry">Dry (DRY) / शुष्क</td><td class="term-cell">0 %</td><td colspan="2" style="background-color: #f9f9f9"></td></tr>
+          </tbody>
+        </table>
+
+        <div class="signature-section">
+          <div class="sig-box">
+            <div class="sig-label">Duty Officer</div>
+            <div class="sig-line" id="dutySig" contenteditable="true">${savedDutySel}</div>
+          </div>
+          <div class="sig-box">
+            <div class="sig-label">Forecast Issued By</div>
+            <div class="sig-line" id="issuedSig" contenteditable="true">${savedIssuedSel}</div>
+          </div>
+        </div>
+        
+        <div style="width: 100%; text-align: center; font-family: 'Times New Roman', serif; font-size: 12px; color: #333; border-top: 1px solid #000; margin-top: 30px; padding-top: 10px;">
+            Generated by SWFC Web Application | Developed by Lal Kamal
+        </div>
+        `;
 
         document.getElementById("summaryContent").innerHTML = finalContent;
 
         // Trigger Map Rendering
-        setTimeout(renderMinTempMaps, 100);
+        setTimeout(() => {
+          renderMaxTempMaps();
+          renderMinTempMaps();
+          renderForecastMaps();
+          renderWarningMaps();
+        }, 100);
 
         // Listen for storage changes to auto-update date if changed in other tab
         window.addEventListener("storage", (e) => {
           if (e.key === "bihar_forecast_date") {
             loadDate();
           }
+          // Auto-update officers if changed in bulletin_footer.html
+          if (e.key === "bihar_selected_duty_officer") {
+            const el = document.getElementById("dutySig");
+            if (el) el.innerText = e.newValue;
+          }
+          if (e.key === "bihar_selected_issued_officer") {
+            const el = document.getElementById("issuedSig");
+            if (el) el.innerText = e.newValue;
+          }
         });
+
+        setupDragAndDrop();
       });
+
+      // --- Warning Map Rendering Logic ---
+      function renderWarningMaps() {
+        const container = document.getElementById("warningMapsContainer");
+        if (!container) return;
+        const syncedImage = localStorage.getItem("bihar_warning_image");
+        if (syncedImage) {
+          container.innerHTML = `<img src="${syncedImage}" style="width:100%; border:1px solid #ccc; margin-top:20px;">`;
+        }
+      }
+
+      // --- Forecast Map Rendering Logic ---
+      function renderForecastMaps() {
+        const container = document.getElementById("forecastMapsContainer");
+        if (!container) return;
+        const syncedImage = localStorage.getItem("bihar_forecast_image");
+        if (syncedImage) {
+          container.innerHTML = `<img src="${syncedImage}" style="width:100%; border:1px solid #ccc; margin-top:20px;">`;
+        }
+      }
+
+      // --- Max Temp Map Rendering Logic ---
+      function renderMaxTempMaps() {
+        const container = document.getElementById("maxTempMapsContainer");
+        if (!container) return;
+
+        // Check for synced image first
+        const syncedImage = localStorage.getItem(
+          "bihar_max_temp_forecast_image",
+        );
+        if (syncedImage) {
+          container.innerHTML = `<img src="${syncedImage}" style="width:100%; border:1px solid #ccc; margin-top:20px;">`;
+          return;
+        }
+
+        const rawData = localStorage.getItem("bihar_temperature_data");
+        if (!rawData) return;
+
+        let weeklyData = { max: [] };
+        try {
+          const parsed = JSON.parse(rawData);
+          if (parsed.max) weeklyData.max = parsed.max;
+        } catch (e) {
+          console.error(e);
+          return;
+        }
+
+        // Date & Season
+        const storedDate = localStorage.getItem("bihar_forecast_date");
+        const baseDate = storedDate ? new Date(storedDate) : new Date();
+        const month = baseDate.getMonth();
+        const season = month >= 9 || month <= 1 ? "Winter" : "Summer";
+
+        const dateOptions = {
+          day: "2-digit",
+          month: "2-digit",
+          year: "numeric",
+        };
+        const dateStr = baseDate
+          .toLocaleDateString("en-GB", dateOptions)
+          .replace(/\//g, ".");
+
+        // Header
+        let html = `<div style="height: 20px;"></div>`;
+        html += `<h3 style="text-align:center; margin-bottom:10px; color:#2c3e50;">अगले सात दिनों के लिए अधिकतम तापमान का पूर्वानुमान ${dateStr}</h3>`;
+
+        // Grid
+        html += `<div class="map-grid">`;
+        for (let i = 0; i < 7; i++) {
+          html += `<div class="map-cell" id="maxMap${i}"></div>`;
+        }
+        // Legend Cell (8th)
+        html += `<div class="map-cell" id="maxMapLegend" style="background:white; display:flex; flex-direction:column; align-items:center; justify-content:center;"></div>`;
+        html += `</div>`;
+
+        container.innerHTML = html;
+
+        // Load Shapefile and Render Maps
+        const basePath = "data/Bihar_Districts_Shapefile/Bihar";
+        Promise.all([
+          fetch(basePath + ".shp").then((r) => {
+            if (!r.ok) throw new Error("SHP file not found");
+            return r.arrayBuffer();
+          }),
+          fetch(basePath + ".dbf").then((r) => {
+            if (!r.ok) throw new Error("DBF file not found");
+            return r.arrayBuffer();
+          }),
+          fetch(basePath + ".prj").then((r) => (r.ok ? r.text() : null)),
+        ])
+          .then(([shpBuffer, dbfBuffer, prjStr]) => {
+            const geojson = shp.combine([
+              shp.parseShp(shpBuffer, prjStr || undefined),
+              shp.parseDbf(dbfBuffer),
+            ]);
+            for (let i = 0; i < 7; i++) {
+              const dayDate = new Date(baseDate);
+              dayDate.setDate(baseDate.getDate() + i);
+              const dayStr = dayDate.toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+              });
+              const mapDiv = document.getElementById(`maxMap${i}`);
+              const headerDiv = document.createElement("div");
+              headerDiv.className = "map-cell-header";
+              headerDiv.innerText = `Day ${i + 1} - ${dayStr}`;
+              mapDiv.appendChild(headerDiv);
+              const map = L.map(`maxMap${i}`, {
+                zoomControl: false,
+                attributionControl: false,
+                dragging: false,
+                scrollWheelZoom: false,
+                doubleClickZoom: false,
+                boxZoom: false,
+                touchZoom: false,
+              }).setView([25.6, 85.6], 6);
+              const layer = L.geoJSON(geojson, {
+                style: (feature) => {
+                  const oid = String(feature.properties.OBJECTID);
+                  const dayData = weeklyData.max[i] || {};
+                  const distData = dayData[oid];
+                  let color = "#ffffff";
+                  if (distData && distData.val !== undefined) {
+                    color = getTempColor(distData.val, "max", season);
+                  }
+                  return {
+                    fillColor: color,
+                    weight: 1,
+                    opacity: 1,
+                    color: "#333",
+                    fillOpacity: 0.8,
+                  };
+                },
+                onEachFeature: (feature, layer) => {
+                  if (feature.properties.D_NAME) {
+                    layer.bindTooltip(feature.properties.D_NAME, {
+                      permanent: true,
+                      direction: "center",
+                      className: "map-label",
+                      offset: [0, 0],
+                    });
+                  }
+                },
+              }).addTo(map);
+              map.fitBounds(layer.getBounds());
+            }
+          })
+          .catch((e) => console.error("Shapefile load error", e));
+
+        // Render Legend
+        const legendDiv = document.getElementById("maxMapLegend");
+        const scales = getScaleData(season, "max");
+        let legendHtml = `<strong style="font-size:16px; margin-bottom:10px;">LEGEND / संकेत</strong>`;
+        legendHtml += `<strong style="font-size:14px; margin-bottom:10px;">Maximum Temperature (${season})</strong>`;
+        legendHtml += `<div style="display:grid; grid-template-columns: 1fr 1fr; gap: 5px 20px; text-align:left;">`;
+        [...scales].reverse().forEach((l) => {
+          legendHtml += `<div class="legend-item"><div class="color-box" style="background:${l.color}"></div><span>${l.label} °C</span></div>`;
+        });
+        legendHtml += `</div>`;
+        legendDiv.innerHTML = legendHtml;
+      }
 
       // --- Min Temp Map Rendering Logic ---
       function renderMinTempMaps() {
         const container = document.getElementById("minTempMapsContainer");
         if (!container) return;
+
+        // Check for synced image first
+        const syncedImage = localStorage.getItem(
+          "bihar_min_temp_forecast_image",
+        );
+        if (syncedImage) {
+          container.innerHTML = `<img src="${syncedImage}" style="width:100%; border:1px solid #ccc; margin-top:20px;">`;
+          return;
+        }
 
         const rawData = localStorage.getItem("bihar_temperature_data");
         if (!rawData) return;
@@ -1107,7 +2085,7 @@
           .replace(/\//g, ".");
 
         // Header
-        let html = `<div style="page-break-before: always; height: 20px;"></div>`;
+        let html = `<div style="height: 20px;"></div>`;
         html += `<h3 style="text-align:center; margin-bottom:10px; color:#2c3e50;">अगले सात दिनों के लिए न्यूनतम तापमान का पूर्वानुमान ${dateStr}</h3>`;
 
         // Grid
@@ -1123,65 +2101,81 @@
 
         // Load Shapefile and Render Maps
         const basePath = "data/Bihar_Districts_Shapefile/Bihar";
-        shp(basePath).then((geojson) => {
-          for (let i = 0; i < 7; i++) {
-            const dayDate = new Date(baseDate);
-            dayDate.setDate(baseDate.getDate() + i);
-            const dayStr = dayDate.toLocaleDateString("en-IN", {
-              day: "2-digit",
-              month: "short",
-            });
+        Promise.all([
+          fetch(basePath + ".shp").then((r) => {
+            if (!r.ok) throw new Error("SHP file not found");
+            return r.arrayBuffer();
+          }),
+          fetch(basePath + ".dbf").then((r) => {
+            if (!r.ok) throw new Error("DBF file not found");
+            return r.arrayBuffer();
+          }),
+          fetch(basePath + ".prj").then((r) => (r.ok ? r.text() : null)),
+        ])
+          .then(([shpBuffer, dbfBuffer, prjStr]) => {
+            const geojson = shp.combine([
+              shp.parseShp(shpBuffer, prjStr || undefined),
+              shp.parseDbf(dbfBuffer),
+            ]);
 
-            const mapDiv = document.getElementById(`minMap${i}`);
-            // Add Header Overlay
-            const headerDiv = document.createElement("div");
-            headerDiv.className = "map-cell-header";
-            headerDiv.innerText = `Day ${i + 1} - ${dayStr}`;
-            mapDiv.appendChild(headerDiv);
+            for (let i = 0; i < 7; i++) {
+              const dayDate = new Date(baseDate);
+              dayDate.setDate(baseDate.getDate() + i);
+              const dayStr = dayDate.toLocaleDateString("en-IN", {
+                day: "2-digit",
+                month: "short",
+              });
 
-            const map = L.map(`minMap${i}`, {
-              zoomControl: false,
-              attributionControl: false,
-              dragging: false,
-              scrollWheelZoom: false,
-              doubleClickZoom: false,
-              boxZoom: false,
-              touchZoom: false,
-            }).setView([25.6, 85.6], 6);
+              const mapDiv = document.getElementById(`minMap${i}`);
+              // Add Header Overlay
+              const headerDiv = document.createElement("div");
+              headerDiv.className = "map-cell-header";
+              headerDiv.innerText = `Day ${i + 1} - ${dayStr}`;
+              mapDiv.appendChild(headerDiv);
 
-            L.geoJSON(geojson, {
-              style: (feature) => {
-                const oid = String(feature.properties.OBJECTID);
-                const distData = weeklyData.min[i]
-                  ? weeklyData.min[i][oid]
-                  : null;
-                let color = "#ffffff";
-                if (distData && distData.val !== undefined) {
-                  color = getTempColor(distData.val, "min", season);
-                }
-                return {
-                  fillColor: color,
-                  weight: 1,
-                  opacity: 1,
-                  color: "#333",
-                  fillOpacity: 0.8,
-                };
-              },
-              onEachFeature: (feature, layer) => {
-                if (feature.properties.D_NAME) {
-                  layer.bindTooltip(feature.properties.D_NAME, {
-                    permanent: true,
-                    direction: "center",
-                    className: "map-label",
-                    offset: [0, 0],
-                  });
-                }
-              },
-            }).addTo(map);
+              const map = L.map(`minMap${i}`, {
+                zoomControl: false,
+                attributionControl: false,
+                dragging: false,
+                scrollWheelZoom: false,
+                doubleClickZoom: false,
+                boxZoom: false,
+                touchZoom: false,
+              }).setView([25.6, 85.6], 6);
 
-            map.fitBounds(L.geoJSON(geojson).getBounds());
-          }
-        });
+              const layer = L.geoJSON(geojson, {
+                style: (feature) => {
+                  const oid = String(feature.properties.OBJECTID);
+                  const dayData = weeklyData.min[i] || {};
+                  const distData = dayData[oid];
+                  let color = "#ffffff";
+                  if (distData && distData.val !== undefined) {
+                    color = getTempColor(distData.val, "min", season);
+                  }
+                  return {
+                    fillColor: color,
+                    weight: 1,
+                    opacity: 1,
+                    color: "#333",
+                    fillOpacity: 0.8,
+                  };
+                },
+                onEachFeature: (feature, layer) => {
+                  if (feature.properties.D_NAME) {
+                    layer.bindTooltip(feature.properties.D_NAME, {
+                      permanent: true,
+                      direction: "center",
+                      className: "map-label",
+                      offset: [0, 0],
+                    });
+                  }
+                },
+              }).addTo(map);
+
+              map.fitBounds(layer.getBounds());
+            }
+          })
+          .catch((e) => console.error("Shapefile load error", e));
 
         // Render Legend
         const legendDiv = document.getElementById("minMapLegend");

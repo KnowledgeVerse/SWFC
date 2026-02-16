@@ -386,6 +386,12 @@
           </option>
         </select>
         <div class="checkbox-wrapper">
+          <input type="checkbox" id="includeLowestMax" checked />
+          <label for="includeLowestMax"
+            >Include Lowest Max Temp Line (सबसे कम अधिकतम तापमान)</label
+          >
+        </div>
+        <div class="checkbox-wrapper">
           <input
             type="checkbox"
             id="editMaxTrend"
@@ -424,50 +430,75 @@
       <!-- Section 4: Dynamic Heading Section -->
       <div class="section">
         <h3>4. Special Weather / Warnings</h3>
-        <label>Select Heading:</label>
         <div
+          class="checkbox-wrapper"
           style="
-            display: flex;
-            gap: 10px;
-            align-items: center;
-            margin-bottom: 10px;
+            margin-bottom: 15px;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
           "
         >
-          <select
-            id="specialHeadingSelect"
-            onchange="updateSpecialSectionUI()"
-            style="flex: 1; margin-bottom: 0"
-          >
-            <option value="अधिकतम हवा का बहाव">अधिकतम हवा का बहाव</option>
-            <option value="गरज के साथ वर्षा की संभावना">
-              गरज के साथ वर्षा की संभावना
-            </option>
-            <option value="विशेष मौसम चेतावनी">विशेष मौसम चेतावनी</option>
-            <option value="अन्य महत्वपूर्ण मौसम घटना">
-              अन्य महत्वपूर्ण मौसम घटना
-            </option>
-            <option value="कोहरा/ न्यूनतम दृश्यता">
-              कोहरा/ न्यूनतम दृश्यता :
-            </option>
-          </select>
           <input
-            type="text"
-            id="customSpecialHeading"
-            placeholder="Edit Heading..."
-            style="flex: 1; margin-bottom: 0"
+            type="checkbox"
+            id="includeSpecialSection"
+            checked
+            onchange="
+              document.getElementById('specialSectionBody').style.display = this
+                .checked
+                ? 'block'
+                : 'none'
+            "
           />
+          <label for="includeSpecialSection"
+            >Include Special Weather Section in Bulletin</label
+          >
         </div>
+        <div id="specialSectionBody">
+          <label>Select Heading:</label>
+          <div
+            style="
+              display: flex;
+              gap: 10px;
+              align-items: center;
+              margin-bottom: 10px;
+            "
+          >
+            <select
+              id="specialHeadingSelect"
+              onchange="updateSpecialSectionUI()"
+              style="flex: 1; margin-bottom: 0"
+            >
+              <option value="अधिकतम हवा का बहाव">अधिकतम हवा का बहाव</option>
+              <option value="गरज के साथ वर्षा की संभावना">
+                गरज के साथ वर्षा की संभावना
+              </option>
+              <option value="विशेष मौसम चेतावनी">विशेष मौसम चेतावनी</option>
+              <option value="अन्य महत्वपूर्ण मौसम घटना">
+                अन्य महत्वपूर्ण मौसम घटना
+              </option>
+              <option value="कोहरा/ न्यूनतम दृश्यता">
+                कोहरा/ न्यूनतम दृश्यता :
+              </option>
+            </select>
+            <input
+              type="text"
+              id="customSpecialHeading"
+              placeholder="Edit Heading..."
+              style="flex: 1; margin-bottom: 0"
+            />
+          </div>
 
-        <div
-          id="specialContentArea"
-          style="
-            margin-top: 15px;
-            padding: 10px;
-            background: #fff;
-            border: 1px solid #ddd;
-          "
-        >
-          <!-- Dynamic Content Injected Here -->
+          <div
+            id="specialContentArea"
+            style="
+              margin-top: 15px;
+              padding: 10px;
+              background: #fff;
+              border: 1px solid #ddd;
+            "
+          >
+            <!-- Dynamic Content Injected Here -->
+          </div>
         </div>
       </div>
 
@@ -565,6 +596,13 @@ Or paste table..."
           <input type="checkbox" id="autoTranslateInference" />
           <label for="autoTranslateInference"
             >Auto Translate to Hindi (Dictionary - Fallback)</label
+          >
+        </div>
+        <div class="checkbox-wrapper">
+          <input type="checkbox" id="includeDrySummary" />
+          <label for="includeDrySummary"
+            >Include Forecast Summary (Dry Weather)</label
+          >
           >
         </div>
 
@@ -897,6 +935,32 @@ Or paste table..."
         };
       }
 
+      function getLowestMaxData() {
+        let validData = observedData.filter(
+          (d) => d.max && !isNaN(parseFloat(d.max)),
+        );
+        if (validData.length === 0) return null;
+
+        let minMaxVal = Infinity;
+
+        validData.forEach((d) => {
+          const val = parseFloat(d.max);
+          if (val < minMaxVal) minMaxVal = val;
+        });
+
+        const lowestMaxStations = validData.filter(
+          (d) => parseFloat(d.max) === minMaxVal,
+        );
+        const names = lowestMaxStations.map((d) =>
+          getStationDistrictName(d.station, d.district),
+        );
+
+        return {
+          val: minMaxVal,
+          stationNames: joinNames(names),
+        };
+      }
+
       function getMinData() {
         let validData = observedData.filter(
           (d) => d.min && !isNaN(parseFloat(d.min)),
@@ -993,6 +1057,13 @@ Or paste table..."
           summary += `सर्वाधिक अधिकतम तापमान <b>${maxData.highestVal}°C (${dateStr}) ${maxData.stationNames}</b> में दर्ज किया गया ।<br>`;
           summary += `राज्य का अधिकतम तापमान <b>${maxData.minVal} – ${maxData.maxVal}°C</b> के बीच रहा।<br>`;
 
+          if (document.getElementById("includeLowestMax").checked) {
+            const lowestMax = getLowestMaxData();
+            if (lowestMax) {
+              summary += `सबसे कम अधिकतम तापमान <b>${lowestMax.val}°C ${lowestMax.stationNames}</b> में दर्ज किया गया ।<br>`;
+            }
+          }
+
           const maxTrend = document.getElementById("maxTempTrend").value;
           summary += `${maxTrend}<br>`; // Minimal gap
         }
@@ -1011,41 +1082,43 @@ Or paste table..."
         }
 
         // --- SECTION 4 (Dynamic Heading) ---
-        // Use the custom input value
-        const heading =
-          document.getElementById("customSpecialHeading").value ||
-          document.getElementById("specialHeadingSelect").value;
-        summary += `<p><b>${heading} :</b></p>`;
+        if (document.getElementById("includeSpecialSection").checked) {
+          // Use the custom input value
+          const heading =
+            document.getElementById("customSpecialHeading").value ||
+            document.getElementById("specialHeadingSelect").value;
+          summary += `<p><b>${heading} :</b></p>`;
 
-        if (heading === "अधिकतम हवा का बहाव") {
-          const dist = document.getElementById("specialDistrict").value;
-          const speed = document.getElementById("specialWindSpeed").value;
-          if (dist && speed) {
-            summary += `राज्य के ${dist} जिले में ${speed} किलोमीटर/घंटा तक की हवा दर्ज की गई।`;
-          }
-        } else if (heading === "कोहरा/ न्यूनतम दृश्यता") {
-          const visRows = document.querySelectorAll(
-            "#visRowsContainer .visibility-row",
-          );
-          visRows.forEach((row) => {
-            const visVal = row.querySelector(".vis-val").value.trim();
-            const visCheckboxes = row.querySelectorAll(
-              ".multi-select-box input:checked",
-            );
-            if (visVal && visCheckboxes.length > 0) {
-              const names = Array.from(visCheckboxes).map((cb) => cb.value);
-              const joinedNames = joinNames(names);
-              summary += `सबसे कम न्यूनतम दृश्यता <b>${visVal} मीटर ${joinedNames}</b> में दर्ज किया गया ।<br>`;
+          if (heading === "अधिकतम हवा का बहाव") {
+            const dist = document.getElementById("specialDistrict").value;
+            const speed = document.getElementById("specialWindSpeed").value;
+            if (dist && speed) {
+              summary += `राज्य के ${dist} जिले में ${speed} किलोमीटर/घंटा तक की हवा दर्ज की गई।`;
             }
-          });
-        } else {
-          const text = document.getElementById("specialText").value;
-          if (text) summary += text;
+          } else if (heading === "कोहरा/ न्यूनतम दृश्यता") {
+            const visRows = document.querySelectorAll(
+              "#visRowsContainer .visibility-row",
+            );
+            visRows.forEach((row) => {
+              const visVal = row.querySelector(".vis-val").value.trim();
+              const visCheckboxes = row.querySelectorAll(
+                ".multi-select-box input:checked",
+              );
+              if (visVal && visCheckboxes.length > 0) {
+                const names = Array.from(visCheckboxes).map((cb) => cb.value);
+                const joinedNames = joinNames(names);
+                summary += `सबसे कम न्यूनतम दृश्यता <b>${visVal} मीटर ${joinedNames}</b> में दर्ज किया गया ।<br>`;
+              }
+            });
+          } else {
+            const text = document.getElementById("specialText").value;
+            if (text) summary += text;
+          }
+          summary += "<br>"; // Minimal gap
         }
-        summary += "<br>"; // Minimal gap
 
         // --- SECTION 5 (Rainfall Quantity) ---
-        summary += `<p><b>वर्षा की मुख्य मात्रा (मिमी में :-</b></p>`;
+        summary += `<p><b>वर्षा की मुख्य मात्रा (मिमी में):– </b>`;
 
         // Parse Rainfall Textarea
         const rainText = document.getElementById("rainInput").value.trim();
@@ -1072,8 +1145,9 @@ Or paste table..."
             .join(" , ");
           summary += str;
         } else {
-          summary += "NIL";
+          summary += "NIL.";
         }
+        summary += `</p>`;
 
         // 6. Append Observed Data Table
         summary += generateObservedTableHtml(observedData, reportDate);
@@ -1126,6 +1200,10 @@ Or paste table..."
             }
           });
           summary += `</ul>`;
+        }
+
+        if (document.getElementById("includeDrySummary").checked) {
+          summary += `<br><b>पूर्वानुमान सारांश :-</b><br>अगले 7 दिनों के दौरान प्रदेश का मौसम शुष्क बने रहने की संभावना है।`;
         }
 
         // 8. Dynamic Sections (Inference Part 2)
@@ -1220,18 +1298,15 @@ Or paste table..."
 
         // Inline styles for the table to ensure it looks correct in the summary editor
         let html = `<br><br>
-        <table style="width: 100%; border-collapse: collapse; font-size: 14px; border: 2px solid #000; background: white; font-family: Arial, sans-serif;">
+        <table style="width: 100%; border-collapse: collapse; font-size: 14px; border: 2px solid #000; background: white; font-family: Arial, sans-serif; table-layout: fixed;">
             <thead>
-                <tr>
-                    <th colspan="6" style="border: 1px solid #000; padding: 12px; text-align: center; background-color: #e6b07d; font-size: 18px; color: #000; text-transform: uppercase;">Observed Temperature & Rainfall – 08:30 IST</th>
-                </tr>
-                <tr>
-                    <th style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #e6b07d; font-weight: bold; color: #000;">DISTRICT/जिला</th>
-                    <th style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #e6b07d; font-weight: bold; color: #000;">STATION/स्टेशन</th>
-                    <th style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #e6b07d; font-weight: bold; color: #000;">Max.Tem/ अधिकतम<br>तापमान(°C) observed on<br>${pdStr}</th>
-                    <th style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #e6b07d; font-weight: bold; color: #000;">Min.Temp/न्यूनतम<br>तापमान(°C) observed on<br>${dStr}</th>
-                    <th style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #e6b07d; font-weight: bold; color: #000;">R/H (%) at 08:30 IST /<br>०८:३० पर सापेक्षिक आर्द्रता<br>${dStr}</th>
-                    <th style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #e6b07d; font-weight: bold; color: #000;">24 Hrs Rainfall ending at 08:30 IST/<br>०८:३० पर दर्ज़ वर्षा (मिली मीटर)<br>${dStr}</th>
+                <tr style="font-size: 9px;">
+                    <th style="width: 25%; border: 1px solid #000; padding: 4px; text-align: center; background-color: #e6b07d; font-weight: bold; color: #000;">DISTRICT/जिला</th>
+                    <th style="width: 25%; border: 1px solid #000; padding: 4px; text-align: center; background-color: #e6b07d; font-weight: bold; color: #000;">STATION/स्टेशन</th>
+                    <th style="width: 12.5%; border: 1px solid #000; padding: 4px; text-align: center; background-color: #e6b07d; font-weight: bold; color: #000;">Max.Tem/ अधिकतम<br>तापमान(°C) observed on<br>${pdStr}</th>
+                    <th style="width: 12.5%; border: 1px solid #000; padding: 4px; text-align: center; background-color: #e6b07d; font-weight: bold; color: #000;">Min.Temp/न्यूनतम<br>तापमान(°C) observed on<br>${dStr}</th>
+                    <th style="width: 12.5%; border: 1px solid #000; padding: 4px; text-align: center; background-color: #e6b07d; font-weight: bold; color: #000;">R/H (%) at 08:30 IST /<br>०८:३० पर सापेक्षिक आर्द्रता<br>${dStr}</th>
+                    <th style="width: 12.5%; border: 1px solid #000; padding: 4px; text-align: center; background-color: #e6b07d; font-weight: bold; color: #000;">24 Hrs Rainfall ending at 08:30 IST/<br>०८:३० पर दर्ज़ वर्षा (मिली मीटर)<br>${dStr}</th>
                 </tr>
             </thead>
             <tbody>`;
@@ -1265,11 +1340,11 @@ Or paste table..."
           };
 
           html += `<tr>
-                <td style="border: 1px solid #000; padding: 8px; text-align: left; background-color: #cfd8b6; font-weight: bold; color: #000;">${d.district || "NA"}</td>
-                <td style="border: 1px solid #000; padding: 8px; text-align: left; background-color: #cfd8b6; font-weight: bold; color: #000;">${d.station || "NA"}</td>
-                <td style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #ffff00;">${valOrNA(d.max, maxStyle)}</td>
-                <td style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #dfe8c6;">${valOrNA(d.min, minStyle)}</td>
-                <td style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #9fd0df;">${valOrNA(d.rh, rhStyle)}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: left; background-color: #cfd8b6; font-weight: bold; color: #000; word-wrap: break-word;">${d.district || "NA"}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: left; background-color: #cfd8b6; font-weight: bold; color: #000; word-wrap: break-word;">${d.station || "NA"}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #ffff00; font-weight: bold;">${valOrNA(d.max, maxStyle)}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #dfe8c6; font-weight: bold;">${valOrNA(d.min, minStyle)}</td>
+                <td style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #9fd0df; font-weight: bold;">${valOrNA(d.rh, rhStyle)}</td>
                 <td style="border: 1px solid #000; padding: 8px; text-align: center; background-color: #00b050; font-weight: bold;">${valOrNA(d.rain, rainStyle)}</td>
             </tr>`;
         });

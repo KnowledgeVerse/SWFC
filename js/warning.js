@@ -187,6 +187,193 @@ function init() {
   loadShapefile();
 }
 
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+async function generateCompositeCanvas() {
+  const items = document.querySelectorAll(".grid-item");
+  const container = document.getElementById("gridContainer");
+  const wasGrid = container.classList.contains("grid-view-active");
+
+  // Temporarily disable grid view to capture high-res images
+  if (wasGrid) {
+    container.classList.remove("grid-view-active");
+  }
+
+  if (items.length === 0) return null;
+
+  // Capture Header
+  const headerText = document.getElementById("mainHeaderTitle").innerText;
+  const tempHeader = document.createElement("div");
+  tempHeader.style.cssText =
+    "position:fixed; top:0; left:0; width:1600px; background:white; padding:20px; text-align:center; font-family:'Noto Sans Devanagari', sans-serif; font-weight:bold; font-size:32px; color:#000; z-index:-9999;";
+  tempHeader.innerText = headerText;
+  document.body.appendChild(tempHeader);
+
+  let headerDataUrl;
+  try {
+    headerDataUrl = await domtoimage.toPng(tempHeader, { bgcolor: "#ffffff" });
+  } catch (e) {
+    console.error("Header capture failed", e);
+    document.body.removeChild(tempHeader);
+    if (wasGrid) container.classList.add("grid-view-active");
+    return null;
+  }
+  document.body.removeChild(tempHeader);
+
+  const headerImg = await loadImage(headerDataUrl);
+
+  // Capture Grid Items
+  const itemImages = [];
+  for (let i = 0; i < items.length; i++) {
+    const dataUrl = await domtoimage.toPng(items[i], { bgcolor: "#ffffff" });
+    itemImages.push(await loadImage(dataUrl));
+  }
+
+  // Restore Grid View
+  if (wasGrid) container.classList.add("grid-view-active");
+
+  // Layout Calculations (2 Columns)
+  const colCount = 2;
+  const padding = 20;
+  const itemWidth = itemImages[0].width;
+  const itemHeight = itemImages[0].height;
+
+  const canvasWidth = itemWidth * colCount + padding * (colCount + 1);
+  const rowCount = Math.ceil(itemImages.length / colCount);
+  const gridHeight = itemHeight * rowCount + padding * (rowCount + 1);
+  const totalHeight = headerImg.height + gridHeight;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = canvasWidth;
+  canvas.height = totalHeight;
+  const ctx = canvas.getContext("2d");
+
+  // Background
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Draw Header (Centered)
+  let hWidth = headerImg.width;
+  let hHeight = headerImg.height;
+  if (hWidth > canvasWidth) {
+    const scale = canvasWidth / hWidth;
+    hWidth = canvasWidth;
+    hHeight = hHeight * scale;
+  }
+  const headerX = (canvasWidth - hWidth) / 2;
+  ctx.drawImage(headerImg, headerX, 0, hWidth, hHeight);
+
+  let currentY = hHeight + padding;
+
+  for (let i = 0; i < itemImages.length; i++) {
+    const col = i % colCount;
+    const row = Math.floor(i / colCount);
+    const x = padding + col * (itemWidth + padding);
+    const y = currentY + row * (itemHeight + padding);
+    ctx.drawImage(itemImages[i], x, y, itemWidth, itemHeight);
+  }
+
+  return canvas;
+}
+
+async function downloadSingleImage() {
+  const btn = document.querySelector("button[onclick='downloadSingleImage()']");
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+  try {
+    const canvas = await generateCompositeCanvas();
+    if (canvas) {
+      const dataUrl = canvas.toDataURL("image/png", 1.0);
+      const link = document.createElement("a");
+      link.download = `Warning_Grid_${new Date().toISOString().split("T")[0]}.png`;
+      link.href = dataUrl;
+      link.click();
+    }
+  } catch (e) {
+    console.error(e);
+    alert("Error generating image.");
+  } finally {
+    btn.innerHTML = originalText;
+  }
+}
+window.downloadSingleImage = downloadSingleImage;
+
+async function syncToBulletin() {
+  const btn = document.querySelector("button[onclick='syncToBulletin()']");
+  const originalText = '<i class="fas fa-sync"></i> Sync to Bulletin';
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
+  try {
+    const canvas = await generateCompositeCanvas();
+    if (canvas) {
+      // Clear previous image to free up space immediately
+      try {
+        localStorage.removeItem("bihar_warning_image");
+      } catch (e) {
+        console.warn("Could not clear old warning image", e);
+      }
+
+      let saved = false;
+      let scale = 1.0;
+
+      // Try progressively lower scale and quality until it fits
+      while (scale >= 0.4 && !saved) {
+        let exportCanvas = canvas;
+        if (scale < 1.0) {
+          exportCanvas = document.createElement("canvas");
+          exportCanvas.width = canvas.width * scale;
+          exportCanvas.height = canvas.height * scale;
+          const ctx = exportCanvas.getContext("2d");
+          ctx.drawImage(canvas, 0, 0, exportCanvas.width, exportCanvas.height);
+        }
+
+        // Try higher quality first
+        let quality = 0.95;
+        while (quality > 0.4 && !saved) {
+          try {
+            const dataUrl = exportCanvas.toDataURL("image/jpeg", quality);
+            localStorage.setItem("bihar_warning_image", dataUrl);
+            saved = true;
+          } catch (e) {
+            if (e.name === "QuotaExceededError" || e.code === 22) {
+              quality -= 0.1;
+            } else {
+              throw e;
+            }
+          }
+        }
+        if (!saved) scale -= 0.2; // Reduce scale if quality reduction wasn't enough
+      }
+      if (!saved) throw new Error("QuotaExceededError");
+
+      btn.innerHTML = '<i class="fas fa-check"></i> Synced!';
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+      }, 2000);
+    }
+  } catch (e) {
+    console.error(e);
+    if (e.name === "QuotaExceededError" || e.message === "QuotaExceededError") {
+      alert(
+        "Sync failed: Image size is too large for browser storage. Please clear old bulletins or browser cache.",
+      );
+    } else {
+      alert("Error syncing image.");
+    }
+  } finally {
+    if (btn.innerHTML.includes("Syncing")) {
+      btn.innerHTML = originalText;
+    }
+  }
+}
+window.syncToBulletin = syncToBulletin;
+
 async function downloadPDF() {
   const { jsPDF } = window.jspdf;
   const doc = new jsPDF("p", "mm", "a2"); // Portrait, A2
@@ -512,9 +699,9 @@ function addLegendToMap(map, dayData, index) {
     div.style.padding = "8px";
     div.style.borderRadius = "5px";
     div.style.boxShadow = "0 0 15px rgba(0,0,0,0.3)";
-    div.style.fontSize = "24px";
+    div.style.fontSize = "14px"; // Reduced font size
     div.style.lineHeight = "1.3";
-    div.style.minWidth = "260px";
+    div.style.minWidth = "180px"; // Reduced width
     div.style.transformOrigin = "top right";
 
     let html = "";
@@ -529,14 +716,14 @@ function addLegendToMap(map, dayData, index) {
       presentPhenomena.forEach((pId) => {
         const pDef = phenDefs.find((p) => p.id === pId);
         if (pDef) {
-          html += `<div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;"><img src="${pDef.image}" style="width:45px; height:45px;"><span>${pDef.english}</span></div>`;
+          html += `<div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;"><img src="${pDef.image}" style="width:25px; height:25px;"><span>${pDef.english}</span></div>`;
         }
       });
       html += "<hr style='margin:5px 0; border:0; border-top:1px solid #ccc;'>";
     }
     html += "<strong>Warning</strong><br>";
     warningLegendItems.forEach((item) => {
-      html += `<div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;"><span style="width:35px; height:35px; background:${item.color}; border:${item.border || "1px solid #ccc"}; display:inline-block;"></span><span>${item.text}</span></div>`;
+      html += `<div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;"><span style="width:20px; height:20px; background:${item.color}; border:${item.border || "1px solid #ccc"}; display:inline-block;"></span><span>${item.text}</span></div>`;
     });
     div.innerHTML = html;
     L.DomEvent.disableClickPropagation(div);
@@ -638,6 +825,22 @@ function syncLayout(sourceEl, scale) {
 }
 window.toggleLayoutEdit = toggleLayoutEdit;
 
+function toggleGridView() {
+  const container = document.getElementById("gridContainer");
+  container.classList.toggle("grid-view-active");
+  setTimeout(() => {
+    maps.forEach((map) => {
+      map.invalidateSize();
+      map.eachLayer((layer) => {
+        if (layer instanceof L.GeoJSON) {
+          map.fitBounds(layer.getBounds(), { padding: [0, 0] });
+        }
+      });
+    });
+  }, 300);
+}
+window.toggleGridView = toggleGridView;
+
 function getDistrictRegionColor(id) {
   id = parseInt(id);
   const regions =
@@ -659,3 +862,189 @@ function getDistrictRegionColor(id) {
   if (regions.se.includes(id)) return "#795548";
   return "#3388ff";
 }
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+async function generateCompositeCanvas() {
+  const items = document.querySelectorAll(".grid-item");
+  const container = document.getElementById("gridContainer");
+  const wasGrid = container.classList.contains("grid-view-active");
+
+  if (wasGrid) {
+    container.classList.remove("grid-view-active");
+    maps.forEach((map) => map.invalidateSize());
+    await new Promise((r) => setTimeout(r, 500));
+  }
+
+  if (items.length === 0) return null;
+
+  const headerText = document.getElementById("mainHeaderTitle").innerText;
+  const tempHeader = document.createElement("div");
+  tempHeader.style.cssText =
+    "position:fixed; top:0; left:0; width:1600px; background:white; padding:20px; text-align:center; font-family:'Noto Sans Devanagari', sans-serif; font-weight:bold; font-size:32px; color:#000; z-index:-9999;";
+  tempHeader.innerText = headerText;
+  document.body.appendChild(tempHeader);
+
+  let headerDataUrl;
+  try {
+    headerDataUrl = await domtoimage.toPng(tempHeader, { bgcolor: "#ffffff" });
+  } catch (e) {
+    console.error("Header capture failed", e);
+    document.body.removeChild(tempHeader);
+    if (wasGrid) {
+      container.classList.add("grid-view-active");
+      maps.forEach((map) => map.invalidateSize());
+    }
+    return null;
+  }
+  document.body.removeChild(tempHeader);
+
+  const headerImg = await loadImage(headerDataUrl);
+
+  const itemImages = [];
+  for (let i = 0; i < items.length; i++) {
+    const dataUrl = await domtoimage.toPng(items[i], { bgcolor: "#ffffff" });
+    itemImages.push(await loadImage(dataUrl));
+  }
+
+  if (wasGrid) {
+    container.classList.add("grid-view-active");
+    maps.forEach((map) => map.invalidateSize());
+  }
+
+  const colCount = 2;
+  const padding = 20;
+  const itemWidth = itemImages[0].width;
+  const itemHeight = itemImages[0].height;
+
+  const canvasWidth = itemWidth * colCount + padding * (colCount + 1);
+  const rowCount = Math.ceil(itemImages.length / colCount);
+  const gridHeight = itemHeight * rowCount + padding * (rowCount + 1);
+  const totalHeight = headerImg.height + gridHeight;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = canvasWidth;
+  canvas.height = totalHeight;
+  const ctx = canvas.getContext("2d");
+
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  let hWidth = headerImg.width;
+  let hHeight = headerImg.height;
+  if (hWidth > canvasWidth) {
+    const scale = canvasWidth / hWidth;
+    hWidth = canvasWidth;
+    hHeight = hHeight * scale;
+  }
+  const headerX = (canvasWidth - hWidth) / 2;
+  ctx.drawImage(headerImg, headerX, 0, hWidth, hHeight);
+
+  let currentY = hHeight + padding;
+
+  for (let i = 0; i < itemImages.length; i++) {
+    const col = i % colCount;
+    const row = Math.floor(i / colCount);
+    const x = padding + col * (itemWidth + padding);
+    const y = currentY + row * (itemHeight + padding);
+    ctx.drawImage(itemImages[i], x, y, itemWidth, itemHeight);
+  }
+
+  return canvas;
+}
+
+async function downloadSingleImage() {
+  const btn = document.querySelector("button[onclick='downloadSingleImage()']");
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+  try {
+    const canvas = await generateCompositeCanvas();
+    if (canvas) {
+      const dataUrl = canvas.toDataURL("image/png", 1.0);
+      const link = document.createElement("a");
+      link.download = `Warning_Grid_${new Date().toISOString().split("T")[0]}.png`;
+      link.href = dataUrl;
+      link.click();
+    }
+  } catch (e) {
+    console.error(e);
+    alert("Error generating image.");
+  } finally {
+    btn.innerHTML = originalText;
+  }
+}
+window.downloadSingleImage = downloadSingleImage;
+
+async function syncToBulletin() {
+  const btn = document.querySelector("button[onclick='syncToBulletin()']");
+  const originalText = '<i class="fas fa-sync"></i> Sync to Bulletin';
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
+  try {
+    const canvas = await generateCompositeCanvas();
+    if (canvas) {
+      try {
+        localStorage.removeItem("bihar_warning_image");
+      } catch (e) {
+        console.warn("Could not clear old warning image", e);
+      }
+
+      let saved = false;
+      let scale = 1.0;
+
+      while (scale >= 0.2 && !saved) {
+        let exportCanvas = canvas;
+        if (scale < 1.0) {
+          exportCanvas = document.createElement("canvas");
+          exportCanvas.width = canvas.width * scale;
+          exportCanvas.height = canvas.height * scale;
+          const ctx = exportCanvas.getContext("2d");
+          ctx.drawImage(canvas, 0, 0, exportCanvas.width, exportCanvas.height);
+        }
+
+        let quality = 0.9;
+        while (quality > 0.3 && !saved) {
+          try {
+            const dataUrl = exportCanvas.toDataURL("image/jpeg", quality);
+            localStorage.setItem("bihar_warning_image", dataUrl);
+            saved = true;
+          } catch (e) {
+            if (e.name === "QuotaExceededError" || e.code === 22) {
+              quality -= 0.1;
+            } else {
+              throw e;
+            }
+          }
+        }
+        if (!saved) scale -= 0.2;
+      }
+
+      if (!saved) throw new Error("QuotaExceededError");
+
+      btn.innerHTML = '<i class="fas fa-check"></i> Synced!';
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+      }, 2000);
+    }
+  } catch (e) {
+    console.error(e);
+    if (e.name === "QuotaExceededError" || e.message === "QuotaExceededError") {
+      alert(
+        "Sync failed: Image size is too large for browser storage. Please clear old bulletins or browser cache.",
+      );
+    } else {
+      alert("Error syncing image.");
+    }
+  } finally {
+    if (btn.innerHTML.includes("Syncing")) {
+      btn.innerHTML = originalText;
+    }
+  }
+}
+window.syncToBulletin = syncToBulletin;

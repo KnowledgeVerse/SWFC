@@ -267,6 +267,31 @@
         animation: gradientBG 15s ease infinite;
         background-attachment: fixed;
       }
+      /* Grid View Styles */
+      .page.grid-view-active {
+        display: grid;
+        grid-template-columns: 1fr 1fr;
+        grid-template-rows: repeat(4, 1fr);
+        gap: 5px;
+        height: auto;
+        min-height: 100vh;
+        padding: 5px;
+      }
+      .page.grid-view-active .grid-item {
+        height: 300px;
+        border-width: 1px;
+      }
+      .page.grid-view-active .map-floating-header {
+        font-size: 1em;
+        padding: 2px 10px;
+        top: 2px;
+      }
+      .page.grid-view-active .legend-title {
+        font-size: 1.5em !important;
+      }
+      .page.grid-view-active .legend-item {
+        font-size: 14px !important;
+      }
     </style>
   </head>
   <body>
@@ -432,6 +457,28 @@
             title="Download All Maps as Images"
           >
             <i class="fas fa-images"></i> Download Images
+          </button>
+          <button
+            class="toggle-btn"
+            onclick="toggleGridView()"
+            title="Toggle Grid View"
+          >
+            <i class="fas fa-th"></i> Grid View
+          </button>
+          <button
+            class="toggle-btn"
+            onclick="downloadSingleImage()"
+            title="Download Single Grid Image"
+          >
+            <i class="fas fa-image"></i> Single Image
+          </button>
+          <button
+            class="toggle-btn"
+            onclick="syncToBulletin()"
+            title="Sync Image to Bulletin"
+            style="background-color: #17a2b8"
+          >
+            <i class="fas fa-sync"></i> Sync to Bulletin
           </button>
           <button
             class="toggle-btn"

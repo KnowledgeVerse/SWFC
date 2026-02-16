@@ -401,6 +401,21 @@
           </button>
           <button
             class="toggle-btn"
+            onclick="downloadSingleImage()"
+            title="Download Single Grid Image"
+          >
+            <i class="fas fa-image"></i> Single Image
+          </button>
+          <button
+            class="toggle-btn"
+            onclick="syncToBulletin()"
+            title="Sync Image to Bulletin"
+            style="background-color: #17a2b8"
+          >
+            <i class="fas fa-sync"></i> Sync to Bulletin
+          </button>
+          <button
+            class="toggle-btn"
             onclick="document.getElementById('bgColorInput').click()"
             title="Change Background Color"
           >
@@ -422,11 +437,11 @@
       </div>
 
       <div class="tab-container">
-        <button class="tab-btn active" onclick="switchTab('max')" id="tabMax">
-          Maximum Temperature
-        </button>
-        <button class="tab-btn" onclick="switchTab('min')" id="tabMin">
+        <button class="tab-btn active" onclick="switchTab('min')" id="tabMin">
           Minimum Temperature
+        </button>
+        <button class="tab-btn" onclick="switchTab('max')" id="tabMax">
+          Maximum Temperature
         </button>
       </div>
 

@@ -78,10 +78,9 @@
       /* Header Styling */
       thead tr:first-child th {
         background-color: #e6b07d;
-        font-size: 18px;
-        padding: 12px;
+        font-size: 16px;
+        padding: 8px;
         color: #000;
-        text-transform: uppercase;
       }
       thead tr:nth-child(2) th {
         background-color: #e6b07d;
@@ -97,21 +96,25 @@
         text-align: left;
         font-weight: bold;
         color: #000;
+        white-space: nowrap;
       }
 
       /* Max Temp (3) */
       tbody td:nth-child(3) {
         background-color: #ffff00;
+        font-weight: bold;
       }
 
       /* Min Temp (4) */
       tbody td:nth-child(4) {
         background-color: #dfe8c6;
+        font-weight: bold;
       }
 
       /* RH (5) */
       tbody td:nth-child(5) {
         background-color: #9fd0df;
+        font-weight: bold;
       }
 
       /* Rain (6) */
@@ -684,19 +687,26 @@
         const highestMax = maxVals.length ? Math.max(...maxVals) : null;
         const lowestMin = minVals.length ? Math.min(...minVals) : null;
 
+        const dateStrDots = dateStr.replace(/\//g, ".");
+
         let html = `
-            <table>
+            <table class="obs-table">
                 <thead>
                     <tr>
-                        <th colspan="6">Observed Temperature & Rainfall – 08:30 IST</th>
+                        <th colspan="6" style="padding: 8px;">
+                            <div style="display: flex; justify-content: space-between; align-items: center; font-size: 14px;">
+                                <span>Observed Temperature & Rainfall / 08:30 प्रक्षेपण</span>
+                                <span>दिनांक:- ${dateStrDots}</span>
+                            </div>
+                        </th>
                     </tr>
-                    <tr>
-                        <th>DISTRICT/जिला</th>
-                        <th>STATION/स्टेशन</th>
-                        <th>Max.Tem/ अधिकतम<br>तापमान(°C) observed on<br>${prevDateStr}</th>
-                        <th>Min.Temp/न्यूनतम<br>तापमान(°C) observed on<br>${dateStr}</th>
-                        <th>R/H (%) at 08:30 IST /<br>०८:३० पर सापेक्षिक आर्द्रता<br>${dateStr}</th>
-                        <th>24 Hrs Rainfall ending at 08:30 IST/<br>०८:३० पर दर्ज़ वर्षा (मिली मीटर)<br>${dateStr}</th>
+                    <tr style="font-size: 9px;">
+                        <th style="width: 25%; white-space: nowrap;">DISTRICT/जिला</th>
+                        <th style="width: 25%; white-space: nowrap;">STATION/स्टेशन</th>
+                        <th style="width: 12.5%;">Max.Tem/ अधिकतम<br>तापमान(°C) observed on<br>${prevDateStr}</th>
+                        <th style="width: 12.5%;">Min.Temp/न्यूनतम<br>तापमान(°C) observed on<br>${dateStr}</th>
+                        <th style="width: 12.5%;">R/H (%) at 08:30 IST /<br>०८:३० पर सापेक्षिक आर्द्रता<br>${dateStr}</th>
+                        <th style="width: 12.5%;">24 Hrs Rainfall ending at 08:30 IST/<br>०८:३० पर दर्ज़ वर्षा (मिली मीटर)<br>${dateStr}</th>
                     </tr>
                 </thead>
                 <tbody>

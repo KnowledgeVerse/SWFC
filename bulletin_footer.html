@@ -588,6 +588,76 @@
       let dutyOfficers = [];
       let issuedOfficers = [];
 
+      // Function to load officers from CSV
+      async function loadOfficersFromCSV() {
+        try {
+          // Adjust path for web (forward slashes)
+          // Added timestamp to prevent caching so you see changes if you update the file manually
+          const response = await fetch(
+            "IMD_Employee _Name/Employee_Name.csv?t=" + new Date().getTime(),
+          );
+          if (!response.ok) throw new Error("CSV file not found");
+          const text = await response.text();
+
+          const lines = text.split(/\r\n|\n/);
+          if (lines.length < 2) return; // No data
+
+          // Helper to parse CSV line handling quotes
+          const parseLine = (line) => {
+            const result = [];
+            let start = 0;
+            let inQuotes = false;
+            for (let i = 0; i < line.length; i++) {
+              if (line[i] === '"') {
+                inQuotes = !inQuotes;
+              } else if (line[i] === "," && !inQuotes) {
+                let field = line.substring(start, i).trim();
+                if (field.startsWith('"') && field.endsWith('"')) {
+                  field = field.substring(1, field.length - 1);
+                }
+                result.push(field);
+                start = i + 1;
+              }
+            }
+            let lastField = line.substring(start).trim();
+            if (lastField.startsWith('"') && lastField.endsWith('"')) {
+              lastField = lastField.substring(1, lastField.length - 1);
+            }
+            result.push(lastField);
+            return result;
+          };
+
+          const headers = parseLine(lines[0]);
+          const dutyIdx = headers.findIndex(
+            (h) =>
+              h.trim().toLowerCase() === "duty officer" ||
+              h.toLowerCase().includes("duty officer"),
+          );
+          const issuedIdx = headers.findIndex((h) =>
+            h.trim().toLowerCase().includes("forecast issued by"),
+          );
+
+          const newDuty = [];
+          const newIssued = [];
+
+          for (let i = 1; i < lines.length; i++) {
+            if (!lines[i].trim()) continue;
+            const row = parseLine(lines[i]);
+            if (dutyIdx !== -1 && row[dutyIdx]) newDuty.push(row[dutyIdx]);
+            if (issuedIdx !== -1 && row[issuedIdx])
+              newIssued.push(row[issuedIdx]);
+          }
+
+          if (newDuty.length > 0) dutyOfficers = newDuty;
+          if (newIssued.length > 0) issuedOfficers = newIssued;
+          populateDropdowns();
+        } catch (e) {
+          console.warn("CSV Load Error (using defaults):", e);
+          loadOfficers(); // Fallback
+          populateDropdowns();
+        }
+      }
+
       function loadOfficers() {
         const storedDuty = localStorage.getItem("bihar_duty_officers");
         const storedIssued = localStorage.getItem("bihar_issued_officers");
@@ -660,6 +730,12 @@
         const select = document.getElementById(selectId);
         const display = document.getElementById(displayId);
         display.textContent = select.value;
+
+        if (selectId === "dutyOfficerSelect") {
+          localStorage.setItem("bihar_selected_duty_officer", select.value);
+        } else if (selectId === "issuedBySelect") {
+          localStorage.setItem("bihar_selected_issued_officer", select.value);
+        }
       }
 
       function addOfficer(type) {
@@ -701,8 +777,7 @@
 
       // Initialize
       document.addEventListener("DOMContentLoaded", () => {
-        loadOfficers();
-        populateDropdowns();
+        loadOfficersFromCSV();
       });
     </script>
   </body>

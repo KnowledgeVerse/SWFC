@@ -3,7 +3,7 @@
 let weeklyData = { max: [], min: [] };
 let baseDate = new Date();
 let maps = [];
-let currentTab = "max"; // 'max' or 'min'
+let currentTab = "min"; // 'max' or 'min'
 let currentSeason = "Summer"; // Default
 let isZoomEnabled = false;
 let isSyncEnabled = true;
@@ -167,13 +167,13 @@ function updateLegendPage() {
     currentTab === "max" ? "Maximum Temperature" : "Minimum Temperature";
   const scales = getScaleData(currentSeason, currentTab);
 
-  let legendHtml = `<div class="legend-title" style="font-size:4em; padding:15px; text-align:center; white-space:nowrap;">LEGEND / संकेत</div>`;
+  let legendHtml = `<div class="legend-title" style="font-size:3em; padding:10px; text-align:center; white-space:nowrap; margin-top:10px;">LEGEND / संकेत</div>`;
 
-  legendHtml += `<div class="legend-section" style="padding:20px 30px; display:flex; flex-direction:column; justify-content:flex-start; flex-grow:1;"><strong style="font-size: 3em; margin-bottom: 40px; display:block; text-align:center; white-space:nowrap;">${typeText} (${currentSeason})</strong><div style="display:grid; grid-template-columns: max-content max-content; justify-content: center; gap: 30px 200px; align-items: center;">`;
+  legendHtml += `<div class="legend-section" style="padding:10px 30px; display:flex; flex-direction:column; justify-content:center; flex-grow:1; height:100%; overflow:hidden;"><strong style="font-size: 2.5em; margin-bottom: 20px; display:block; text-align:center; white-space:nowrap;">${typeText} (${currentSeason})</strong><div style="display:grid; grid-template-columns: max-content max-content; justify-content: center; gap: 15px 100px; align-items: center; align-content: center;">`;
 
   // Reverse to show highest on top
   [...scales].reverse().forEach((l) => {
-    legendHtml += `<div class="legend-item" style="font-size:45px; display:flex; align-items:center;"><div class="color-box" style="width:80px; height:80px; background:${l.color}; border:1px solid #333; margin-right: 25px; flex-shrink:0;"></div><span style="white-space:nowrap;">${l.label} °C</span></div>`;
+    legendHtml += `<div class="legend-item" style="font-size:35px; display:flex; align-items:center;"><div class="color-box" style="width:60px; height:60px; background:${l.color}; border:1px solid #333; margin-right: 20px; flex-shrink:0;"></div><span style="white-space:nowrap;">${l.label} °C</span></div>`;
   });
   legendHtml += `</div></div>`;
 
@@ -689,3 +689,134 @@ function getDistrictRegionColor(id) {
   if (regions.se.includes(id)) return "#795548";
   return "#3388ff";
 }
+
+function loadImage(src) {
+  return new Promise((resolve, reject) => {
+    const img = new Image();
+    img.onload = () => resolve(img);
+    img.onerror = reject;
+    img.src = src;
+  });
+}
+
+async function generateCompositeImage() {
+  const items = document.querySelectorAll(".grid-item");
+  if (items.length === 0) return null;
+
+  // Capture Header
+  const headerText = document.getElementById("mainHeaderTitle").innerText;
+  const tempHeader = document.createElement("div");
+  tempHeader.style.cssText =
+    "position:fixed; top:0; left:0; width:1600px; background:white; padding:20px; text-align:center; font-family:'Noto Sans Devanagari', sans-serif; font-weight:bold; font-size:32px; color:#000; z-index:-9999;";
+  tempHeader.innerText = headerText;
+  document.body.appendChild(tempHeader);
+
+  let headerDataUrl;
+  try {
+    headerDataUrl = await domtoimage.toPng(tempHeader, { bgcolor: "#ffffff" });
+  } catch (e) {
+    console.error("Header capture failed", e);
+    document.body.removeChild(tempHeader);
+    return null;
+  }
+  document.body.removeChild(tempHeader);
+
+  const headerImg = await loadImage(headerDataUrl);
+
+  // Capture Grid Items
+  const itemImages = [];
+  for (let i = 0; i < items.length; i++) {
+    const dataUrl = await domtoimage.toPng(items[i], { bgcolor: "#ffffff" });
+    itemImages.push(await loadImage(dataUrl));
+  }
+
+  // Layout Calculations (2 Columns)
+  const colCount = 2;
+  const padding = 20;
+  const itemWidth = itemImages[0].width;
+  const itemHeight = itemImages[0].height;
+
+  const canvasWidth = itemWidth * colCount + padding * (colCount + 1);
+  const rowCount = Math.ceil(itemImages.length / colCount);
+  const gridHeight = itemHeight * rowCount + padding * (rowCount + 1);
+  const totalHeight = headerImg.height + gridHeight;
+
+  const canvas = document.createElement("canvas");
+  canvas.width = canvasWidth;
+  canvas.height = totalHeight;
+  const ctx = canvas.getContext("2d");
+
+  // Background
+  ctx.fillStyle = "#ffffff";
+  ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+  // Draw Header (Centered)
+  let hWidth = headerImg.width;
+  let hHeight = headerImg.height;
+  if (hWidth > canvasWidth) {
+    const scale = canvasWidth / hWidth;
+    hWidth = canvasWidth;
+    hHeight = hHeight * scale;
+  }
+  const headerX = (canvasWidth - hWidth) / 2;
+  ctx.drawImage(headerImg, headerX, 0, hWidth, hHeight);
+
+  let currentY = hHeight + padding;
+
+  for (let i = 0; i < itemImages.length; i++) {
+    const col = i % colCount;
+    const row = Math.floor(i / colCount);
+    const x = padding + col * (itemWidth + padding);
+    const y = currentY + row * (itemHeight + padding);
+    ctx.drawImage(itemImages[i], x, y, itemWidth, itemHeight);
+  }
+
+  return canvas.toDataURL("image/png");
+}
+
+async function downloadSingleImage() {
+  const btn = document.querySelector("button[onclick='downloadSingleImage()']");
+  const originalText = btn.innerHTML;
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Generating...';
+  try {
+    const dataUrl = await generateCompositeImage();
+    if (dataUrl) {
+      const link = document.createElement("a");
+      const typeStr = currentTab === "max" ? "Maximum" : "Minimum";
+      link.download = `Temperature_Forecast_${typeStr}_Grid_${new Date().toISOString().split("T")[0]}.png`;
+      link.href = dataUrl;
+      link.click();
+    }
+  } catch (e) {
+    console.error(e);
+    alert("Error generating image.");
+  } finally {
+    btn.innerHTML = originalText;
+  }
+}
+window.downloadSingleImage = downloadSingleImage;
+
+async function syncToBulletin() {
+  const btn = document.querySelector("button[onclick='syncToBulletin()']");
+  const originalText = '<i class="fas fa-sync"></i> Sync to Bulletin';
+  btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Syncing...';
+  try {
+    const dataUrl = await generateCompositeImage();
+    if (dataUrl) {
+      const key =
+        currentTab === "max"
+          ? "bihar_max_temp_forecast_image"
+          : "bihar_min_temp_forecast_image";
+      localStorage.setItem(key, dataUrl);
+
+      btn.innerHTML = '<i class="fas fa-check"></i> Synced!';
+      setTimeout(() => {
+        btn.innerHTML = originalText;
+      }, 2000);
+    }
+  } catch (e) {
+    console.error(e);
+    alert("Error syncing image.");
+  }
+}
+window.syncToBulletin = syncToBulletin;
