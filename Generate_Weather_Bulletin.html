@@ -866,6 +866,24 @@
           </select>
         </div>
 
+        <!-- Template Controls -->
+        <div class="control-group">
+          <button
+            class="export-btn"
+            onclick="saveTemplate()"
+            style="background-color: #17a2b8"
+          >
+            <i class="fas fa-save"></i> Save Template
+          </button>
+          <button
+            class="export-btn"
+            onclick="loadTemplate()"
+            style="background-color: #17a2b8"
+          >
+            <i class="fas fa-folder-open"></i> Load Template
+          </button>
+        </div>
+
         <!-- Export Buttons -->
         <div
           class="control-group"
@@ -1369,6 +1387,81 @@
         }
       }
 
+      // --- Template Logic ---
+      function saveTemplate() {
+        try {
+          const template = {
+            date: document.getElementById("manualDateInput").value,
+            timeMode: document.querySelector('input[name="timeMode"]:checked')
+              .value,
+            manualTime: document.getElementById("manualTimeInput").value,
+            pageSize: document.getElementById("pageSizeSelect").value,
+            content: document.getElementById("summaryContent").innerHTML,
+          };
+          localStorage.setItem(
+            "bihar_bulletin_template",
+            JSON.stringify(template),
+          );
+          alert("Template saved successfully!");
+        } catch (e) {
+          console.error(e);
+          if (e.name === "QuotaExceededError") {
+            alert(
+              "Storage full! Template could not be saved. Try clearing old data or using smaller images.",
+            );
+          } else {
+            alert("Error saving template.");
+          }
+        }
+      }
+
+      function loadTemplate() {
+        const saved = localStorage.getItem("bihar_bulletin_template");
+        if (!saved) {
+          alert("No saved template found.");
+          return;
+        }
+
+        if (
+          !confirm("Loading template will overwrite current content. Continue?")
+        )
+          return;
+
+        try {
+          const template = JSON.parse(saved);
+
+          if (template.date) {
+            document.getElementById("manualDateInput").value = template.date;
+            updateManualDate();
+          }
+          if (template.timeMode) {
+            const radios = document.getElementsByName("timeMode");
+            for (const r of radios) {
+              if (r.value === template.timeMode) r.checked = true;
+            }
+            toggleTimeMode();
+          }
+          if (template.manualTime) {
+            document.getElementById("manualTimeInput").value =
+              template.manualTime;
+            updateManualTime();
+          }
+          if (template.pageSize) {
+            document.getElementById("pageSizeSelect").value = template.pageSize;
+            updatePageSize();
+          }
+          if (template.content) {
+            document.getElementById("summaryContent").innerHTML =
+              template.content;
+          }
+
+          alert("Template loaded successfully!");
+        } catch (e) {
+          console.error(e);
+          alert("Error loading template.");
+        }
+      }
+
       // --- Export Logic ---
 
       function getFormattedDate() {
@@ -1673,11 +1766,35 @@
         }
       }
 
-      function exportBulletinWord() {
-        exportToWord(
-          document.querySelector(".container").innerHTML,
-          `Weather_Bulletin_${getFormattedDate()}.doc`,
+      async function exportBulletinWord() {
+        const btn = document.querySelector(
+          "button[onclick='exportBulletinWord()']",
         );
+        const originalText = btn.innerHTML;
+        btn.innerHTML = '<i class="fas fa-spinner fa-spin"></i> Exporting...';
+
+        try {
+          const pages = await getBulletinPages();
+          let htmlContent = "";
+
+          pages.forEach((page, index) => {
+            htmlContent += page.outerHTML;
+            if (index < pages.length - 1) {
+              htmlContent +=
+                "<br clear=all style='mso-special-character:line-break;page-break-before:always'>";
+            }
+          });
+
+          exportToWord(
+            htmlContent,
+            `Weather_Bulletin_${getFormattedDate()}.doc`,
+          );
+        } catch (e) {
+          console.error(e);
+          alert("Export failed");
+        } finally {
+          btn.innerHTML = originalText;
+        }
       }
 
       function exportBulletinExcel() {
@@ -1689,8 +1806,26 @@
 
       // Helper Export Functions (Reused)
       function exportToWord(html, filename) {
+        let styles = "";
+        document.querySelectorAll("style").forEach((style) => {
+          styles += style.innerHTML;
+        });
+
+        // Add Word-specific Page Setup (A4 Size + Margins)
+        styles += `
+            @page {
+                size: A4;
+                margin: 1.0cm;
+            }
+            body { font-family: Arial, sans-serif; }
+            table { width: 100%; border-collapse: collapse; }
+            td, th { border: 1px solid black; padding: 5px; }
+        `;
+
         const header =
-          "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export<\/title><\/head><body>";
+          "<html xmlns:o='urn:schemas-microsoft-com:office:office' xmlns:w='urn:schemas-microsoft-com:office:word' xmlns='http://www.w3.org/TR/REC-html40'><head><meta charset='utf-8'><title>Export<\/title><style>" +
+          styles +
+          "</style><\/head><body>";
         const footer = "<\/body><\/html>";
         const sourceHTML = header + html + footer;
         const source =
