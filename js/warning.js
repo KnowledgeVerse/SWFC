@@ -586,28 +586,36 @@ function setAllMapsBackground(color) {
 window.setAllMapsBackground = setAllMapsBackground;
 
 function loadShapefile() {
-  const basePath = "data/Bihar_Districts_Shapefile/Bihar";
+  const candidates = [
+    "data/Bihar_Districts_Shapefile/Bihar",
+    "data/Bihar_Districts_Shapefile/bihar",
+    "Data/Bihar_Districts_Shapefile/Bihar",
+    "Data/Bihar_Districts_Shapefile/bihar",
+  ];
 
-  const fetchWithFallback = (ext) => {
-    const originalPath = basePath + ext;
-    const fallbackPath = "data/Bihar_Districts_Shapefile/bihar" + ext;
-    return fetch(originalPath).then((res) => {
-      if (res.ok) return res;
-      return fetch(fallbackPath).then((res2) => {
-        if (res2.ok) return res2;
-        throw new Error(`File not found: ${originalPath}`);
-      });
-    });
+  const tryLoad = async () => {
+    for (const base of candidates) {
+      try {
+        const shpRes = await fetch(base + ".shp");
+        if (shpRes.ok) {
+          const shpBuffer = await shpRes.arrayBuffer();
+          const dbfRes = await fetch(base + ".dbf");
+          if (!dbfRes.ok) continue;
+          const dbfBuffer = await dbfRes.arrayBuffer();
+          let prjStr = null;
+          try {
+            const prjRes = await fetch(base + ".prj");
+            if (prjRes.ok) prjStr = await prjRes.text();
+          } catch (e) {}
+          return { shpBuffer, dbfBuffer, prjStr };
+        }
+      } catch (e) {}
+    }
+    throw new Error("Shapefile not found in any candidate path.");
   };
 
-  Promise.all([
-    fetchWithFallback(".shp").then((r) => r.arrayBuffer()),
-    fetchWithFallback(".dbf").then((r) => r.arrayBuffer()),
-    fetchWithFallback(".prj")
-      .then((r) => r.text())
-      .catch(() => null),
-  ])
-    .then(([shpBuffer, dbfBuffer, prjStr]) => {
+  tryLoad()
+    .then(({ shpBuffer, dbfBuffer, prjStr }) => {
       const geojson = shp.combine([
         shp.parseShp(shpBuffer, prjStr || undefined),
         shp.parseDbf(dbfBuffer),
