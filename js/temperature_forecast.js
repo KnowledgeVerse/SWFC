@@ -14,7 +14,7 @@ const tileLayerUrls = {
   street: "https://{s}.tile.openstreetmap.org/{z}/{x}/{y}.png",
   satellite:
     "https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}",
-  hybrid: "http://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}",
+  hybrid: "https://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}",
 };
 
 document.addEventListener("DOMContentLoaded", init);
@@ -367,7 +367,13 @@ function loadShapefile() {
       }, 500);
     })
     .catch((e) => {
-      console.error("Shapefile load error", e);
+      console.error(
+        "Shapefile load error. Ensure 'data' folder exists and paths match case-sensitively on GitHub.",
+        e,
+      );
+      alert(
+        "Map Shapefile failed to load. Switching to Street View. Check console for details.",
+      );
       setAllMapsLayer("street"); // Fallback
     });
 }
