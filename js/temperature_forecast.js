@@ -37,8 +37,8 @@ function init() {
   }
 
   // Ensure arrays exist
-  if (!weeklyData.max) weeklyData.max = Array(7).fill({});
-  if (!weeklyData.min) weeklyData.min = Array(7).fill({});
+  if (!weeklyData.max) weeklyData.max = Array.from({ length: 7 }, () => ({}));
+  if (!weeklyData.min) weeklyData.min = Array.from({ length: 7 }, () => ({}));
 
   updateHeader();
   renderGrid();
@@ -347,6 +347,8 @@ function loadShapefile() {
     "data/Bihar_Districts_Shapefile/bihar",
     "Data/Bihar_Districts_Shapefile/Bihar",
     "Data/Bihar_Districts_Shapefile/bihar",
+    "data/bihar_districts_shapefile/bihar",
+    "data/bihar_districts_shapefile/Bihar",
   ];
 
   const tryLoad = async () => {
@@ -386,9 +388,12 @@ function loadShapefile() {
     })
     .catch((e) => {
       console.error("Shapefile load error:", e);
-      alert(
-        "Map Shapefile failed to load. Switching to Street View. Check console for details.",
+      // Only alert if it's a critical failure preventing usage
+      console.warn(
+        "Map Shapefile failed to load. Switching to Street View. Error: " +
+          e.message,
       );
+      // alert("Map Shapefile failed to load. Error: " + e.message); // Uncomment for debugging
       setAllMapsLayer("street"); // Fallback
     });
 }
@@ -421,7 +426,7 @@ function addGeoJsonToMap(map, geojson, index) {
 
 function getFeatureStyle(oid, dayIndex) {
   const dataArr = currentTab === "max" ? weeklyData.max : weeklyData.min;
-  const distData = dataArr[dayIndex][oid];
+  const distData = dataArr[dayIndex] ? dataArr[dayIndex][oid] : null;
 
   let fillColor = getDistrictRegionColor(oid); // Default to region color
   let fillOpacity = 0.2;
