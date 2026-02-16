@@ -342,16 +342,24 @@ function loadShapefile() {
     return;
   }
 
+  const fetchWithFallback = (ext) => {
+    const originalPath = basePath + ext;
+    const fallbackPath = "data/Bihar_Districts_Shapefile/bihar" + ext;
+    return fetch(originalPath).then((res) => {
+      if (res.ok) return res;
+      return fetch(fallbackPath).then((res2) => {
+        if (res2.ok) return res2;
+        throw new Error(`File not found: ${originalPath}`);
+      });
+    });
+  };
+
   Promise.all([
-    fetch(basePath + ".shp").then((r) => {
-      if (!r.ok) throw new Error("SHP file not found");
-      return r.arrayBuffer();
-    }),
-    fetch(basePath + ".dbf").then((r) => {
-      if (!r.ok) throw new Error("DBF file not found");
-      return r.arrayBuffer();
-    }),
-    fetch(basePath + ".prj").then((r) => (r.ok ? r.text() : null)),
+    fetchWithFallback(".shp").then((r) => r.arrayBuffer()),
+    fetchWithFallback(".dbf").then((r) => r.arrayBuffer()),
+    fetchWithFallback(".prj")
+      .then((r) => r.text())
+      .catch(() => null),
   ])
     .then(([shpBuffer, dbfBuffer, prjStr]) => {
       const geojson = shp.combine([
