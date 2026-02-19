@@ -15,6 +15,11 @@
       rel="stylesheet"
       href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css"
     />
+    <!-- TinyMCE CDN -->
+    <script
+      src="https://cdnjs.cloudflare.com/ajax/libs/tinymce/6.8.2/tinymce.min.js"
+      referrerpolicy="origin"
+    ></script>
     <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
     <script src="https://unpkg.com/shpjs@latest/dist/shp.js"></script>
     <style>
@@ -25,6 +30,10 @@
         --header-bg: #fff;
         --border-color: #000;
         --font-family: "Arial", sans-serif;
+        --page-margin-top: 20px;
+        --page-margin-bottom: 20px;
+        --page-margin-left: 40px;
+        --page-margin-right: 40px;
       }
 
       body {
@@ -36,10 +45,32 @@
       }
 
       .container {
-        max-width: 1000px;
+        width: 210mm; /* Fixed A4 width for WYSIWYG */
         margin: 0 auto;
         background: var(--header-bg);
+        padding: var(--page-margin-top) var(--page-margin-right)
+          var(--page-margin-bottom) var(--page-margin-left);
+        box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
+        border: 1px solid #ddd;
+        min-height: 297mm; /* A4 Height */
+        position: relative;
+      }
+
+      /* Page View Mode Styles */
+      .container.page-view-mode {
+        padding: 0;
+        background: transparent;
+        box-shadow: none;
+        border: none;
+      }
+
+      .container.page-view-mode .page-segment {
+        background: white;
+        width: 100%;
+        max-width: 1000px; /* Match container max-width */
+        width: 210mm;
         padding: 20px 40px;
+        margin-bottom: 20px;
         box-shadow: 0 0 15px rgba(0, 0, 0, 0.1);
         border: 1px solid #ddd;
       }
@@ -177,13 +208,33 @@
       }
 
       /* Sticky Wrapper */
-      .sticky-wrapper {
+      #topRibbon {
         position: sticky;
         top: 0;
         z-index: 1000;
         background: var(--bg-color);
         padding-bottom: 10px;
         border-bottom: 1px solid #ccc;
+        transition: transform 0.3s ease;
+      }
+
+      #topRibbon.collapsed {
+        transform: translateY(-100%);
+      }
+
+      .ribbon-toggle-btn {
+        position: absolute;
+        bottom: -25px;
+        left: 20px;
+        background: #007bff;
+        color: white;
+        border: none;
+        padding: 5px 15px;
+        border-radius: 0 0 8px 8px;
+        cursor: pointer;
+        font-size: 12px;
+        box-shadow: 0 2px 5px rgba(0, 0, 0, 0.2);
+        z-index: 1001;
       }
 
       /* Print Styles */
@@ -202,8 +253,9 @@
         .controls {
           display: none;
         }
-        .sticky-wrapper {
+        #topRibbon {
           position: static;
+          display: none;
         }
         .nav-toolbar {
           display: none !important;
@@ -212,6 +264,10 @@
           border: none !important;
         }
         #uploadPanel {
+          display: none !important;
+        }
+        /* Hide TinyMCE UI in Print */
+        .tox-tinymce-inline {
           display: none !important;
         }
       }
@@ -248,6 +304,15 @@
         padding: 5px;
         text-align: center;
         vertical-align: middle;
+        word-wrap: break-word; /* Ensure text wraps */
+        overflow-wrap: break-word;
+      }
+      /* Force black borders on all tables */
+      table,
+      th,
+      td {
+        border: 1px solid #000 !important;
+        border-collapse: collapse !important;
       }
       .forecast-table th {
         background-color: #0056b3;
@@ -292,6 +357,8 @@
         padding: 5px;
         text-align: left;
         vertical-align: top;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
       }
       .imd-table th {
         background-color: #0056b3;
@@ -332,12 +399,15 @@
         font-size: 12px;
         background: white;
         margin-top: 10px;
+        table-layout: fixed; /* Fix table width */
       }
       .gen-table th,
       .gen-table td {
         border: 1px solid #000;
         padding: 8px;
         text-align: center;
+        word-wrap: break-word;
+        overflow-wrap: break-word;
       }
       .gen-table th {
         background-color: #e0e0e0;
@@ -459,28 +529,30 @@
       /* Visual Page Break for Screen Preview */
       @media screen {
         [style*="page-break-before: always"]::before {
-          content: "✂ PAGE BREAK (New Page Starts Here) ✂";
+          content: "";
           display: block;
-          text-align: center;
-          color: #dc3545;
-          font-size: 12px;
-          font-weight: bold;
-          border-top: 2px dashed #dc3545;
-          margin: 20px 0 10px 0;
-          padding-top: 5px;
-          background-color: rgba(220, 53, 69, 0.05);
+          height: 20px;
+          background: #f4f4f4; /* Match body bg to create gap */
+          border-top: 1px dashed #ccc;
+          border-bottom: 1px dashed #ccc;
+          margin: 20px -40px; /* Negative margin to stretch across padding */
         }
         [style*="page-break-after: always"]::after {
-          content: "✂ PAGE BREAK (Page Ends Here) ✂";
+          content: "";
           display: block;
-          text-align: center;
-          color: #dc3545;
-          font-size: 12px;
-          font-weight: bold;
-          border-bottom: 2px dashed #dc3545;
-          margin: 10px 0 20px 0;
-          padding-bottom: 5px;
-          background-color: rgba(220, 53, 69, 0.05);
+          height: 20px;
+          background: #f4f4f4;
+          border-top: 1px dashed #ccc;
+          border-bottom: 1px dashed #ccc;
+          margin: 20px -40px;
+        }
+
+        /* Hide breaks in Page View Mode as we handle them differently or keep them as gaps */
+        .container.page-view-mode [style*="page-break-before: always"]::before,
+        .container.page-view-mode [style*="page-break-after: always"]::after {
+          background: #525659; /* Darker gap */
+          height: 30px;
+          border: none;
         }
       }
 
@@ -716,10 +788,33 @@
         color: blue !important;
         font-weight: 900 !important;
       }
+
+      /* TinyMCE Inline Fixes */
+      .mce-content-body {
+        outline: none !important;
+      }
     </style>
   </head>
   <body>
-    <div class="sticky-wrapper">
+    <div id="topRibbon">
+      <button
+        class="ribbon-toggle-btn"
+        onclick="toggleRibbon()"
+        title="Show/Hide Ribbon"
+      >
+        <i class="fas fa-chevron-up" id="ribbonIcon"></i> Hide Ribbon
+      </button>
+
+      <!-- Fixed Toolbar Container for TinyMCE -->
+      <div
+        id="tiny-toolbar"
+        style="
+          background: #f0f0f0;
+          border-bottom: 1px solid #ccc;
+          min-height: 40px;
+        "
+      ></div>
+
       <div
         class="nav-toolbar"
         style="
@@ -881,6 +976,13 @@
             style="background-color: #17a2b8"
           >
             <i class="fas fa-folder-open"></i> Load Template
+          </button>
+          <button
+            class="export-btn"
+            onclick="openMarginModal()"
+            style="background-color: #007bff"
+          >
+            <i class="fas fa-ruler-combined"></i> Margins
           </button>
         </div>
 
@@ -1054,39 +1156,138 @@
       </div>
     </div>
 
-    <div class="container">
+    <!-- Margin Setup Modal -->
+    <div
+      id="marginModal"
+      style="
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0, 0, 0, 0.5);
+        z-index: 2001;
+        justify-content: center;
+        align-items: center;
+      "
+    >
+      <div
+        style="
+          background: white;
+          padding: 20px;
+          border-radius: 8px;
+          width: 300px;
+          box-shadow: 0 5px 15px rgba(0, 0, 0, 0.3);
+        "
+      >
+        <h5
+          style="
+            margin-top: 0;
+            border-bottom: 1px solid #eee;
+            padding-bottom: 10px;
+          "
+        >
+          Page Margins (px)
+        </h5>
+        <div
+          style="
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 10px;
+            margin-bottom: 15px;
+          "
+        >
+          <div>
+            <label style="font-size: 12px; font-weight: bold">Top</label>
+            <input
+              type="number"
+              id="marginTopInput"
+              class="form-control"
+              style="width: 100%; padding: 5px"
+              value="20"
+            />
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: bold">Bottom</label>
+            <input
+              type="number"
+              id="marginBottomInput"
+              class="form-control"
+              style="width: 100%; padding: 5px"
+              value="20"
+            />
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: bold">Left</label>
+            <input
+              type="number"
+              id="marginLeftInput"
+              class="form-control"
+              style="width: 100%; padding: 5px"
+              value="40"
+            />
+          </div>
+          <div>
+            <label style="font-size: 12px; font-weight: bold">Right</label>
+            <input
+              type="number"
+              id="marginRightInput"
+              class="form-control"
+              style="width: 100%; padding: 5px"
+              value="40"
+            />
+          </div>
+        </div>
+        <div style="text-align: right">
+          <button
+            class="export-btn"
+            style="background-color: #6c757d; display: inline-block"
+            onclick="closeMarginModal()"
+          >
+            Cancel
+          </button>
+          <button
+            class="export-btn"
+            style="background-color: #007bff; display: inline-block"
+            onclick="saveMargins()"
+          >
+            Save & Apply
+          </button>
+        </div>
+        <div style="margin-top: 10px; font-size: 11px; color: #666">
+          * Adjust values to fit content.
+        </div>
+      </div>
+    </div>
+
+    <div class="container" id="mainContainer">
       <!-- Header Section -->
       <div class="header-top">
         <div class="logo-container" style="justify-content: flex-start">
-          <!-- Placeholder Left Logo -->
           <img
-            src="left_logo.png"
-            alt="Gov Logo"
+            src="assets/logo.png"
             class="logo"
+            alt="Gov Logo"
             onerror="this.src = 'assets/logo.png'"
           />
         </div>
-
         <div class="header-text">
           <div>भारत सरकार</div>
           <div>पृथ्वी विज्ञान मंत्रालय</div>
           <div>भारत मौसम विज्ञान विभाग</div>
           <div>मौसम विज्ञान केंद्र, पटना</div>
           <div>पटना – 800002</div>
-          <div style="font-weight: normal; font-size: 14px">
-            Website: https://mausam.imd.gov.in/patna
-          </div>
-          <div style="font-weight: normal; font-size: 14px">
-            ई-मेल: mc.patna@imd.gov.in
+          <div style="font-weight: normal; font-size: 12px">
+            Website: https://mausam.imd.gov.in/patna | ई-मेल:
+            mc.patna@imd.gov.in
           </div>
         </div>
-
         <div class="logo-container" style="justify-content: flex-end">
-          <!-- Placeholder Right Logo -->
           <img
-            src="right_logo.png"
-            alt="IMD Logo"
+            src="assets/IMD_150_Year_Logo.png"
             class="logo"
+            alt="IMD Logo"
             onerror="this.src = 'assets/IMD_150_Year_Logo.png'"
           />
         </div>
@@ -1118,6 +1319,44 @@
     </div>
 
     <script>
+      // --- TinyMCE Initialization ---
+      tinymce.init({
+        selector: "#summaryContent",
+        inline: true, // Inline mode to preserve document structure
+        fixed_toolbar_container: "#tiny-toolbar", // Fix toolbar to top div
+        menubar: true, // Enable menubar for full Word-like experience
+        plugins: [
+          "advlist",
+          "autolink",
+          "lists",
+          "link",
+          "image",
+          "charmap",
+          "preview",
+          "anchor",
+          "searchreplace",
+          "visualblocks",
+          "code",
+          "fullscreen",
+          "insertdatetime",
+          "media",
+          "table",
+          "help",
+          "wordcount",
+          "emoticons",
+        ],
+        toolbar:
+          "undo redo | fontfamily fontsize | bold italic underline strikethrough | forecolor backcolor | alignleft aligncenter alignright alignjustify | bullist numlist outdent indent | removeformat | table",
+        font_family_formats:
+          "Arial=arial,helvetica,sans-serif; Courier New=courier new,courier,monospace; AkrutiKndPadmini=AkrutiKndPadmini; Times New Roman=times new roman,times,serif; Verdana=verdana,geneva,sans-serif",
+        content_style: `
+            body { font-family: 'Arial', sans-serif; font-size: 14px; }
+            table { width: 100% !important; table-layout: fixed; border-collapse: collapse; }
+            td, th { border: 1px solid #000; padding: 5px; word-wrap: break-word; }
+            img { max-width: 100%; height: auto; }
+        `,
+      });
+
       // --- Date Logic ---
       function loadDate() {
         // Try to get date from localStorage (set by index.html)
@@ -1381,10 +1620,81 @@
           ".container:not(.export-page)",
         );
         if (size === "legal") {
-          container.style.maxWidth = "1029px"; // 216/210 * 1000 approx
+          container.style.width = "216mm";
         } else {
-          container.style.maxWidth = "1000px";
+          container.style.width = "210mm";
         }
+      }
+
+      // --- Ribbon Toggle ---
+      function toggleRibbon() {
+        const ribbon = document.getElementById("topRibbon");
+        const icon = document.getElementById("ribbonIcon");
+        const btn = document.querySelector(".ribbon-toggle-btn");
+
+        ribbon.classList.toggle("collapsed");
+
+        if (ribbon.classList.contains("collapsed")) {
+          icon.className = "fas fa-chevron-down";
+          btn.innerHTML = '<i class="fas fa-chevron-down"></i> Show Ribbon';
+        } else {
+          icon.className = "fas fa-chevron-up";
+          btn.innerHTML = '<i class="fas fa-chevron-up"></i> Hide Ribbon';
+        }
+      }
+
+      // --- Margin Logic ---
+      function openMarginModal() {
+        const root = document.documentElement;
+        const getVal = (prop) =>
+          parseInt(getComputedStyle(root).getPropertyValue(prop)) || 20;
+
+        document.getElementById("marginTopInput").value =
+          getVal("--page-margin-top");
+        document.getElementById("marginBottomInput").value = getVal(
+          "--page-margin-bottom",
+        );
+        document.getElementById("marginLeftInput").value =
+          getVal("--page-margin-left");
+        document.getElementById("marginRightInput").value = getVal(
+          "--page-margin-right",
+        );
+
+        document.getElementById("marginModal").style.display = "flex";
+      }
+
+      function closeMarginModal() {
+        document.getElementById("marginModal").style.display = "none";
+      }
+
+      function saveMargins() {
+        const top = document.getElementById("marginTopInput").value;
+        const bottom = document.getElementById("marginBottomInput").value;
+        const left = document.getElementById("marginLeftInput").value;
+        const right = document.getElementById("marginRightInput").value;
+
+        const margins = { top, bottom, left, right };
+        localStorage.setItem("bihar_bulletin_margins", JSON.stringify(margins));
+        applyMargins(margins);
+        closeMarginModal();
+      }
+
+      function applyMargins(margins) {
+        const root = document.documentElement;
+        if (margins.top)
+          root.style.setProperty("--page-margin-top", margins.top + "px");
+        if (margins.bottom)
+          root.style.setProperty("--page-margin-bottom", margins.bottom + "px");
+        if (margins.left)
+          root.style.setProperty("--page-margin-left", margins.left + "px");
+        if (margins.right)
+          root.style.setProperty("--page-margin-right", margins.right + "px");
+      }
+
+      // Load margins on init
+      const savedMargins = localStorage.getItem("bihar_bulletin_margins");
+      if (savedMargins) {
+        applyMargins(JSON.parse(savedMargins));
       }
 
       // --- Template Logic ---
@@ -1396,7 +1706,9 @@
               .value,
             manualTime: document.getElementById("manualTimeInput").value,
             pageSize: document.getElementById("pageSizeSelect").value,
-            content: document.getElementById("summaryContent").innerHTML,
+            content: tinymce.get("summaryContent")
+              ? tinymce.get("summaryContent").getContent()
+              : document.getElementById("summaryContent").innerHTML,
           };
           localStorage.setItem(
             "bihar_bulletin_template",
@@ -1422,11 +1734,6 @@
           return;
         }
 
-        if (
-          !confirm("Loading template will overwrite current content. Continue?")
-        )
-          return;
-
         try {
           const template = JSON.parse(saved);
 
@@ -1440,19 +1747,15 @@
               if (r.value === template.timeMode) r.checked = true;
             }
             toggleTimeMode();
-          }
-          if (template.manualTime) {
-            document.getElementById("manualTimeInput").value =
-              template.manualTime;
-            updateManualTime();
-          }
-          if (template.pageSize) {
-            document.getElementById("pageSizeSelect").value = template.pageSize;
             updatePageSize();
           }
           if (template.content) {
-            document.getElementById("summaryContent").innerHTML =
-              template.content;
+            if (tinymce.get("summaryContent")) {
+              tinymce.get("summaryContent").setContent(template.content);
+            } else {
+              document.getElementById("summaryContent").innerHTML =
+                template.content;
+            }
           }
 
           alert("Template loaded successfully!");
@@ -1460,6 +1763,12 @@
           console.error(e);
           alert("Error loading template.");
         }
+      }
+
+      // --- Page View Logic ---
+      function togglePageView() {
+        const container = document.getElementById("mainContainer");
+        container.classList.toggle("page-view-mode");
       }
 
       // --- Export Logic ---
@@ -1478,7 +1787,7 @@
         const summaryContent = document.getElementById("summaryContent");
 
         const pageSize = document.getElementById("pageSizeSelect").value;
-        const exportWidth = pageSize === "legal" ? "1029px" : "1000px";
+        const exportWidth = pageSize === "legal" ? "216mm" : "210mm";
 
         // Clone container to avoid modifying live DOM
         const clone = container.cloneNode(true);
@@ -1557,6 +1866,11 @@
         currentPage.style.border = "none";
         currentPage.style.boxShadow = "none";
 
+        // Apply current margins to export page
+        const root = document.documentElement;
+        const style = getComputedStyle(root);
+        currentPage.style.padding = `${style.getPropertyValue("--page-margin-top")} ${style.getPropertyValue("--page-margin-right")} ${style.getPropertyValue("--page-margin-bottom")} ${style.getPropertyValue("--page-margin-left")}`;
+
         // Add Header to Page 1
         headerNodes.forEach((node) =>
           currentPage.appendChild(node.cloneNode(true)),
@@ -1617,13 +1931,10 @@
               currentPage.style.width = exportWidth;
               currentPage.style.border = "none";
               currentPage.style.boxShadow = "none";
+              currentPage.style.padding = `${style.getPropertyValue("--page-margin-top")} ${style.getPropertyValue("--page-margin-right")} ${style.getPropertyValue("--page-margin-bottom")} ${style.getPropertyValue("--page-margin-left")}`;
 
               // If the break element has content (e.g. heading), add it to new page
-              if (
-                child.innerText.trim() !== "" ||
-                child.tagName === "H3" ||
-                child.tagName === "TABLE"
-              ) {
+              if (child.tagName === "H3" || child.tagName === "TABLE") {
                 currentPage.appendChild(child.cloneNode(true));
               }
               continue;
@@ -1644,6 +1955,7 @@
               currentPage.style.width = exportWidth;
               currentPage.style.border = "none";
               currentPage.style.boxShadow = "none";
+              currentPage.style.padding = `${style.getPropertyValue("--page-margin-top")} ${style.getPropertyValue("--page-margin-right")} ${style.getPropertyValue("--page-margin-bottom")} ${style.getPropertyValue("--page-margin-left")}`;
               continue;
             }
           }
@@ -1707,6 +2019,13 @@
         for (let i = 0; i < pages.length; i++) {
           hiddenDiv.innerHTML = "";
           hiddenDiv.appendChild(pages[i]);
+
+          // Auto-fit logic for tables
+          const tables = pages[i].querySelectorAll("table");
+          tables.forEach((table) => {
+            // Reduce font size for tables in export to ensure fit
+            table.style.fontSize = "10px";
+          });
 
           try {
             const dataUrl = await domtoimage.toPng(pages[i], {
@@ -1814,12 +2133,12 @@
         // Add Word-specific Page Setup (A4 Size + Margins)
         styles += `
             @page {
-                size: A4;
-                margin: 1.0cm;
+                size: ${document.getElementById("pageSizeSelect").value === "legal" ? "Legal" : "A4"};
+                margin: 0; /* Use div padding for margins to match screen */
             }
             body { font-family: Arial, sans-serif; }
-            table { width: 100%; border-collapse: collapse; }
-            td, th { border: 1px solid black; padding: 5px; }
+            table { width: 100%; border-collapse: collapse; border: 1px solid black; }
+            td, th { border: 1px solid black; padding: 5px; border-collapse: collapse; }
         `;
 
         const header =
@@ -1988,7 +2307,12 @@
         </div>
         `;
 
-        document.getElementById("summaryContent").innerHTML = finalContent;
+        // Set content safely
+        if (tinymce.get("summaryContent")) {
+          tinymce.get("summaryContent").setContent(finalContent);
+        } else {
+          document.getElementById("summaryContent").innerHTML = finalContent;
+        }
 
         // Trigger Map Rendering
         setTimeout(() => {
@@ -2327,36 +2651,72 @@
 
       function getScaleData(season, type) {
         if (season === "Winter") {
-          return [
-            { label: "0 – 2", color: "#6A00A8" },
-            { label: "2 – 4", color: "#4B00FF" },
-            { label: "4 – 6", color: "#007BFF" },
-            { label: "6 – 8", color: "#00C8C8" },
-            { label: "8 – 10", color: "#00E676" },
-            { label: "10 – 12", color: "#00C853" },
-            { label: "12 – 14", color: "#7CFC00" },
-            { label: "14 – 16", color: "#CDDC39" },
-            { label: "16 – 18", color: "#FFD54F" },
-            { label: "18 – 20", color: "#FF9800" },
-            { label: "20 – 22", color: "#F44336" },
-            { label: "> 22", color: "#E91E63" },
-          ];
+          if (type === "min") {
+            return [
+              { label: "0 – 2", color: "#6A00A8" },
+              { label: "2 – 4", color: "#4B00FF" },
+              { label: "4 – 6", color: "#007BFF" },
+              { label: "6 – 8", color: "#00C8C8" },
+              { label: "8 – 10", color: "#00E676" },
+              { label: "10 – 12", color: "#00C853" },
+              { label: "12 – 14", color: "#7CFC00" },
+              { label: "14 – 16", color: "#CDDC39" },
+              { label: "16 – 18", color: "#FFD54F" },
+              { label: "18 – 20", color: "#FF9800" },
+              { label: "20 – 22", color: "#F44336" },
+              { label: "> 22", color: "#E91E63" },
+            ];
+          } else {
+            // Winter Max
+            return [
+              { label: "12 – 14", color: "#6A00A8" },
+              { label: "14 – 16", color: "#4B00FF" },
+              { label: "16 – 18", color: "#007BFF" },
+              { label: "18 – 20", color: "#00C8C8" },
+              { label: "20 – 22", color: "#00E676" },
+              { label: "22 – 24", color: "#00C853" },
+              { label: "24 – 26", color: "#7CFC00" },
+              { label: "26 – 28", color: "#CDDC39" },
+              { label: "28 – 30", color: "#FFD54F" },
+              { label: "30 – 32", color: "#FF9800" },
+              { label: "32 – 34", color: "#F44336" },
+              { label: "> 34", color: "#E91E63" },
+            ];
+          }
         } else {
-          // Summer Min
-          return [
-            { label: "10 – 12", color: "#6A00A8" },
-            { label: "12 – 14", color: "#4B00FF" },
-            { label: "14 – 16", color: "#007BFF" },
-            { label: "16 – 18", color: "#00C8C8" },
-            { label: "18 – 20", color: "#00E676" },
-            { label: "20 – 22", color: "#00C853" },
-            { label: "22 – 24", color: "#7CFC00" },
-            { label: "24 – 26", color: "#CDDC39" },
-            { label: "26 – 28", color: "#FFD54F" },
-            { label: "28 – 30", color: "#FF9800" },
-            { label: "30 – 32", color: "#F44336" },
-            { label: "> 32", color: "#E91E63" },
-          ];
+          // Summer
+          if (type === "min") {
+            return [
+              { label: "10 – 12", color: "#6A00A8" },
+              { label: "12 – 14", color: "#4B00FF" },
+              { label: "14 – 16", color: "#007BFF" },
+              { label: "16 – 18", color: "#00C8C8" },
+              { label: "18 – 20", color: "#00E676" },
+              { label: "20 – 22", color: "#00C853" },
+              { label: "22 – 24", color: "#7CFC00" },
+              { label: "24 – 26", color: "#CDDC39" },
+              { label: "26 – 28", color: "#FFD54F" },
+              { label: "28 – 30", color: "#FF9800" },
+              { label: "30 – 32", color: "#F44336" },
+              { label: "> 32", color: "#E91E63" },
+            ];
+          } else {
+            // Summer Max
+            return [
+              { label: "24 – 26", color: "#6A00A8" },
+              { label: "26 – 28", color: "#4B00FF" },
+              { label: "28 – 30", color: "#007BFF" },
+              { label: "30 – 32", color: "#00C8C8" },
+              { label: "32 – 34", color: "#00E676" },
+              { label: "34 – 36", color: "#00C853" },
+              { label: "36 – 38", color: "#7CFC00" },
+              { label: "38 – 40", color: "#CDDC39" },
+              { label: "40 – 42", color: "#FFD54F" },
+              { label: "42 – 45", color: "#FF9800" },
+              { label: "45 – 47", color: "#F44336" },
+              { label: "> 47", color: "#E91E63" },
+            ];
+          }
         }
       }
 
