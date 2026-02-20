@@ -13,6 +13,7 @@
       rel="stylesheet"
       href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
     />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
     <style>
       body {
         font-family: "Inter", "Noto Sans Devanagari", sans-serif;
@@ -134,6 +135,15 @@
         font-weight: 600;
         border: 1px solid rgba(251, 146, 60, 0.3);
       }
+      .cloud-cl {
+        color: #60a5fa;
+      }
+      .cloud-cm {
+        color: #c084fc;
+      }
+      .cloud-ch {
+        color: #f472b6;
+      }
       @keyframes fadeIn {
         from {
           opacity: 0;
@@ -160,18 +170,131 @@
         background: linear-gradient(90deg, #3b82f6, #8b5cf6);
         transition: width 0.3s ease;
       }
-      .batch-indicator {
-        background: rgba(59, 130, 246, 0.2);
-        border: 1px solid rgba(59, 130, 246, 0.3);
-        border-radius: 0.5rem;
-        padding: 0.5rem 1rem;
+
+      /* Date Picker Styles */
+      .date-picker-popup {
+        display: none;
+        position: absolute;
+        background: #1e293b;
+        border: 1px solid #334155;
+        border-radius: 0.75rem;
+        padding: 1rem;
+        z-index: 50;
+        box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.5);
+      }
+      .date-picker-popup.active {
+        display: block;
+      }
+      .date-picker-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1rem;
+      }
+      .date-picker-grid {
+        display: grid;
+        grid-template-columns: repeat(7, 1fr);
+        gap: 0.25rem;
+        text-align: center;
+      }
+      .date-picker-day {
+        padding: 0.5rem;
+        border-radius: 0.375rem;
+        cursor: pointer;
         font-size: 0.875rem;
-        color: #60a5fa;
+      }
+      .date-picker-day:hover {
+        background: rgba(59, 130, 246, 0.3);
+      }
+      .date-picker-day.selected {
+        background: #3b82f6;
+        color: white;
+      }
+      .date-picker-day.other-month {
+        color: #64748b;
+      }
+      .date-picker-weekday {
+        color: #94a3b8;
+        font-size: 0.75rem;
+        padding: 0.25rem;
+      }
+      .month-year-selector {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+      .month-year-selector select {
+        background: #0f172a;
+        border: 1px solid #334155;
+        color: white;
+        padding: 0.5rem;
+        border-radius: 0.375rem;
+      }
+
+      /* Modal Styles */
+      .modal-overlay {
+        display: none;
+        position: fixed;
+        top: 0;
+        left: 0;
+        right: 0;
+        bottom: 0;
+        background: rgba(0, 0, 0, 0.7);
+        z-index: 100;
+        justify-content: center;
+        align-items: center;
+      }
+      .modal-overlay.active {
+        display: flex;
+      }
+      .modal-content {
+        background: #1e293b;
+        border-radius: 1rem;
+        padding: 2rem;
+        max-width: 90vw;
+        max-height: 90vh;
+        overflow: auto;
+        border: 1px solid #334155;
+      }
+      .modal-header {
+        display: flex;
+        justify-content: space-between;
+        align-items: center;
+        margin-bottom: 1.5rem;
+      }
+      .close-btn {
+        background: none;
+        border: none;
+        color: #94a3b8;
+        font-size: 1.5rem;
+        cursor: pointer;
+      }
+      .close-btn:hover {
+        color: white;
+      }
+      .view-toggle {
+        display: flex;
+        gap: 0.5rem;
+        margin-bottom: 1rem;
+      }
+      .view-toggle button {
+        padding: 0.5rem 1rem;
+        border-radius: 0.375rem;
+        border: 1px solid #334155;
+        background: #0f172a;
+        color: #94a3b8;
+        cursor: pointer;
+      }
+      .view-toggle button.active {
+        background: #3b82f6;
+        color: white;
+        border-color: #3b82f6;
       }
     </style>
   </head>
   <body class="text-slate-200 p-4 md:p-8">
     <div class="max-w-7xl mx-auto">
+      <!-- Navigation -->
       <!-- Navigation Bar -->
       <div
         class="glass-panel rounded-xl p-3 mb-8 flex flex-wrap justify-center gap-2"
@@ -303,9 +426,6 @@
         <p class="text-slate-400 text-lg">
           भारतीय मौसम विभाग - सतह मौसम अवलोकन डिकोडर
         </p>
-        <p class="text-slate-500 text-sm mt-2">
-          Supports up to 30,000+ lines | Auto Month Detection | Batch Processing
-        </p>
       </div>
 
       <!-- Input Section -->
@@ -313,14 +433,12 @@
         <div class="flex flex-col md:flex-row gap-4 mb-4">
           <div class="flex-1">
             <label class="block text-sm font-medium text-slate-300 mb-2"
-              >SYNOP Data Paste करें (Any GMT: 00, 03, 06, 09, 12, 15, 18, 21 |
-              Supports 30,000+ lines)</label
+              >SYNOP Data Paste करें (Supports 30,000+ lines)</label
             >
             <textarea
               id="synopInput"
               rows="10"
               class="w-full bg-slate-900 border border-slate-700 rounded-lg p-4 text-slate-300 font-mono text-sm focus:ring-2 focus:ring-blue-500 focus:border-transparent resize-none"
-              placeholder="यहाँ अपना SYNOP डेटा पेस्ट करें...&#10;Month markers: JUL: AUG: SEP: OCT: NOV: DEC: JAN: FEB: MAR: APR: MAY: JUN:&#10;Example:&#10;SMIN90 VEPT 191200&#10;AAXX 19124&#10;42492 31996 40000 10266 20130 40140 70500 84030 333 10292 58022 84360=rh=043/18.6Vis=4500m"
             ></textarea>
             <div class="progress-bar hidden" id="progressBar">
               <div
@@ -369,28 +487,74 @@
         </div>
       </div>
 
-      <!-- Database View Section (Hidden by default) -->
+      <!-- Database View -->
       <div id="databaseView" class="hidden mb-8">
         <div class="glass-panel rounded-2xl p-6 mb-6">
           <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
-            <i class="fas fa-database text-green-400"></i>
-            Stored SYNOP Database
+            <i class="fas fa-database text-green-400"></i>Stored SYNOP Database
           </h2>
 
-          <!-- Date Selection -->
-          <div class="grid grid-cols-1 md:grid-cols-3 gap-4 mb-6">
+          <!-- Advanced Date Picker -->
+          <div class="grid grid-cols-1 md:grid-cols-4 gap-4 mb-6 relative">
             <div>
               <label class="block text-sm font-medium text-slate-300 mb-2"
-                >Select Date (DD-MM-YYYY)</label
+                >Select Date</label
               >
-              <input
-                type="text"
-                id="selectDate"
-                placeholder="19-07-2024"
-                class="bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white w-full"
-              />
-              <p class="text-xs text-slate-500 mt-1">Format: DD-MM-YYYY</p>
+              <div class="relative">
+                <input
+                  type="text"
+                  id="selectDate"
+                  readonly
+                  placeholder="Click to select date"
+                  class="bg-slate-900 border border-slate-700 rounded-lg px-4 py-2 text-white w-full cursor-pointer"
+                  onclick="toggleDatePicker()"
+                />
+                <i
+                  class="fas fa-calendar absolute right-3 top-3 text-slate-500"
+                ></i>
+
+                <!-- Date Picker Popup -->
+                <div id="datePickerPopup" class="date-picker-popup">
+                  <div class="date-picker-header">
+                    <button
+                      onclick="changeYear(-1)"
+                      class="text-slate-400 hover:text-white"
+                    >
+                      <i class="fas fa-chevron-left"></i>
+                    </button>
+                    <div class="month-year-selector">
+                      <select id="monthSelect" onchange="renderCalendar()">
+                        <option value="0">January</option>
+                        <option value="1">February</option>
+                        <option value="2">March</option>
+                        <option value="3">April</option>
+                        <option value="4">May</option>
+                        <option value="5">June</option>
+                        <option value="6">July</option>
+                        <option value="7">August</option>
+                        <option value="8">September</option>
+                        <option value="9">October</option>
+                        <option value="10">November</option>
+                        <option value="11">December</option>
+                      </select>
+                      <select id="yearSelect" onchange="renderCalendar()">
+                        <!-- Years populated by JS -->
+                      </select>
+                    </div>
+                    <button
+                      onclick="changeYear(1)"
+                      class="text-slate-400 hover:text-white"
+                    >
+                      <i class="fas fa-chevron-right"></i>
+                    </button>
+                  </div>
+                  <div class="date-picker-grid" id="calendarGrid">
+                    <!-- Calendar populated by JS -->
+                  </div>
+                </div>
+              </div>
             </div>
+
             <div>
               <label class="block text-sm font-medium text-slate-300 mb-2"
                 >Select GMT</label
@@ -410,30 +574,45 @@
                 <option value="21">21 GMT</option>
               </select>
             </div>
-            <div class="flex items-end">
+
+            <div class="flex items-end gap-2">
               <button
                 onclick="loadDateData()"
                 class="bg-blue-600 hover:bg-blue-500 text-white font-semibold py-2 px-4 rounded-lg transition-all w-full"
               >
                 Load Data
               </button>
+              <button
+                onclick="exportToExcel()"
+                class="bg-green-600 hover:bg-green-500 text-white font-semibold py-2 px-4 rounded-lg transition-all"
+                title="Export to Excel"
+              >
+                <i class="fas fa-file-excel"></i>
+              </button>
+            </div>
+
+            <div class="flex items-end">
+              <button
+                onclick="show0312Table()"
+                class="bg-amber-600 hover:bg-amber-500 text-white font-semibold py-2 px-4 rounded-lg transition-all w-full text-sm"
+              >
+                <i class="fas fa-table mr-2"></i>03 & 12 GMT Table
+              </button>
             </div>
           </div>
 
-          <!-- Available Dates List -->
+          <!-- Available Dates -->
           <div class="mb-6">
             <h3 class="text-lg font-semibold text-white mb-3">
-              Available Dates in Database:
+              Available Dates:
             </h3>
             <div
               id="availableDatesList"
               class="flex flex-wrap gap-2 max-h-32 overflow-y-auto p-2 bg-slate-900 rounded-lg"
-            >
-              <!-- Dates will be loaded here -->
-            </div>
+            ></div>
           </div>
 
-          <!-- Date Range Selection -->
+          <!-- Date Range -->
           <div class="glass-panel rounded-xl p-4 mb-6 border border-slate-700">
             <h3 class="text-lg font-semibold text-white mb-3">
               Date Range Comparison
@@ -441,23 +620,21 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
               <div>
                 <label class="block text-xs text-slate-400 mb-1"
-                  >From Date (DD-MM-YYYY)</label
+                  >From Date</label
                 >
                 <input
                   type="text"
                   id="fromDate"
-                  placeholder="01-07-2024"
+                  placeholder="DD-MM-YYYY"
                   class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white w-full text-sm"
                 />
               </div>
               <div>
-                <label class="block text-xs text-slate-400 mb-1"
-                  >To Date (DD-MM-YYYY)</label
-                >
+                <label class="block text-xs text-slate-400 mb-1">To Date</label>
                 <input
                   type="text"
                   id="toDate"
-                  placeholder="31-07-2024"
+                  placeholder="DD-MM-YYYY"
                   class="bg-slate-900 border border-slate-700 rounded-lg px-3 py-2 text-white w-full text-sm"
                 />
               </div>
@@ -466,36 +643,52 @@
                   onclick="compareDates()"
                   class="bg-indigo-600 hover:bg-indigo-500 text-white font-semibold py-2 px-4 rounded-lg transition-all w-full text-sm"
                 >
-                  Compare Dates
+                  Compare
                 </button>
               </div>
             </div>
           </div>
 
-          <!-- 03 & 12 GMT Special Table Button -->
-          <button
-            onclick="show0312Table()"
-            class="mb-4 bg-gradient-to-r from-amber-600 to-orange-600 hover:from-amber-500 hover:to-orange-500 text-white font-semibold py-2 px-4 rounded-lg transition-all"
-          >
-            <i class="fas fa-table mr-2"></i>Show 03 & 12 GMT Special Table
-          </button>
-
           <!-- Stored Data Display -->
-          <div id="storedDataDisplay" class="space-y-6">
-            <!-- Data will be loaded here -->
-          </div>
+          <div id="storedDataDisplay" class="space-y-6"></div>
         </div>
       </div>
 
-      <!-- 03 & 12 GMT Special Table (Hidden by default) -->
+      <!-- Detail Modal -->
+      <div id="detailModal" class="modal-overlay">
+        <div class="modal-content w-full max-w-4xl">
+          <div class="modal-header">
+            <h2 class="text-2xl font-bold text-white" id="modalTitle">
+              Station Details
+            </h2>
+            <button class="close-btn" onclick="closeModal()">&times;</button>
+          </div>
+          <div class="view-toggle">
+            <button class="active" onclick="showModalView('table')">
+              Table View
+            </button>
+            <button onclick="showModalView('detailed')">Detailed View</button>
+          </div>
+          <div id="modalBody"></div>
+        </div>
+      </div>
+
+      <!-- 03 & 12 GMT Special Table -->
       <div id="special0312Table" class="hidden mb-8">
         <div class="glass-panel rounded-2xl p-6 border-2 border-amber-500/50">
-          <h2
-            class="text-xl font-bold text-white mb-4 flex items-center gap-2 text-amber-400"
-          >
-            <i class="fas fa-star"></i>
-            03 & 12 GMT Special Summary Table
-          </h2>
+          <div class="flex justify-between items-center mb-4">
+            <h2
+              class="text-xl font-bold text-white flex items-center gap-2 text-amber-400"
+            >
+              <i class="fas fa-star"></i>03 & 12 GMT Special Summary
+            </h2>
+            <button
+              onclick="export0312ToExcel()"
+              class="bg-green-600 hover:bg-green-500 text-white font-semibold py-2 px-4 rounded-lg text-sm"
+            >
+              <i class="fas fa-file-excel mr-2"></i>Export Excel
+            </button>
+          </div>
           <div class="overflow-x-auto max-h-96 overflow-y-auto">
             <table class="summary-table" id="table0312">
               <thead>
@@ -503,14 +696,15 @@
                   <th>Date</th>
                   <th>GMT</th>
                   <th>Station</th>
-                  <th>Temp (°C)</th>
-                  <th>Max Temp (°C)</th>
-                  <th>WB (°C)</th>
-                  <th>RH (%)</th>
-                  <th>Pressure (hPa)</th>
-                  <th>Visibility (m)</th>
+                  <th>Temp</th>
+                  <th>Max</th>
+                  <th>WB</th>
+                  <th>RH</th>
+                  <th>Pressure</th>
+                  <th>Visibility</th>
                   <th>Wind</th>
                   <th>Weather</th>
+                  <th>Clouds</th>
                 </tr>
               </thead>
               <tbody id="tbody0312"></tbody>
@@ -519,9 +713,8 @@
         </div>
       </div>
 
-      <!-- Current Decode Results -->
+      <!-- Current Results -->
       <div id="currentResults">
-        <!-- Date/Time Info -->
         <div
           id="dateTimeInfo"
           class="hidden mb-6 glass-panel rounded-xl p-4 border-l-4 border-cyan-500"
@@ -539,27 +732,19 @@
             </div>
             <div class="flex gap-6 text-sm flex-wrap">
               <div>
-                <span class="text-slate-500">Report Type:</span>
-                <span class="text-white font-semibold ml-2"
-                  >AAXX (Land Station)</span
-                >
+                <span class="text-slate-500">Report Type:</span
+                ><span class="text-white font-semibold ml-2">AAXX</span>
               </div>
               <div>
-                <span class="text-slate-500">Wind Unit:</span>
-                <span
+                <span class="text-slate-500">Wind Unit:</span
+                ><span
                   id="windUnit"
                   class="text-white font-semibold ml-2"
                 ></span>
               </div>
               <div>
-                <span class="text-slate-500">Total Stations:</span>
-                <span id="totalStations" class="text-white font-semibold ml-2"
-                  >0</span
-                >
-              </div>
-              <div>
-                <span class="text-slate-500">Batches:</span>
-                <span id="batchCount" class="text-white font-semibold ml-2"
+                <span class="text-slate-500">Stations:</span
+                ><span id="totalStations" class="text-white font-semibold ml-2"
                   >0</span
                 >
               </div>
@@ -567,14 +752,13 @@
           </div>
         </div>
 
-        <!-- Summary Table -->
         <div
           id="summarySection"
           class="hidden mb-8 glass-panel rounded-xl p-6 overflow-hidden"
         >
           <h2 class="text-xl font-bold text-white mb-4 flex items-center gap-2">
-            <span class="w-2 h-2 bg-green-400 rounded-full"></span>
-            GMT Summary Table - सभी स्टेशन का संक्षिप्त विवरण
+            <span class="w-2 h-2 bg-green-400 rounded-full"></span>GMT Summary
+            Table
           </h2>
           <div class="overflow-x-auto max-h-96 overflow-y-auto">
             <table class="summary-table">
@@ -584,13 +768,15 @@
                   <th>GMT</th>
                   <th>Station ID</th>
                   <th>Station Name</th>
-                  <th>Temp (°C)</th>
-                  <th>Wet Bulb (°C)</th>
-                  <th>RH (%)</th>
-                  <th>Visibility (m)</th>
-                  <th>Wind (Dir/Speed)</th>
+                  <th>Temp</th>
+                  <th>WB</th>
+                  <th>RH</th>
+                  <th>Pressure</th>
+                  <th>Visibility</th>
+                  <th>Wind</th>
                   <th>Weather</th>
-                  <th>Cloud</th>
+                  <th>Cloud (CL/CM/CH)</th>
+                  <th>Action</th>
                 </tr>
               </thead>
               <tbody id="summaryTableBody"></tbody>
@@ -598,30 +784,25 @@
           </div>
         </div>
 
-        <!-- Results Container -->
-        <div id="resultsContainer" class="space-y-6">
-          <!-- Stations will be inserted here -->
-        </div>
+        <div id="resultsContainer" class="space-y-6"></div>
       </div>
 
-      <!-- Empty State -->
       <div id="emptyState" class="text-center py-20">
         <div class="text-6xl mb-4">🌤️</div>
         <h3 class="text-xl font-semibold text-slate-400">
           SYNOP Data का इंतजार है
         </h3>
         <p class="text-slate-500 mt-2">
-          ऊपर दिए गए बॉक्स में अपना डेटा पेस्ट करें और Decode करें
-        </p>
-        <p class="text-slate-600 text-sm mt-1">
-          Supports: JUL: AUG: SEP: OCT: NOV: DEC: JAN: FEB: MAR: APR: MAY: JUN:
-          markers
+          ऊपर दिए गए बॉक्स में अपना डेटा पेस्ट करें
         </p>
       </div>
 
       <!-- Footer -->
       <footer class="mt-16 pt-8 border-t border-slate-700/50 text-center">
         <div class="space-y-2 mb-6">
+          <h3 class="text-xl font-bold text-white mb-2">
+            Bihar Weather Forecast
+          </h3>
           <p class="text-slate-400 text-sm">
             डेटा स्रोत: India Meteorological Department (IMD), Meteorological
             Centre, Patna.
@@ -636,16 +817,72 @@
             >@ Lal Kamal</span
           >
         </div>
-        <p class="text-slate-500 text-sm">All Rights Reserved.</p>
+        <p class="text-slate-500 text-sm mb-4">All Rights Reserved.</p>
+
+        <p
+          class="text-slate-400 text-sm flex justify-center items-center gap-2 mb-6"
+        >
+          <i class="fas fa-eye"></i> Visitors:
+          <span id="visitorCount" class="font-mono font-bold text-blue-400"
+            >...</span
+          >
+        </p>
+
+        <button
+          onclick="window.scrollTo({ top: 0, behavior: 'smooth' })"
+          class="bg-slate-800 hover:bg-slate-700 text-slate-300 px-4 py-2 rounded-lg text-sm transition-all mb-8"
+        >
+          Back to Top <i class="fas fa-arrow-up ml-1"></i>
+        </button>
       </footer>
     </div>
 
     <script>
-      // Initialize database from localStorage
+      // Database
       let synopDatabase =
         JSON.parse(localStorage.getItem("synopDatabase")) || {};
+      let currentExcelData = []; // For Excel export
 
-      // Month mapping
+      // Cloud Type Names
+      const cloudNames = {
+        CL: {
+          0: "No low clouds",
+          1: "Cumulus humilis",
+          2: "Cumulus mediocris",
+          3: "Cumulonimbus (no anvil)",
+          4: "Stratocumulus from Cumulus",
+          5: "Stratocumulus",
+          6: "Stratus",
+          7: "Fractus (bad weather)",
+          8: "Cumulus & Stratocumulus",
+          9: "Cumulonimbus (with anvil)",
+        },
+        CM: {
+          0: "No medium clouds",
+          1: "Altostratus semitransparent",
+          2: "Altostratus/Nimbostratus",
+          3: "Altocumulus semitransparent",
+          4: "Altocumulus patches",
+          5: "Altocumulus bands",
+          6: "Altocumulus from Cumulus",
+          7: "Altocumulus multiple layers",
+          8: "Altocumulus with towers",
+          9: "Altocumulus chaotic",
+        },
+        CH: {
+          0: "No high clouds",
+          1: "Cirrus filaments",
+          2: "Dense Cirrus",
+          3: "Cirrus anvil remains",
+          4: "Cirrus invading sky",
+          5: "Cirrus bands <45°",
+          6: "Cirrus bands >45°",
+          7: "Cirrostratus covering sky",
+          8: "Cirrostratus not invading",
+          9: "Cirrocumulus",
+        },
+      };
+
       const monthMap = {
         JAN: "01",
         FEB: "02",
@@ -660,12 +897,25 @@
         NOV: "11",
         DEC: "12",
       };
+      const monthNames = [
+        "January",
+        "February",
+        "March",
+        "April",
+        "May",
+        "June",
+        "July",
+        "August",
+        "September",
+        "October",
+        "November",
+        "December",
+      ];
 
-      // Current month tracker
-      let currentMonth = String(new Date().getMonth() + 1).padStart(2, "0");
+      let currentMonth = new Date().getMonth();
       let currentYear = new Date().getFullYear();
+      let selectedDateObj = null;
 
-      // Updated Station Names Mapping
       const stationNames = {
         42492: "Patna",
         42591: "Gaya",
@@ -682,7 +932,6 @@
         42499: "Sabour",
       };
 
-      // Code Tables based on PDF
       const codeTables = {
         windDir: {
           "00": "Calm",
@@ -733,36 +982,417 @@
         },
       };
 
-      function loadExample() {
-        const example = `SMIN90 VEPT 191200
-AAXX 19124
-42492 31996 40000 10266 20130 40140 70500 84030 333 10292 58022 84360=rh=043/18.6Vis=4500m
-42591 31596 43604 10250 20170 40147 70510 82540 333 10290 58020 82620 83360= WB=20.0 RH=061% VIS=5000M
-42498 31595 40000 10266 20138 40147 70521 82530 333 10291 58018 82620 84360= 19.0/rh=045% Vis.=3500m
-42500 31595 30000 10270 20182 40129 70520 83500 333 10306 58014 83620= WB=21.4 RH=059%, VIS=3200m
-42283 32596 30000 10246 20193 40113 82530 333 10300 58018= WB 21.2 RH=072% PK
-
-AUG:
-SMIN90 VEPT 201200
-AAXX 20124
-42492 31996 40000 10270 20135 40145 70500 84030 333 10295 58020=rh=048/19.0Vis=4000m
-42591 31596 43604 10255 20175 40150 70510 82540 333 10295 58018= WB=20.5 RH=065% VIS=4500M`;
-        document.getElementById("synopInput").value = example;
+      // Date Picker Functions
+      function initDatePicker() {
+        const yearSelect = document.getElementById("yearSelect");
+        const currentY = new Date().getFullYear();
+        for (let y = currentY - 5; y <= currentY + 1; y++) {
+          const option = document.createElement("option");
+          option.value = y;
+          option.textContent = y;
+          if (y === currentYear) option.selected = true;
+          yearSelect.appendChild(option);
+        }
+        document.getElementById("monthSelect").value = currentMonth;
+        renderCalendar();
       }
 
-      function clearAll() {
-        document.getElementById("synopInput").value = "";
-        document.getElementById("resultsContainer").innerHTML = "";
-        document.getElementById("summarySection").classList.add("hidden");
-        document.getElementById("dateTimeInfo").classList.add("hidden");
-        document.getElementById("emptyState").classList.remove("hidden");
-        document.getElementById("databaseView").classList.add("hidden");
-        document.getElementById("currentResults").classList.remove("hidden");
-        document.getElementById("progressBar").classList.add("hidden");
-        document.getElementById("processingStatus").classList.add("hidden");
+      function renderCalendar() {
+        const month = parseInt(document.getElementById("monthSelect").value);
+        const year = parseInt(document.getElementById("yearSelect").value);
+        const grid = document.getElementById("calendarGrid");
+
+        grid.innerHTML = "";
+
+        // Weekday headers
+        const weekdays = ["Su", "Mo", "Tu", "We", "Th", "Fr", "Sa"];
+        weekdays.forEach((d) => {
+          const div = document.createElement("div");
+          div.className = "date-picker-weekday";
+          div.textContent = d;
+          grid.appendChild(div);
+        });
+
+        const firstDay = new Date(year, month, 1).getDay();
+        const daysInMonth = new Date(year, month + 1, 0).getDate();
+        const daysInPrevMonth = new Date(year, month, 0).getDate();
+
+        // Previous month days
+        for (let i = firstDay - 1; i >= 0; i--) {
+          const div = document.createElement("div");
+          div.className = "date-picker-day other-month";
+          div.textContent = daysInPrevMonth - i;
+          grid.appendChild(div);
+        }
+
+        // Current month days
+        const today = new Date();
+        for (let d = 1; d <= daysInMonth; d++) {
+          const div = document.createElement("div");
+          div.className = "date-picker-day";
+          div.textContent = d;
+
+          // Check if this date is in database
+          const dateStr = `${String(d).padStart(2, "0")}-${String(month + 1).padStart(2, "0")}-${year}`;
+          if (synopDatabase[dateStr]) {
+            div.style.background = "rgba(34, 197, 94, 0.3)";
+            div.style.color = "#4ade80";
+            div.style.fontWeight = "bold";
+          }
+
+          if (
+            selectedDateObj &&
+            selectedDateObj.date === d &&
+            selectedDateObj.month === month &&
+            selectedDateObj.year === year
+          ) {
+            div.classList.add("selected");
+          }
+
+          div.onclick = () => selectDate(d, month, year);
+          grid.appendChild(div);
+        }
       }
 
-      // Smart RH, WB, and Visibility Parser
+      function selectDate(day, month, year) {
+        selectedDateObj = { date: day, month: month, year: year };
+        const dateStr = `${String(day).padStart(2, "0")}-${String(month + 1).padStart(2, "0")}-${year}`;
+        document.getElementById("selectDate").value = dateStr;
+        renderCalendar();
+        toggleDatePicker();
+      }
+
+      function toggleDatePicker() {
+        const popup = document.getElementById("datePickerPopup");
+        popup.classList.toggle("active");
+        if (popup.classList.contains("active")) {
+          renderCalendar();
+        }
+      }
+
+      function changeYear(delta) {
+        const yearSelect = document.getElementById("yearSelect");
+        yearSelect.value = parseInt(yearSelect.value) + delta;
+        renderCalendar();
+      }
+
+      // Close date picker when clicking outside
+      document.addEventListener("click", (e) => {
+        const picker = document.getElementById("datePickerPopup");
+        const input = document.getElementById("selectDate");
+        if (!picker.contains(e.target) && e.target !== input) {
+          picker.classList.remove("active");
+        }
+      });
+
+      // Modal Functions
+      function showDetailModal(date, gmt, stationId) {
+        const data = synopDatabase[date][gmt];
+        const station = data.stations.find((s) => s.id === stationId);
+        if (!station) return;
+
+        document.getElementById("modalTitle").innerHTML = `
+          <span class="date-badge">${date}</span>
+          <span class="gmt-badge ml-2">${gmt}:00</span>
+          <span class="text-white ml-2">${station.name} (${station.id})</span>
+        `;
+
+        showModalView("table");
+        document.getElementById("detailModal").classList.add("active");
+      }
+
+      function closeModal() {
+        document.getElementById("detailModal").classList.remove("active");
+      }
+
+      function showModalView(view) {
+        const buttons = document.querySelectorAll(".view-toggle button");
+        buttons.forEach((b) => b.classList.remove("active"));
+        event.target.classList.add("active");
+
+        const date = document
+          .getElementById("modalTitle")
+          .querySelector(".date-badge").textContent;
+        const gmt = document
+          .getElementById("modalTitle")
+          .querySelector(".gmt-badge")
+          .textContent.replace(":00", "");
+        const stationId = document
+          .getElementById("modalTitle")
+          .textContent.match(/\((\d{5})\)/)[1];
+
+        const data = synopDatabase[date][gmt];
+        const station = data.stations.find((s) => s.id === stationId);
+
+        const modalBody = document.getElementById("modalBody");
+
+        if (view === "table") {
+          modalBody.innerHTML = createStationTable(station, date, gmt);
+        } else {
+          modalBody.innerHTML = createStationDetailed(station, date, gmt);
+        }
+      }
+
+      function createStationTable(station, date, gmt) {
+        return `
+          <table class="summary-table">
+            <tr><th>Parameter</th><th>Value</th><th>Code</th></tr>
+            <tr><td>Station ID</td><td>${station.id}</td><td>-</td></tr>
+            <tr><td>Station Name</td><td>${station.name}</td><td>-</td></tr>
+            <tr><td>Date</td><td>${date}</td><td>-</td></tr>
+            <tr><td>GMT</td><td>${gmt}:00</td><td>-</td></tr>
+            <tr><td>Temperature</td><td>${station.temp || "-"} °C</td><td>1snTTT</td></tr>
+            <tr><td>Max Temperature</td><td>${station.maxTemp || "-"} °C</td><td>333 1snTxTxTx</td></tr>
+            <tr><td>Dew Point</td><td>${station.dewPoint || "-"} °C</td><td>2snTdTdTd</td></tr>
+            <tr><td>Wet Bulb</td><td>${station.extras.wb || "-"} °C</td><td>Comment</td></tr>
+            <tr><td>Relative Humidity</td><td>${station.extras.rh || "-"} %</td><td>Comment</td></tr>
+            <tr><td>Pressure</td><td>${station.pressure || "-"}</td><td>${station.pressureCode || "4PPPP"}</td></tr>
+            <tr><td>Pressure Change</td><td>${station.pressChange || "-"}</td><td>58/59P24P24P24</td></tr>
+            <tr><td>Wind Direction</td><td>${station.windDir || "-"}</td><td>dd</td></tr>
+            <tr><td>Wind Speed</td><td>${station.windSpeed || "-"}</td><td>ff</td></tr>
+            <tr><td>Visibility</td><td>${station.finalVisibility || "-"}</td><td>VV</td></tr>
+            <tr><td>Cloud Cover (N)</td><td>${station.cloudCover || "-"}</td><td>N</td></tr>
+            <tr><td>Low Cloud (CL)</td><td>${cloudNames.CL[station.CL] || station.CL || "-"} (${station.CL || "-"})</td><td>CL</td></tr>
+            <tr><td>Medium Cloud (CM)</td><td>${cloudNames.CM[station.CM] || station.CM || "-"} (${station.CM || "-"})</td><td>CM</td></tr>
+            <tr><td>High Cloud (CH)</td><td>${cloudNames.CH[station.CH] || station.CH || "-"} (${station.CH || "-"})</td><td>CH</td></tr>
+            <tr><td>Present Weather</td><td>${station.weather || "-"}</td><td>ww</td></tr>
+            <tr><td>Past Weather W1</td><td>${codeTables.presentWeather[station.W1] || station.W1 || "-"}</td><td>W1</td></tr>
+            <tr><td>Past Weather W2</td><td>${codeTables.presentWeather[station.W2] || station.W2 || "-"}</td><td>W2</td></tr>
+          </table>
+        `;
+      }
+
+      function createStationDetailed(station, date, gmt) {
+        const clName = cloudNames.CL[station.CL] || "Unknown";
+        const cmName = cloudNames.CM[station.CM] || "Unknown";
+        const chName = cloudNames.CH[station.CH] || "Unknown";
+
+        return `
+          <div class="space-y-4">
+            <div class="glass-panel rounded-lg p-4 border border-blue-500/30">
+              <h3 class="text-lg font-bold text-blue-400 mb-2">Basic Information</h3>
+              <p><span class="text-slate-400">Station:</span> <span class="text-white font-semibold">${station.name}</span> (${station.id})</p>
+              <p><span class="text-slate-400">Date/Time:</span> <span class="date-badge">${date}</span> <span class="gmt-badge">${gmt}:00 GMT</span></p>
+            </div>
+            
+            <div class="glass-panel rounded-lg p-4 border border-orange-500/30">
+              <h3 class="text-lg font-bold text-orange-400 mb-2">Temperature & Humidity</h3>
+              <div class="grid grid-cols-2 gap-4">
+                <div><span class="text-slate-400">Temperature:</span> <span class="text-2xl font-bold text-orange-300">${station.temp || "-"}°C</span></div>
+                <div><span class="text-slate-400">Max Temp:</span> <span class="text-xl font-bold text-orange-300">${station.maxTemp || "-"}°C</span></div>
+                <div><span class="text-slate-400">Dew Point:</span> <span class="text-cyan-300">${station.dewPoint || "-"}°C</span></div>
+                <div><span class="text-slate-400">Wet Bulb:</span> <span class="text-orange-300">${station.extras.wb || "-"}°C</span></div>
+                <div><span class="text-slate-400">Relative Humidity:</span> <span class="text-green-400 font-bold">${station.extras.rh || "-"}%</span></div>
+              </div>
+            </div>
+            
+            <div class="glass-panel rounded-lg p-4 border border-purple-500/30">
+              <h3 class="text-lg font-bold text-purple-400 mb-2">Pressure</h3>
+              <p class="text-2xl font-bold text-purple-300">${station.pressure || "-"}</p>
+              <p class="text-sm text-slate-400">Code: ${station.pressureCode || "-"}</p>
+              ${station.pressChange ? `<p class="text-sm text-slate-400">24h Change: ${station.pressChange} hPa</p>` : ""}
+            </div>
+            
+            <div class="glass-panel rounded-lg p-4 border border-cyan-500/30">
+              <h3 class="text-lg font-bold text-cyan-400 mb-2">Wind</h3>
+              <p><span class="text-slate-400">Direction:</span> <span class="text-white font-semibold">${station.windDir || "-"}</span></p>
+              <p><span class="text-slate-400">Speed:</span> <span class="text-white font-semibold">${station.windSpeed || "-"}</span></p>
+            </div>
+            
+            <div class="glass-panel rounded-lg p-4 border border-pink-500/30">
+              <h3 class="text-lg font-bold text-pink-400 mb-2">Clouds</h3>
+              <div class="space-y-2">
+                <div class="flex justify-between"><span class="cloud-cl font-semibold">Low Cloud (CL):</span> <span>${clName} (${station.CL || "-"})</span></div>
+                <div class="flex justify-between"><span class="cloud-cm font-semibold">Medium Cloud (CM):</span> <span>${cmName} (${station.CM || "-"})</span></div>
+                <div class="flex justify-between"><span class="cloud-ch font-semibold">High Cloud (CH):</span> <span>${chName} (${station.CH || "-"})</span></div>
+                <div class="flex justify-between"><span class="text-slate-400">Total Cloud Cover:</span> <span>${station.cloudCover || "-"}</span></div>
+              </div>
+            </div>
+            
+            <div class="glass-panel rounded-lg p-4 border border-yellow-500/30">
+              <h3 class="text-lg font-bold text-yellow-400 mb-2">Weather & Visibility</h3>
+              <p><span class="text-slate-400">Present Weather:</span> <span class="text-white">${station.weather || "-"}</span></p>
+              <p><span class="text-slate-400">Past Weather W1:</span> <span class="text-slate-300">${codeTables.presentWeather[station.W1] || station.W1 || "-"}</span></p>
+              <p><span class="text-slate-400">Past Weather W2:</span> <span class="text-slate-300">${codeTables.presentWeather[station.W2] || station.W2 || "-"}</span></p>
+              <p><span class="text-slate-400">Visibility:</span> <span class="text-purple-300 font-semibold">${station.finalVisibility || "-"}</span></p>
+            </div>
+            
+            <div class="bg-slate-900 rounded-lg p-4">
+              <h3 class="text-sm font-bold text-slate-400 mb-2">Raw SYNOP Code</h3>
+              <code class="text-xs text-slate-500 break-all">${station.raw}</code>
+            </div>
+          </div>
+        `;
+      }
+
+      // Excel Export Functions
+      function exportToExcel() {
+        if (currentExcelData.length === 0) {
+          alert("No data to export. Please load data first.");
+          return;
+        }
+
+        const ws_data = [
+          [
+            "Date",
+            "GMT",
+            "Station ID",
+            "Station Name",
+            "Temperature (°C)",
+            "Max Temp (°C)",
+            "Dew Point (°C)",
+            "Wet Bulb (°C)",
+            "RH (%)",
+            "Pressure (hPa)",
+            "Pressure Code",
+            "Pressure Change",
+            "Wind Direction",
+            "Wind Speed",
+            "Visibility",
+            "Cloud Cover (N)",
+            "Low Cloud (CL)",
+            "Low Cloud Name",
+            "Medium Cloud (CM)",
+            "Medium Cloud Name",
+            "High Cloud (CH)",
+            "High Cloud Name",
+            "Present Weather",
+            "Past Weather W1",
+            "Past Weather W2",
+            "Raw SYNOP",
+          ],
+        ];
+
+        currentExcelData.forEach((row) => {
+          ws_data.push([
+            row.date,
+            row.gmt,
+            row.stationId,
+            row.stationName,
+            row.temp,
+            row.maxTemp,
+            row.dewPoint,
+            row.wb,
+            row.rh,
+            row.pressure,
+            row.pressureCode,
+            row.pressChange,
+            row.windDir,
+            row.windSpeed,
+            row.visibility,
+            row.cloudCover,
+            row.CL,
+            cloudNames.CL[row.CL] || "",
+            row.CM,
+            cloudNames.CM[row.CM] || "",
+            row.CH,
+            cloudNames.CH[row.CH] || "",
+            row.weather,
+            row.W1,
+            row.W2,
+            row.raw,
+          ]);
+        });
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(ws_data);
+
+        // Set column widths
+        ws["!cols"] = [
+          { w: 12 },
+          { w: 8 },
+          { w: 12 },
+          { w: 15 },
+          { w: 10 },
+          { w: 10 },
+          { w: 10 },
+          { w: 10 },
+          { w: 8 },
+          { w: 12 },
+          { w: 12 },
+          { w: 12 },
+          { w: 12 },
+          { w: 10 },
+          { w: 12 },
+          { w: 10 },
+          { w: 8 },
+          { w: 25 },
+          { w: 8 },
+          { w: 25 },
+          { w: 8 },
+          { w: 25 },
+          { w: 15 },
+          { w: 15 },
+          { w: 15 },
+          { w: 50 },
+        ];
+
+        XLSX.utils.book_append_sheet(wb, ws, "SYNOP Data");
+
+        const dateStr = new Date().toISOString().split("T")[0];
+        XLSX.writeFile(wb, `SYNOP_Data_${dateStr}.xlsx`);
+      }
+
+      function export0312ToExcel() {
+        const allDates = Object.keys(synopDatabase).sort();
+        const ws_data = [
+          [
+            "Date",
+            "GMT",
+            "Station ID",
+            "Station Name",
+            "Temperature (°C)",
+            "Max Temp (°C)",
+            "Wet Bulb (°C)",
+            "RH (%)",
+            "Pressure (hPa)",
+            "Visibility (m)",
+            "Wind Direction",
+            "Wind Speed",
+            "Weather",
+            "Low Cloud",
+            "Medium Cloud",
+            "High Cloud",
+          ],
+        ];
+
+        allDates.forEach((date) => {
+          ["03", "12"].forEach((gmt) => {
+            if (synopDatabase[date][gmt]) {
+              synopDatabase[date][gmt].stations.forEach((s) => {
+                ws_data.push([
+                  date,
+                  gmt + ":00",
+                  s.id,
+                  s.name,
+                  s.temp,
+                  s.maxTemp,
+                  s.extras.wb,
+                  s.extras.rh,
+                  s.pressure,
+                  s.finalVisibility,
+                  s.windDir,
+                  s.windSpeed,
+                  s.weather,
+                  cloudNames.CL[s.CL] || s.CL,
+                  cloudNames.CM[s.CM] || s.CM,
+                  cloudNames.CH[s.CH] || s.CH,
+                ]);
+              });
+            }
+          });
+        });
+
+        const wb = XLSX.utils.book_new();
+        const ws = XLSX.utils.aoa_to_sheet(ws_data);
+        XLSX.utils.book_append_sheet(wb, ws, "03-12 GMT Data");
+        XLSX.writeFile(
+          wb,
+          `SYNOP_03-12_GMT_Summary_${new Date().toISOString().split("T")[0]}.xlsx`,
+        );
+      }
+
+      // Parse Functions
       function parseCommentData(comment) {
         const result = {
           rh: null,
@@ -770,25 +1400,19 @@ AAXX 20124
           visibility: null,
           minVisibility: null,
         };
-
         if (!comment) return result;
 
-        // Extract WB - number before / or after WB/W.B/WB=
         const wbMatch =
           comment.match(/(?:W\.?B\.?\s*[=:]?\s*|^)(\d+\.?\d*)\s*(?:\/|;)/i) ||
           comment.match(/W\.?B\.?\s*[=:]?\s*(\d+\.?\d*)/i);
-        if (wbMatch) {
-          result.wb = parseFloat(wbMatch[1]);
-        }
+        if (wbMatch) result.wb = parseFloat(wbMatch[1]);
 
-        // Extract RH - various patterns
         const rhPatterns = [
           /RH\s*[=:]?\s*(\d{2,3})\s*%?/i,
           /\/(\d{2,3})\s*%/,
           /^(\d{2,3})\s*%/,
           /rh\s*[=:]?\s*(\d{2,3})/i,
         ];
-
         for (let pattern of rhPatterns) {
           const match = comment.match(pattern);
           if (match) {
@@ -800,14 +1424,12 @@ AAXX 20124
           }
         }
 
-        // Extract Visibility
         const visPatterns = [
           /VIS\s*[=:]?\s*(\d{3,5})/i,
           /Vis\.?\s*[=:]?\s*(\d{3,5})/i,
           /\/(\d{4})(?:\/|%|$)/,
           /Vis\.?\s*(\d{3,5})/i,
         ];
-
         for (let pattern of visPatterns) {
           const match = comment.match(pattern);
           if (match) {
@@ -819,30 +1441,20 @@ AAXX 20124
           }
         }
 
-        // Min visibility
         const minMatch = comment.match(/min\s*[=:]?\s*(\d{3,5})/i);
-        if (minMatch) {
-          result.minVisibility = parseInt(minMatch[1]);
-        }
+        if (minMatch) result.minVisibility = parseInt(minMatch[1]);
 
         return result;
       }
 
-      // Decode Pressure from 4PPPP format
       function decodePressure(pressCode) {
         if (!pressCode || pressCode.length !== 5) return null;
-
         const digits = pressCode.substring(1);
         const firstDigit = digits[0];
         const value = parseInt(digits);
-
-        // If starts with 0 or 1, it's 1000+ hPa
-        if (firstDigit === "0" || firstDigit === "1") {
+        if (firstDigit === "0" || firstDigit === "1")
           return (1000 + value / 10).toFixed(1);
-        } else {
-          // If starts with 8 or 9, it's 800-999 hPa (less than 1000)
-          return (value / 10).toFixed(1);
-        }
+        else return (value / 10).toFixed(1);
       }
 
       async function decodeAndStoreSynop() {
@@ -852,7 +1464,6 @@ AAXX 20124
           return;
         }
 
-        // Show progress
         const progressBar = document.getElementById("progressBar");
         const progressFill = document.getElementById("progressFill");
         const statusDiv = document.getElementById("processingStatus");
@@ -862,11 +1473,8 @@ AAXX 20124
 
         const lines = input.split("\n");
         const totalLines = lines.length;
-
         statusDiv.textContent = `Processing ${totalLines} lines...`;
 
-        // Process in chunks for large files
-        const chunkSize = 1000;
         let processedLines = 0;
         let allBatches = [];
         let currentBatch = {
@@ -876,36 +1484,31 @@ AAXX 20124
           year: currentYear,
         };
 
-        // Reset month to current
         currentMonth = String(new Date().getMonth() + 1).padStart(2, "0");
         currentYear = new Date().getFullYear();
 
         for (let i = 0; i < lines.length; i++) {
           const line = lines[i].trim();
           processedLines++;
-
-          // Update progress every 100 lines
           if (processedLines % 100 === 0) {
-            const progress = (processedLines / totalLines) * 100;
-            progressFill.style.width = `${progress}%`;
-            statusDiv.textContent = `Processing... ${processedLines}/${totalLines} lines (${Math.round(progress)}%)`;
-            await new Promise((resolve) => setTimeout(resolve, 0)); // Allow UI update
+            progressFill.style.width = `${(processedLines / totalLines) * 100}%`;
+            statusDiv.textContent = `Processing... ${processedLines}/${totalLines} lines`;
+            await new Promise((resolve) => setTimeout(resolve, 0));
           }
 
           if (!line) continue;
 
-          // Check for month marker
-          const monthMatch = line.match(
-            /^(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC):?/i,
+          // Check for New Year Marker (e.g., "HAPPY NEW YEAR", "NEW YEAR 2026")
+          const newYearMatch = line.match(
+            /(?:HAPPY\s*)?NEW\s*YEAR(?:\s*(\d{4}))?/i,
           );
-          if (monthMatch) {
-            // Save previous batch if exists
-            if (currentBatch.header && currentBatch.stations.length > 0) {
+          if (newYearMatch) {
+            if (currentBatch.header && currentBatch.stations.length > 0)
               allBatches.push({ ...currentBatch });
+            currentMonth = "01"; // Reset to January
+            if (newYearMatch[1]) {
+              currentYear = parseInt(newYearMatch[1]); // Set specific year if provided
             }
-
-            // Reset for new month
-            currentMonth = monthMap[monthMatch[1].toUpperCase()];
             currentBatch = {
               header: null,
               stations: [],
@@ -915,14 +1518,31 @@ AAXX 20124
             continue;
           }
 
-          // Check for header line (SMIN...)
+          // Check for Month Header with optional Year (e.g., "NOV", "NOV 2025")
+          const monthMatch = line.match(
+            /^(JAN|FEB|MAR|APR|MAY|JUN|JUL|AUG|SEP|OCT|NOV|DEC)(?:\s*(\d{4}))?:?/i,
+          );
+          if (monthMatch) {
+            if (currentBatch.header && currentBatch.stations.length > 0)
+              allBatches.push({ ...currentBatch });
+            currentMonth = monthMap[monthMatch[1].toUpperCase()];
+            if (monthMatch[2]) {
+              currentYear = parseInt(monthMatch[2]); // Update year if present
+            }
+            currentBatch = {
+              header: null,
+              stations: [],
+              month: currentMonth,
+              year: currentYear,
+            };
+            continue;
+          }
+
           if (line.startsWith("SMIN")) {
-            // Save previous batch if exists
             if (currentBatch.header && currentBatch.stations.length > 0) {
               allBatches.push({ ...currentBatch });
               currentBatch.stations = [];
             }
-
             currentBatch.header = {
               bulletin: line.substring(0, 6),
               region: line.substring(6, 10),
@@ -931,7 +1551,6 @@ AAXX 20124
             continue;
           }
 
-          // Check for AAXX line
           if (line.startsWith("AAXX")) {
             const parts = line.split(" ");
             if (currentBatch.header) {
@@ -949,7 +1568,6 @@ AAXX 20124
             continue;
           }
 
-          // Check for station data
           const stationMatch = line.match(/^(\d{5})\s+/);
           if (stationMatch && currentBatch.header) {
             const station = parseStationLine(line);
@@ -961,52 +1579,33 @@ AAXX 20124
           }
         }
 
-        // Add last batch
-        if (currentBatch.header && currentBatch.stations.length > 0) {
+        if (currentBatch.header && currentBatch.stations.length > 0)
           allBatches.push(currentBatch);
-        }
 
-        progressFill.style.width = "100%";
-        statusDiv.textContent = `Processing complete! Found ${allBatches.length} batches. Storing...`;
-
-        // Store all batches
         let totalStored = 0;
-        allBatches.forEach((batch, idx) => {
+        allBatches.forEach((batch) => {
           const dateKey = `${batch.header.obsDate}-${batch.month}-${batch.year}`;
           const gmtKey = batch.header.obsHour;
-
-          if (!synopDatabase[dateKey]) {
-            synopDatabase[dateKey] = {};
-          }
-
+          if (!synopDatabase[dateKey]) synopDatabase[dateKey] = {};
           synopDatabase[dateKey][gmtKey] = {
             header: batch.header,
             stations: batch.stations,
             timestamp: new Date().toISOString(),
           };
-
           totalStored += batch.stations.length;
         });
 
-        // Save to localStorage
         localStorage.setItem("synopDatabase", JSON.stringify(synopDatabase));
 
-        // Display first batch
         if (allBatches.length > 0) {
-          const firstBatch = allBatches[0];
-          displayBatch(firstBatch);
-
-          // Show summary for all batches
-          if (allBatches.length > 1) {
-            displayAllBatchesSummary(allBatches);
-          }
+          displayBatch(allBatches[0]);
+          if (allBatches.length > 1) displayAllBatchesSummary(allBatches);
         }
 
         progressBar.classList.add("hidden");
         statusDiv.classList.add("hidden");
-
         alert(
-          `Processing complete!\nTotal batches: ${allBatches.length}\nTotal stations stored: ${totalStored}`,
+          `Processing complete!\nBatches: ${allBatches.length}\nStations: ${totalStored}`,
         );
       }
 
@@ -1017,7 +1616,6 @@ AAXX 20124
           const commentPart = equalParts[1]
             ? equalParts.slice(1).join("=").trim()
             : "";
-
           const groups = mainPart.split(/\s+/);
           if (groups.length < 2) return null;
 
@@ -1028,10 +1626,8 @@ AAXX 20124
             comment: commentPart,
             extras: parseCommentData(commentPart),
           };
-
           let i = 1;
 
-          // Section 0: iRixhVV
           if (groups[i] && groups[i].length === 5) {
             const g = groups[i];
             station.iR = g[0];
@@ -1041,7 +1637,6 @@ AAXX 20124
             i++;
           }
 
-          // Section 1: Nddff
           if (groups[i] && groups[i].length === 5) {
             const g = groups[i];
             station.N = g[0];
@@ -1055,7 +1650,6 @@ AAXX 20124
             i++;
           }
 
-          // 1snTTT - Temperature
           if (groups[i] && groups[i].startsWith("1")) {
             const g = groups[i];
             const sign = g[1] === "0" ? 1 : -1;
@@ -1065,7 +1659,6 @@ AAXX 20124
             i++;
           }
 
-          // 2snTdTdTd - Dew Point
           if (groups[i] && groups[i].startsWith("2")) {
             const g = groups[i];
             const sign = g[1] === "0" ? 1 : -1;
@@ -1076,14 +1669,12 @@ AAXX 20124
             i++;
           }
 
-          // 4PPPP - Pressure
           if (groups[i] && groups[i].startsWith("4")) {
             station.pressureCode = groups[i];
             station.pressure = decodePressure(groups[i]) + " hPa";
             i++;
           }
 
-          // 7wwW1W2 - Weather
           if (groups[i] && groups[i].startsWith("7")) {
             const g = groups[i];
             station.ww = g.substring(1, 3);
@@ -1094,7 +1685,6 @@ AAXX 20124
             i++;
           }
 
-          // 8NhCLCMCH - Clouds
           if (groups[i] && groups[i].startsWith("8")) {
             const g = groups[i];
             station.Nh = g[1];
@@ -1104,9 +1694,7 @@ AAXX 20124
             i++;
           }
 
-          // Section 3 (333)
           while (i < groups.length && !groups[i].startsWith("333")) i++;
-
           if (groups[i] === "333") {
             i++;
             if (groups[i] && groups[i].startsWith("1")) {
@@ -1118,22 +1706,20 @@ AAXX 20124
               ).toFixed(1);
               i++;
             }
-
             if (
               groups[i] &&
               (groups[i].startsWith("58") || groups[i].startsWith("59"))
             ) {
               const g = groups[i];
-              const type = g.startsWith("58") ? "↑" : "↓";
-              const amount = (parseInt(g.substring(2, 5)) / 10).toFixed(1);
-              station.pressChange = `${type}${amount}`;
+              station.pressChange =
+                (g.startsWith("58") ? "↑" : "↓") +
+                (parseInt(g.substring(2, 5)) / 10).toFixed(1);
             }
           }
 
-          // Visibility
-          if (station.extras.visibility) {
+          if (station.extras.visibility)
             station.finalVisibility = `${station.extras.visibility}m`;
-          } else if (station.VV) {
+          else if (station.VV) {
             const vvCode = station.VV;
             if (vvCode >= "90") {
               const visMap = {
@@ -1150,16 +1736,14 @@ AAXX 20124
               };
               station.finalVisibility =
                 visMap[vvCode] || `${parseInt(vvCode)}00m`;
-            } else if (vvCode <= "50") {
+            } else if (vvCode <= "50")
               station.finalVisibility = `${(parseInt(vvCode) * 0.1).toFixed(1)}km`;
-            } else {
-              station.finalVisibility = `${parseInt(vvCode) - 50}km`;
-            }
+            else station.finalVisibility = `${parseInt(vvCode) - 50}km`;
           }
 
           return station;
         } catch (e) {
-          console.error("Error parsing station:", e);
+          console.error("Error:", e);
           return null;
         }
       }
@@ -1168,11 +1752,8 @@ AAXX 20124
         const dateKey = `${batch.header.obsDate}-${batch.month}-${batch.year}`;
         const gmtKey = batch.header.obsHour;
 
-        // Update header
-        document.getElementById("monthDisplay").textContent = new Date(
-          2000,
-          parseInt(batch.month) - 1,
-        ).toLocaleString("default", { month: "long" });
+        document.getElementById("monthDisplay").textContent =
+          monthNames[parseInt(batch.month) - 1];
         document.getElementById("obsDateDisplay").textContent = dateKey;
         document.getElementById("obsTimeDisplay").textContent =
           `${gmtKey}:00 GMT`;
@@ -1182,42 +1763,42 @@ AAXX 20124
           ] || "Unknown";
         document.getElementById("totalStations").textContent =
           batch.stations.length;
-        document.getElementById("batchCount").textContent = "1";
         document.getElementById("dateTimeInfo").classList.remove("hidden");
 
-        // Display summary table
         const tbody = document.getElementById("summaryTableBody");
         tbody.innerHTML = "";
 
         batch.stations.forEach((station) => {
           const row = document.createElement("tr");
+          const clName = cloudNames.CL[station.CL] || "-";
+          const cmName = cloudNames.CM[station.CM] || "-";
+          const chName = cloudNames.CH[station.CH] || "-";
+
           row.innerHTML = `
             <td class="text-slate-400">${dateKey}</td>
             <td><span class="gmt-badge">${gmtKey}:00</span></td>
             <td class="font-mono font-semibold text-blue-400">${station.id}</td>
             <td class="font-semibold text-white">${station.name}</td>
             <td>${station.temp || "-"}</td>
-            <td>${station.extras.wb ? `<span class="wb-highlight">${station.extras.wb}</span>` : "-"}</td>
-            <td>${station.extras.rh ? `<span class="rh-highlight">${station.extras.rh}%</span>` : "-"}</td>
+            <td>${station.extras.wb || "-"}</td>
+            <td>${station.extras.rh ? station.extras.rh + "%" : "-"}</td>
+            <td>${station.pressure || "-"}</td>
             <td>${station.finalVisibility || "-"}</td>
             <td>${station.windDir || "-"} / ${station.windSpeed || "-"}</td>
             <td>${station.weather || "-"}</td>
-            <td>${station.cloudCover || "-"}</td>
+            <td><span class="cloud-cl">${station.CL || "-"}</span>/<span class="cloud-cm">${station.CM || "-"}</span>/<span class="cloud-ch">${station.CH || "-"}</span></td>
+            <td><button onclick="showDetailModal('${dateKey}', '${gmtKey}', '${station.id}')" class="text-blue-400 hover:text-blue-300 text-sm"><i class="fas fa-eye"></i> View</button></td>
           `;
           tbody.appendChild(row);
         });
 
         document.getElementById("summarySection").classList.remove("hidden");
-
-        // Display cards
         displayStations(batch.stations);
         document.getElementById("emptyState").classList.add("hidden");
       }
 
       function displayAllBatchesSummary(batches) {
-        // Add a summary section for all batches
         const container = document.getElementById("resultsContainer");
-
         const summaryDiv = document.createElement("div");
         summaryDiv.className =
           "glass-panel rounded-xl p-4 mb-6 border-2 border-blue-500/50";
@@ -1226,7 +1807,7 @@ AAXX 20124
           <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-3">
             ${batches
               .map(
-                (b, i) => `
+                (b) => `
               <div class="bg-slate-800 rounded-lg p-3 border border-slate-700">
                 <div class="flex justify-between items-center">
                   <span class="date-badge text-sm">${b.header.obsDate}-${b.month}-${b.year}</span>
@@ -1239,13 +1820,11 @@ AAXX 20124
               .join("")}
           </div>
         `;
-
         container.insertBefore(summaryDiv, container.firstChild);
       }
 
       function displayStations(stations) {
         const container = document.getElementById("resultsContainer");
-        // Keep the summary div if exists
         const summaryDiv = container.querySelector(".glass-panel.border-2");
         container.innerHTML = "";
         if (summaryDiv) container.appendChild(summaryDiv);
@@ -1255,86 +1834,37 @@ AAXX 20124
           card.className = "station-card rounded-xl p-6 animate-fade-in";
           card.style.animationDelay = `${index * 0.05}s`;
 
-          const hasExtras =
-            station.extras.rh || station.extras.wb || station.extras.visibility;
-
           card.innerHTML = `
             <div class="flex flex-col md:flex-row justify-between items-start md:items-center mb-4 pb-4 border-b border-slate-700">
               <div>
-                <h2 class="text-2xl font-bold text-white flex items-center gap-3">
-                  ${station.name}
-                  <span class="code-badge text-sm">${station.id}</span>
-                </h2>
+                <h2 class="text-2xl font-bold text-white flex items-center gap-3">${station.name}<span class="code-badge text-sm">${station.id}</span></h2>
               </div>
               <div class="mt-2 md:mt-0 flex gap-2">
                 ${station.extras.rh ? `<span class="rh-highlight text-sm">RH: ${station.extras.rh}%</span>` : ""}
                 ${station.extras.wb ? `<span class="wb-highlight text-sm">WB: ${station.extras.wb}°C</span>` : ""}
               </div>
             </div>
-
             <div class="param-grid">
-              <div class="param-item">
-                <div class="param-label">Temperature</div>
-                <div class="param-value text-orange-400">${station.temp ? station.temp + "°C" : "N/A"}</div>
-                ${station.maxTemp ? `<div class="text-xs text-slate-400 mt-1">Max: ${station.maxTemp}°C</div>` : ""}
-              </div>
-
-              <div class="param-item">
-                <div class="param-label">Wet Bulb</div>
-                <div class="param-value ${station.extras.wb ? "text-orange-300" : "text-slate-500"}">
-                  ${station.extras.wb ? station.extras.wb + "°C" : "N/A"}
-                </div>
-              </div>
-
-              <div class="param-item">
-                <div class="param-label">Relative Humidity</div>
-                <div class="param-value ${station.extras.rh ? "text-green-400" : "text-slate-500"}">
-                  ${station.extras.rh ? station.extras.rh + "%" : "N/A"}
-                </div>
-              </div>
-
-              <div class="param-item">
-                <div class="param-label">Pressure</div>
-                <div class="param-value text-purple-400">${station.pressure || "N/A"}</div>
-                <div class="text-xs text-slate-400">${station.pressureCode || ""}</div>
-              </div>
-
-              <div class="param-item">
-                <div class="param-label">Wind</div>
-                <div class="param-value">${station.windDir || "N/A"} @ ${station.windSpeed || "N/A"}</div>
-              </div>
-
-              <div class="param-item">
-                <div class="param-label">Visibility</div>
-                <div class="param-value text-purple-300">${station.finalVisibility || "N/A"}</div>
-              </div>
-
-              <div class="param-item">
-                <div class="param-label">Cloud Cover</div>
-                <div class="param-value">${station.cloudCover || "N/A"}</div>
-              </div>
-
-              <div class="param-item">
-                <div class="param-label">Weather</div>
-                <div class="param-value text-sm">${station.weather || "N/A"}</div>
-              </div>
+              <div class="param-item"><div class="param-label">Temperature</div><div class="param-value text-orange-400">${station.temp ? station.temp + "°C" : "N/A"}</div>${station.maxTemp ? `<div class="text-xs text-slate-400 mt-1">Max: ${station.maxTemp}°C</div>` : ""}</div>
+              <div class="param-item"><div class="param-label">Wet Bulb</div><div class="param-value ${station.extras.wb ? "text-orange-300" : "text-slate-500"}">${station.extras.wb ? station.extras.wb + "°C" : "N/A"}</div></div>
+              <div class="param-item"><div class="param-label">Relative Humidity</div><div class="param-value ${station.extras.rh ? "text-green-400" : "text-slate-500"}">${station.extras.rh ? station.extras.rh + "%" : "N/A"}</div></div>
+              <div class="param-item"><div class="param-label">Pressure</div><div class="param-value text-purple-400">${station.pressure || "N/A"}</div><div class="text-xs text-slate-400">${station.pressureCode || ""}</div></div>
+              <div class="param-item"><div class="param-label">Wind</div><div class="param-value">${station.windDir || "N/A"} @ ${station.windSpeed || "N/A"}</div></div>
+              <div class="param-item"><div class="param-label">Visibility</div><div class="param-value text-purple-300">${station.finalVisibility || "N/A"}</div></div>
+              <div class="param-item"><div class="param-label">Cloud Cover</div><div class="param-value">${station.cloudCover || "N/A"}</div></div>
+              <div class="param-item"><div class="param-label">Cloud Types</div><div class="text-sm mt-1"><span class="cloud-cl">CL: ${cloudNames.CL[station.CL] || station.CL || "-"}</span><br><span class="cloud-cm">CM: ${cloudNames.CM[station.CM] || station.CM || "-"}</span><br><span class="cloud-ch">CH: ${cloudNames.CH[station.CH] || station.CH || "-"}</span></div></div>
+              <div class="param-item"><div class="param-label">Weather</div><div class="param-value text-sm">${station.weather || "N/A"}</div></div>
             </div>
-
             <div class="mt-4 pt-4 border-t border-slate-700">
-              <button onclick="this.nextElementSibling.classList.toggle('hidden')" class="text-xs text-slate-500 hover:text-slate-300">
-                Toggle Raw Data
-              </button>
-              <div class="hidden mt-2 p-3 bg-slate-900 rounded font-mono text-xs text-slate-400 overflow-x-auto">
-                ${station.raw}
-              </div>
+              <button onclick="this.nextElementSibling.classList.toggle('hidden')" class="text-xs text-slate-500 hover:text-slate-300">Toggle Raw Data</button>
+              <div class="hidden mt-2 p-3 bg-slate-900 rounded font-mono text-xs text-slate-400 overflow-x-auto">${station.raw}</div>
             </div>
           `;
-
           container.appendChild(card);
         });
       }
 
-      // Database View Functions
+      // Database Functions
       function showDatabaseView() {
         document.getElementById("databaseView").classList.remove("hidden");
         document.getElementById("currentResults").classList.add("hidden");
@@ -1345,29 +1875,31 @@ AAXX 20124
       function updateAvailableDatesList() {
         const container = document.getElementById("availableDatesList");
         const dates = Object.keys(synopDatabase).sort();
-
         if (dates.length === 0) {
           container.innerHTML =
             '<span class="text-slate-500">No data available</span>';
           return;
         }
-
         container.innerHTML = dates
           .map(
             (date) => `
-          <button onclick="document.getElementById('selectDate').value='${date}'; loadDateData()" 
-                  class="date-badge hover:bg-green-500/30 cursor-pointer transition-all">
-            ${date}
-          </button>
+          <button onclick="selectDateFromButton('${date}')" class="date-badge hover:bg-green-500/30 cursor-pointer transition-all text-sm">${date}</button>
         `,
           )
           .join("");
+      }
+
+      function selectDateFromButton(date) {
+        document.getElementById("selectDate").value = date;
+        loadDateData();
       }
 
       function loadDateData() {
         const selectedDate = document.getElementById("selectDate").value.trim();
         const selectedGMT = document.getElementById("selectGMT").value;
         const display = document.getElementById("storedDataDisplay");
+
+        currentExcelData = []; // Reset Excel data
 
         if (!selectedDate) {
           updateAvailableDatesList();
@@ -1389,13 +1921,40 @@ AAXX 20124
           if (!synopDatabase[selectedDate][gmt]) return;
 
           const data = synopDatabase[selectedDate][gmt];
+
+          // Prepare Excel data
+          data.stations.forEach((s) => {
+            currentExcelData.push({
+              date: selectedDate,
+              gmt: gmt + ":00",
+              stationId: s.id,
+              stationName: s.name,
+              temp: s.temp,
+              maxTemp: s.maxTemp,
+              dewPoint: s.dewPoint,
+              wb: s.extras.wb,
+              rh: s.extras.rh,
+              pressure: s.pressure,
+              pressureCode: s.pressureCode,
+              pressChange: s.pressChange,
+              windDir: s.windDir,
+              windSpeed: s.windSpeed,
+              visibility: s.finalVisibility,
+              cloudCover: s.cloudCover,
+              CL: s.CL,
+              CM: s.CM,
+              CH: s.CH,
+              weather: s.weather,
+              W1: s.W1,
+              W2: s.W2,
+              raw: s.raw,
+            });
+          });
+
           html += `
             <div class="glass-panel rounded-xl p-4 mb-4 border border-blue-500/30">
               <div class="flex justify-between items-center mb-4">
-                <h3 class="text-lg font-bold text-white">
-                  <span class="date-badge mr-2">${selectedDate}</span>
-                  <span class="gmt-badge">${gmt}:00 GMT</span>
-                </h3>
+                <h3 class="text-lg font-bold text-white"><span class="date-badge mr-2">${selectedDate}</span><span class="gmt-badge">${gmt}:00 GMT</span></h3>
                 <span class="text-slate-400 text-sm">${data.stations.length} stations</span>
               </div>
               <div class="overflow-x-auto">
@@ -1410,6 +1969,8 @@ AAXX 20124
                       <th>Pressure</th>
                       <th>Visibility</th>
                       <th>Wind</th>
+                      <th>Clouds (CL/CM/CH)</th>
+                      <th>Action</th>
                     </tr>
                   </thead>
                   <tbody>
@@ -1425,6 +1986,8 @@ AAXX 20124
                         <td>${s.pressure || "-"}</td>
                         <td>${s.finalVisibility || "-"}</td>
                         <td>${s.windDir || "-"} ${s.windSpeed || "-"}</td>
+                        <td><span class="cloud-cl">${s.CL || "-"}</span>/<span class="cloud-cm">${s.CM || "-"}</span>/<span class="cloud-ch">${s.CH || "-"}</span></td>
+                        <td><button onclick="showDetailModal('${selectedDate}', '${gmt}', '${s.id}')" class="text-blue-400 hover:text-blue-300"><i class="fas fa-eye"></i></button></td>
                       </tr>
                     `,
                       )
@@ -1444,7 +2007,6 @@ AAXX 20124
       function compareDates() {
         const fromDate = document.getElementById("fromDate").value.trim();
         const toDate = document.getElementById("toDate").value.trim();
-
         if (!fromDate || !toDate) {
           alert("Please enter both dates in DD-MM-YYYY format!");
           return;
@@ -1453,18 +2015,13 @@ AAXX 20124
         const display = document.getElementById("storedDataDisplay");
         const allDates = Object.keys(synopDatabase).sort();
 
-        // Filter dates in range
         const filteredDates = allDates.filter((d) => {
-          // Simple string comparison works for DD-MM-YYYY format if years are same
-          // For better comparison, convert to Date objects
           const [d1, m1, y1] = d.split("-").map(Number);
           const [d2, m2, y2] = fromDate.split("-").map(Number);
           const [d3, m3, y3] = toDate.split("-").map(Number);
-
           const dateObj = new Date(y1, m1 - 1, d1);
           const fromObj = new Date(y2, m2 - 1, d2);
           const toObj = new Date(y3, m3 - 1, d3);
-
           return dateObj >= fromObj && dateObj <= toObj;
         });
 
@@ -1474,8 +2031,7 @@ AAXX 20124
           return;
         }
 
-        let html = `<h3 class="text-xl font-bold text-white mb-4">Comparison: ${fromDate} to ${toDate}</h3>
-                    <p class="text-green-400 mb-4">Found ${filteredDates.length} dates</p>`;
+        let html = `<h3 class="text-xl font-bold text-white mb-4">Comparison: ${fromDate} to ${toDate}</h3><p class="text-green-400 mb-4">Found ${filteredDates.length} dates</p>`;
 
         filteredDates.forEach((date) => {
           const gmts = Object.keys(synopDatabase[date]);
@@ -1483,7 +2039,6 @@ AAXX 20124
             (sum, g) => sum + synopDatabase[date][g].stations.length,
             0,
           );
-
           html += `
             <div class="glass-panel rounded-lg p-4 mb-4 border border-slate-700">
               <h4 class="date-badge inline-block mb-2">${date}</h4>
@@ -1496,28 +2051,20 @@ AAXX 20124
                       s
                         .filter((x) => x.temp)
                         .reduce((a, b) => a + parseFloat(b.temp), 0) /
-                      s.filter((x) => x.temp).length;
-                    return `
-                    <div class="bg-slate-800 rounded p-2 text-center min-w-[80px]">
-                      <span class="gmt-badge text-xs">${g}:00</span>
-                      <p class="text-slate-300 text-xs mt-1">${s.length} stns</p>
-                      ${avgTemp ? `<p class="text-xs text-orange-400">Avg: ${avgTemp.toFixed(1)}°C</p>` : ""}
-                    </div>
-                  `;
+                        s.filter((x) => x.temp).length || 0;
+                    return `<div class="bg-slate-800 rounded p-2 text-center min-w-[80px]"><span class="gmt-badge text-xs">${g}:00</span><p class="text-slate-300 text-xs mt-1">${s.length} stns</p>${avgTemp ? `<p class="text-xs text-orange-400">Avg: ${avgTemp.toFixed(1)}°C</p>` : ""}</div>`;
                   })
                   .join("")}
               </div>
             </div>
           `;
         });
-
         display.innerHTML = html;
       }
 
       function show0312Table() {
         const tbody = document.getElementById("tbody0312");
         tbody.innerHTML = "";
-
         const allDates = Object.keys(synopDatabase).sort();
         let count = 0;
 
@@ -1539,6 +2086,7 @@ AAXX 20124
                   <td>${s.finalVisibility || "-"}</td>
                   <td>${s.windDir || "-"} ${s.windSpeed || "-"}</td>
                   <td>${s.weather || "-"}</td>
+                  <td><span class="cloud-cl">${cloudNames.CL[s.CL] || s.CL || "-"}</span> / <span class="cloud-cm">${cloudNames.CM[s.CM] || s.CM || "-"}</span> / <span class="cloud-ch">${cloudNames.CH[s.CH] || s.CH || "-"}</span></td>
                 `;
                 tbody.appendChild(row);
                 count++;
@@ -1547,11 +2095,9 @@ AAXX 20124
           });
         });
 
-        if (count === 0) {
+        if (count === 0)
           tbody.innerHTML =
-            '<tr><td colspan="11" class="text-center text-slate-400 py-8">No 03 or 12 GMT data found in database</td></tr>';
-        }
-
+            '<tr><td colspan="12" class="text-center text-slate-400 py-8">No 03 or 12 GMT data found</td></tr>';
         document.getElementById("special0312Table").classList.remove("hidden");
         document
           .getElementById("special0312Table")
@@ -1569,9 +2115,40 @@ AAXX 20124
         URL.revokeObjectURL(url);
       }
 
+      function clearAll() {
+        document.getElementById("synopInput").value = "";
+        document.getElementById("resultsContainer").innerHTML = "";
+        document.getElementById("summarySection").classList.add("hidden");
+        document.getElementById("dateTimeInfo").classList.add("hidden");
+        document.getElementById("emptyState").classList.remove("hidden");
+        document.getElementById("databaseView").classList.add("hidden");
+        document.getElementById("currentResults").classList.remove("hidden");
+        document.getElementById("progressBar").classList.add("hidden");
+        document.getElementById("processingStatus").classList.add("hidden");
+      }
+
+      function loadExample() {
+        const example = `SMIN90 VEPT 191200
+AAXX 19124
+42492 31996 40000 10266 20130 40140 70500 84030 333 10292 58022 84360=rh=043/18.6Vis=4500m
+42591 31596 43604 10250 20170 40147 70510 82540 333 10290 58020 82620 83360= WB=20.0 RH=061% VIS=5000M
+
+AUG:
+SMIN90 VEPT 201200
+AAXX 20124
+42492 31996 40000 10270 20135 40145 70500 84030 333 10295 58020=rh=048/19.0Vis=4000m`;
+        document.getElementById("synopInput").value = example;
+      }
+
       // Initialize
       document.addEventListener("DOMContentLoaded", () => {
+        initDatePicker();
         updateAvailableDatesList();
+
+        // Visitor Count Display
+        let count = localStorage.getItem("page_views") || 1117;
+        const el = document.getElementById("visitorCount");
+        if (el) el.innerText = count;
       });
     </script>
   </body>

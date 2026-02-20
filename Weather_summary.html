@@ -390,12 +390,12 @@
           type="text"
           id="weatherConditionInput"
           list="weatherOptions"
-          value="	विगत 24 घंटों के दौरान राज्य का मौसम शुष्क बना रहा ।"
+          value="विगत 24 घंटों के दौरान राज्य का मौसम शुष्क बना रहा ।"
           placeholder="Select or Type..."
         />
         <datalist id="weatherOptions">
           <option
-            value="	विगत 24 घंटों के दौरान राज्य का मौसम शुष्क बना रहा ।"
+            value="विगत 24 घंटों के दौरान राज्य का मौसम शुष्क बना रहा ।"
           ></option>
           <option value="विगत 24 घंटों के दौरान मॉनसून सक्रिय रही।"></option>
         </datalist>
@@ -1094,12 +1094,12 @@ Or paste table..."
         <table style="width: 100%; border-collapse: collapse; font-size: 10px; border: 1px solid #000; background: white; font-family: Arial, sans-serif; table-layout: fixed; margin: 0 auto; max-width: 210mm;">
             <thead>
                 <tr style="font-size: 7px; line-height: 1.1;">
-                    <th style="width: 18%; border: 1px solid #000; padding: 2px 1px; text-align: center; background-color: #e6b07d !important; font-weight: bold; color: #000;">DISTRICT/<br>जिला</th>
-                    <th style="width: 18%; border: 1px solid #000; padding: 2px 1px; text-align: center; background-color: #e6b07d !important; font-weight: bold; color: #000;">STATION/<br>स्टेशन</th>
-                    <th style="width: 16%; border: 1px solid #000; padding: 2px 1px; text-align: center; background-color: #e6b07d !important; font-weight: bold; color: #000; font-size: 6px;">Max.Temp/<br>अधिकतम तापमान(°C)<br>observed on<br>${pdStr}</th>
-                    <th style="width: 16%; border: 1px solid #000; padding: 2px 1px; text-align: center; background-color: #e6b07d !important; font-weight: bold; color: #000; font-size: 6px;">Min.Temp/<br>न्यूनतम तापमान(°C)<br>observed on<br>${dStr}</th>
-                    <th style="width: 16%; border: 1px solid #000; padding: 2px 1px; text-align: center; background-color: #e6b07d !important; font-weight: bold; color: #000; font-size: 6px;">R/H (%) at<br>08:30 IST /<br>सापेक्षिक आर्द्रता<br>${dStr}</th>
-                    <th style="width: 16%; border: 1px solid #000; padding: 2px 1px; text-align: center; background-color: #e6b07d !important; font-weight: bold; color: #000; font-size: 6px;">24 Hrs Rainfall<br>ending at 08:30 IST/<br>वर्षा (मिमी)<br>${dStr}</th>
+                    <th style="width: 22%; border: 1px solid #000; padding: 2px 1px; text-align: center; background-color: #e6b07d !important; font-weight: bold; color: #000;">DISTRICT/<br>जिला</th>
+                    <th style="width: 22%; border: 1px solid #000; padding: 2px 1px; text-align: center; background-color: #e6b07d !important; font-weight: bold; color: #000;">STATION/<br>स्टेशन</th>
+                    <th style="width: 14%; border: 1px solid #000; padding: 2px 1px; text-align: center; background-color: #e6b07d !important; font-weight: bold; color: #000; font-size: 6px;">Max.Temp/<br>अधिकतम तापमान(°C)<br>observed on<br>${pdStr}</th>
+                    <th style="width: 14%; border: 1px solid #000; padding: 2px 1px; text-align: center; background-color: #e6b07d !important; font-weight: bold; color: #000; font-size: 6px;">Min.Temp/<br>न्यूनतम तापमान(°C)<br>observed on<br>${dStr}</th>
+                    <th style="width: 14%; border: 1px solid #000; padding: 2px 1px; text-align: center; background-color: #e6b07d !important; font-weight: bold; color: #000; font-size: 6px;">R/H (%) at<br>08:30 IST /<br>सापेक्षिक आर्द्रता<br>${dStr}</th>
+                    <th style="width: 14%; border: 1px solid #000; padding: 2px 1px; text-align: center; background-color: #e6b07d !important; font-weight: bold; color: #000; font-size: 6px;">24 Hrs Rainfall<br>ending at 08:30 IST/<br>वर्षा (मिमी)<br>${dStr}</th>
                 </tr>
             </thead>
             <tbody>`;
@@ -1183,7 +1183,7 @@ Or paste table..."
         let summary = "";
 
         // SECTION 1
-        summary += `<p style="margin: 5px 0;"><b>पिछले 24 घंटों का राज्य में दर्ज किया गया मौसम सारांश:-</b></p>`;
+        summary += `<p style="margin: 4px 0 1px 0;"><b>पिछले 24 घंटों का राज्य में दर्ज किया गया मौसम सारांश:-</b></p>`;
 
         const weatherCond = document.getElementById(
           "weatherConditionInput",
@@ -1230,7 +1230,7 @@ Or paste table..."
           prevDate.setDate(reportDate.getDate() - 1);
           const dateStr = formatDate(prevDate);
 
-          summary += `<p style="margin: 5px 0;"><b>अधिकतम तापमान : </b></p>`;
+          summary += `<p style="margin: 4px 0 1px 0;"><b>अधिकतम तापमान : </b></p>`;
           summary += `सर्वाधिक अधिकतम तापमान <b>${maxData.highestVal}°C (${dateStr}) ${maxData.stationNames}</b> में दर्ज किया गया ।<br>`;
           summary += `राज्य का अधिकतम तापमान <b>${maxData.minVal} – ${maxData.maxVal}°C</b> के बीच रहा।<br>`;
 
@@ -1250,7 +1250,7 @@ Or paste table..."
         if (minData) {
           const dateStr = formatDate(reportDate);
 
-          summary += `<p style="margin: 5px 0;"><b>न्यूनतम तापमान : </b></p>`;
+          summary += `<p style="margin: 4px 0 1px 0;"><b>न्यूनतम तापमान : </b></p>`;
           summary += `सबसे कम न्यूनतम तापमान <b>${minData.lowestVal}°C (${dateStr}) ${minData.stationNames}</b> में दर्ज किया गया ।<br>`;
           summary += `राज्य का न्यूनतम तापमान <b>${minData.minVal} – ${minData.maxVal}°C</b> के बीच रहा।<br>`;
 
@@ -1263,7 +1263,7 @@ Or paste table..."
           const heading =
             document.getElementById("customSpecialHeading").value ||
             document.getElementById("specialHeadingSelect").value;
-          summary += `<p style="margin: 5px 0;"><b>${heading} :</b></p>`;
+          summary += `<p style="margin: 4px 0 1px 0;"><b>${heading} :</b></p>`;
 
           if (heading === "अधिकतम हवा का बहाव") {
             const dist = document.getElementById("specialDistrict").value;
@@ -1294,7 +1294,7 @@ Or paste table..."
         }
 
         // SECTION 5 (Rainfall Quantity)
-        summary += `<p style="margin: 5px 0;"><b>वर्षा की मुख्य मात्रा (मिमी में):– </b>`;
+        summary += `<p style="margin: 4px 0 1px 0;"><b>वर्षा की मुख्य मात्रा (मिमी में):– </b>`;
 
         const rainText = document.getElementById("rainInput").value.trim();
         let rainfallStations = [];
