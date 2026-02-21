@@ -698,6 +698,7 @@
                   <th>Station</th>
                   <th>Temp</th>
                   <th>Max</th>
+                  <th>Min</th>
                   <th>WB</th>
                   <th>RH</th>
                   <th>Pressure</th>
@@ -1143,6 +1144,7 @@
             <tr><td>GMT</td><td>${gmt}:00</td><td>-</td></tr>
             <tr><td>Temperature</td><td>${station.temp || "-"} °C</td><td>1snTTT</td></tr>
             <tr><td>Max Temperature</td><td>${station.maxTemp || "-"} °C</td><td>333 1snTxTxTx</td></tr>
+            <tr><td>Min Temperature</td><td>${station.minTemp || "-"} °C</td><td>333 2snTnTnTn</td></tr>
             <tr><td>Dew Point</td><td>${station.dewPoint || "-"} °C</td><td>2snTdTdTd</td></tr>
             <tr><td>Wet Bulb</td><td>${station.extras.wb || "-"} °C</td><td>Comment</td></tr>
             <tr><td>Relative Humidity</td><td>${station.extras.rh || "-"} %</td><td>Comment</td></tr>
@@ -1180,6 +1182,7 @@
               <div class="grid grid-cols-2 gap-4">
                 <div><span class="text-slate-400">Temperature:</span> <span class="text-2xl font-bold text-orange-300">${station.temp || "-"}°C</span></div>
                 <div><span class="text-slate-400">Max Temp:</span> <span class="text-xl font-bold text-orange-300">${station.maxTemp || "-"}°C</span></div>
+                <div><span class="text-slate-400">Min Temp:</span> <span class="text-xl font-bold text-blue-300">${station.minTemp || "-"}°C</span></div>
                 <div><span class="text-slate-400">Dew Point:</span> <span class="text-cyan-300">${station.dewPoint || "-"}°C</span></div>
                 <div><span class="text-slate-400">Wet Bulb:</span> <span class="text-orange-300">${station.extras.wb || "-"}°C</span></div>
                 <div><span class="text-slate-400">Relative Humidity:</span> <span class="text-green-400 font-bold">${station.extras.rh || "-"}%</span></div>
@@ -1240,6 +1243,7 @@
             "Station Name",
             "Temperature (°C)",
             "Max Temp (°C)",
+            "Min Temp (°C)",
             "Dew Point (°C)",
             "Wet Bulb (°C)",
             "RH (%)",
@@ -1271,6 +1275,7 @@
             row.stationName,
             row.temp,
             row.maxTemp,
+            row.minTemp,
             row.dewPoint,
             row.wb,
             row.rh,
@@ -1343,6 +1348,7 @@
             "Station Name",
             "Temperature (°C)",
             "Max Temp (°C)",
+            "Min Temp (°C)",
             "Wet Bulb (°C)",
             "RH (%)",
             "Pressure (hPa)",
@@ -1367,6 +1373,7 @@
                   s.name,
                   s.temp,
                   s.maxTemp,
+                  s.minTemp,
                   s.extras.wb,
                   s.extras.rh,
                   s.pressure,
@@ -1553,6 +1560,14 @@
 
           if (line.startsWith("AAXX")) {
             const parts = line.split(" ");
+            // Fix: Initialize header if SMIN is missing
+            if (!currentBatch.header) {
+              currentBatch.header = {
+                bulletin: "MANUAL",
+                region: "XXXX",
+                dateTime: "000000",
+              };
+            }
             if (currentBatch.header) {
               currentBatch.header.reportType = parts[0];
               currentBatch.header.obsDate = parts[1]
@@ -1572,6 +1587,20 @@
           if (stationMatch && currentBatch.header) {
             const station = parseStationLine(line);
             if (station) {
+              // Logic to infer GMT based on Max/Min temp presence if not set or default
+              // 1xxxx -> Max Temp -> Usually 12 GMT
+              // 2xxxx -> Min Temp -> Usually 03 GMT
+              if (
+                currentBatch.header.obsHour === "" ||
+                currentBatch.header.obsHour === "00"
+              ) {
+                if (station.maxTemp && !station.minTemp) {
+                  currentBatch.header.obsHour = "12";
+                } else if (station.minTemp && !station.maxTemp) {
+                  currentBatch.header.obsHour = "03";
+                }
+              }
+
               station.month = currentBatch.month;
               station.year = currentBatch.year;
               currentBatch.stations.push(station);
@@ -1695,12 +1724,22 @@
           }
 
           while (i < groups.length && !groups[i].startsWith("333")) i++;
-          if (groups[i] === "333") {
+          // Fix: Allow 333 or 333/ or similar
+          if (groups[i] && groups[i].startsWith("333")) {
             i++;
             if (groups[i] && groups[i].startsWith("1")) {
               const g = groups[i];
               const sign = g[1] === "0" ? 1 : -1;
               station.maxTemp = (
+                (sign * parseInt(g.substring(2, 5))) /
+                10
+              ).toFixed(1);
+              i++;
+            }
+            if (groups[i] && groups[i].startsWith("2")) {
+              const g = groups[i];
+              const sign = g[1] === "0" ? 1 : -1;
+              station.minTemp = (
                 (sign * parseInt(g.substring(2, 5))) /
                 10
               ).toFixed(1);
@@ -1845,7 +1884,7 @@
               </div>
             </div>
             <div class="param-grid">
-              <div class="param-item"><div class="param-label">Temperature</div><div class="param-value text-orange-400">${station.temp ? station.temp + "°C" : "N/A"}</div>${station.maxTemp ? `<div class="text-xs text-slate-400 mt-1">Max: ${station.maxTemp}°C</div>` : ""}</div>
+              <div class="param-item"><div class="param-label">Temperature</div><div class="param-value text-orange-400">${station.temp ? station.temp + "°C" : "N/A"}</div>${station.maxTemp ? `<div class="text-xs text-slate-400 mt-1">Max: ${station.maxTemp}°C</div>` : ""}${station.minTemp ? `<div class="text-xs text-slate-400 mt-1">Min: ${station.minTemp}°C</div>` : ""}</div>
               <div class="param-item"><div class="param-label">Wet Bulb</div><div class="param-value ${station.extras.wb ? "text-orange-300" : "text-slate-500"}">${station.extras.wb ? station.extras.wb + "°C" : "N/A"}</div></div>
               <div class="param-item"><div class="param-label">Relative Humidity</div><div class="param-value ${station.extras.rh ? "text-green-400" : "text-slate-500"}">${station.extras.rh ? station.extras.rh + "%" : "N/A"}</div></div>
               <div class="param-item"><div class="param-label">Pressure</div><div class="param-value text-purple-400">${station.pressure || "N/A"}</div><div class="text-xs text-slate-400">${station.pressureCode || ""}</div></div>
@@ -1964,6 +2003,7 @@
                       <th>Station</th>
                       <th>Temp</th>
                       <th>Max</th>
+                  <th>Min</th>
                       <th>WB</th>
                       <th>RH</th>
                       <th>Pressure</th>
@@ -1981,6 +2021,7 @@
                         <td class="font-semibold text-white">${s.name}</td>
                         <td>${s.temp || "-"}°C</td>
                         <td>${s.maxTemp || "-"}°C</td>
+                        <td>${s.minTemp || "-"}°C</td>
                         <td>${s.extras.wb || "-"}°C</td>
                         <td>${s.extras.rh ? s.extras.rh + "%" : "-"}</td>
                         <td>${s.pressure || "-"}</td>
@@ -2080,6 +2121,7 @@
                   <td class="font-semibold text-white">${s.name}</td>
                   <td>${s.temp || "-"}°C</td>
                   <td>${s.maxTemp || "-"}°C</td>
+                  <td>${s.minTemp || "-"}°C</td>
                   <td>${s.extras.wb || "-"}°C</td>
                   <td>${s.extras.rh ? s.extras.rh + "%" : "-"}</td>
                   <td class="text-purple-400 font-semibold">${s.pressure || "-"}</td>
