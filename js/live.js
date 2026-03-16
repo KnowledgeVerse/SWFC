@@ -891,13 +891,34 @@ function updateLegend(dayPhenomena, type) {
     // Sort by phenDefs order
     phenDefs.forEach((p) => {
       if (dayPhenomena.has(p.id)) {
+        let extraInfo = "";
+        if (p.id === "gustywind" && districtPhenomenaMap) {
+          const speeds = new Set();
+          Object.values(districtPhenomenaMap).forEach((d) => {
+            let hasGusty = false;
+            if (Array.isArray(d.phenomena))
+              hasGusty = d.phenomena.includes("gustywind");
+            else if (d.phenomena && d.phenomena.has)
+              hasGusty = d.phenomena.has("gustywind");
+
+            if (hasGusty) {
+              const idx = (d.intensities && d.intensities["gustywind"]) || 0;
+              const gustySpeeds = ["30-40 kmph", "40-50 kmph", "50-60 kmph"];
+              if (gustySpeeds[idx]) speeds.add(gustySpeeds[idx]);
+            }
+          });
+          if (speeds.size > 0) {
+            extraInfo = `<br><span style="color:#c0392b; font-size:0.9em; font-weight:bold;">(${Array.from(speeds).join(", ")})</span>`;
+          }
+        }
+
         legendDiv.innerHTML += `
           <div style="display:flex; align-items:center; margin-bottom:6px;">
             <div style="width:35px; height:35px; text-align:center; margin-right:8px; display:flex; justify-content:center; align-items:center;">
                 <img src="${p.image}" style="max-width: 100%; max-height: 100%;">
             </div>
             <div style="line-height:1.2;">
-                <span style="font-weight:bold;">${p.english}</span><br>
+                <span style="font-weight:bold;">${p.english}</span>${extraInfo}<br>
                 <span style="font-size:0.9em; color:#555;">${p.hindi}</span>
             </div>
           </div>`;

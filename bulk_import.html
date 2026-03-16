@@ -306,6 +306,23 @@
               ><i class="fas fa-file-signature"></i
             ></a>
           </div>
+          <div
+            style="
+              display: flex;
+              align-items: center;
+              gap: 5px;
+              margin-right: 15px;
+              font-weight: bold;
+            "
+          >
+            <label for="importDateInput" style="margin: 0">Date:</label>
+            <input
+              type="date"
+              id="importDateInput"
+              onchange="updateImportGlobalDate()"
+              style="padding: 5px; border: 1px solid #ccc; border-radius: 4px"
+            />
+          </div>
           <button class="btn-secondary" onclick="clearGrid()">
             <i class="fas fa-eraser"></i> Clear Grid
           </button>
@@ -383,5 +400,26 @@
 
     <script src="js/districts.js"></script>
     <script src="js/bulk_import.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const dateInput = document.getElementById("importDateInput");
+        const storedDate = localStorage.getItem("bihar_forecast_date");
+        let d = storedDate ? new Date(storedDate) : new Date();
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        if (dateInput) dateInput.value = `${yyyy}-${mm}-${dd}`;
+      });
+
+      function updateImportGlobalDate() {
+        const val = document.getElementById("importDateInput").value;
+        if (val) {
+          localStorage.setItem(
+            "bihar_forecast_date",
+            new Date(val).toISOString(),
+          );
+        }
+      }
+    </script>
   </body>
 </html>

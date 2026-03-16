@@ -286,6 +286,24 @@
               margin-right: 15px;
             "
           >
+            Date:
+            <input
+              type="date"
+              id="warningTableDateInput"
+              onchange="updateWarningTableDate()"
+              style="padding: 4px; border-radius: 4px; border: 1px solid #ccc"
+            />
+          </label>
+          <label
+            style="
+              display: flex;
+              align-items: center;
+              gap: 5px;
+              font-weight: bold;
+              color: #2c3e50;
+              margin-right: 15px;
+            "
+          >
             Filter:
             <select
               id="filterTableColor"
@@ -359,6 +377,24 @@
               onchange="renderTable()"
             />
             <i class="fas fa-fill-drip" style="font-size: 1.2em"></i>
+          </label>
+          <label
+            style="
+              display: flex;
+              align-items: center;
+              gap: 5px;
+              font-weight: bold;
+              cursor: pointer;
+              color: #2c3e50;
+              margin-right: 15px;
+            "
+          >
+            <input
+              type="checkbox"
+              id="chkMergePhenomenaTable"
+              onchange="toggleMergePhenomena(this.checked)"
+            />
+            Merge
           </label>
           <label
             style="
@@ -452,9 +488,22 @@
         // Ensure we load data
         loadSavedData();
 
+        // Sync merge checkbox
+        const chkMerge = document.getElementById("chkMergePhenomenaTable");
+        if (chkMerge) chkMerge.checked = isMergePhenomena;
+
         // Set mode to Warning by default for this page
         currentReviewMode = "warning";
         weeklyData = weeklyWarningData;
+
+        // Init Date
+        const dateInput = document.getElementById("warningTableDateInput");
+        const storedDate = localStorage.getItem("bihar_forecast_date");
+        let d = storedDate ? new Date(storedDate) : new Date();
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        if (dateInput) dateInput.value = `${yyyy}-${mm}-${dd}`;
 
         // Render Table
         renderTable();
@@ -466,6 +515,18 @@
         weeklyData = weeklyWarningData;
         renderTable();
         alert("Data Synced Successfully!");
+      }
+
+      function updateWarningTableDate() {
+        const val = document.getElementById("warningTableDateInput").value;
+        if (val) {
+          forecastBaseDate = new Date(val);
+          localStorage.setItem(
+            "bihar_forecast_date",
+            forecastBaseDate.toISOString(),
+          );
+          renderTable();
+        }
       }
 
       // Re-implement renderTable specific logic if needed, or rely on main.js

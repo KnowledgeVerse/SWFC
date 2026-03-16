@@ -267,7 +267,7 @@ let selectedDistricts = [],
   currentColor = null;
 let isCleanFill = true; // Default enabled as per request
 let currentIconScale = 1.0; // Global variable for icon scaling
-let isMergePhenomena = false; // State for Merge Phenomena
+let isMergePhenomena = localStorage.getItem("bihar_merge_phenomena") === "true"; // State for Merge Phenomena
 let phenomenonSelectionOrder = []; // Track selection order
 
 let isLayoutEditMode = false;
@@ -629,6 +629,8 @@ function buildColorSelectionDropdown() {
 function attachHandlers() {
   document.getElementById("districtSearch").oninput = filterDistricts;
   document.getElementById("generateForecast").onclick = generateForecast;
+  const chkMergeMain = document.getElementById("chkMergePhenomenaMain");
+  if (chkMergeMain) chkMergeMain.checked = isMergePhenomena;
   document.getElementById("clearSelection").onclick = clearSelection;
   document.getElementById("exportText").onclick = exportToText;
   document.getElementById("exportPDF").onclick = exportToPDF;
@@ -1417,6 +1419,7 @@ function downloadMapImage() {
     .toPng(node, {
       width: node.offsetWidth,
       height: node.offsetHeight,
+      bgcolor: "#ffffff",
     })
     .then(function (dataUrl) {
       const link = document.createElement("a");
@@ -2052,6 +2055,7 @@ function renderTable(dataSource) {
 
 function toggleMergePhenomena(checked) {
   isMergePhenomena = checked;
+  localStorage.setItem("bihar_merge_phenomena", checked);
   updatePhenomenaNumbers();
   renderTable();
 }
@@ -2215,6 +2219,7 @@ async function downloadSmartImages() {
         const dataUrl = await domtoimage.toPng(node, {
           width: node.offsetWidth,
           height: node.offsetHeight,
+          bgcolor: "#ffffff",
         });
         node.classList.remove("static-icons"); // Unfreeze
 
@@ -2226,6 +2231,7 @@ async function downloadSmartImages() {
         link.download = `${today}-${type}-${rangeStr}.png`;
         link.href = dataUrl;
         link.click();
+        await new Promise((r) => setTimeout(r, 500));
       }
     };
 
@@ -3278,6 +3284,7 @@ function initMap() {
     {
       maxZoom: 18,
       attribution: "© OpenStreetMap",
+      crossOrigin: true,
     },
   );
 
@@ -3286,12 +3293,13 @@ function initMap() {
     {
       maxZoom: 18,
       attribution: "Tiles &copy; Esri",
+      crossOrigin: true,
     },
   );
 
   hybridLayer = L.tileLayer(
     "http://mt0.google.com/vt/lyrs=y&hl=en&x={x}&y={y}&z={z}",
-    { attribution: "Google", maxZoom: 20 },
+    { attribution: "Google", maxZoom: 20, crossOrigin: true },
   );
 
   // Add default layer

@@ -377,10 +377,18 @@
       <div class="toolbar">
         <div>
           <strong>Forecast Start Date: </strong>
-          <span
-            id="displayDate"
-            style="color: #0056b3; font-weight: bold"
-          ></span>
+          <input
+            type="date"
+            id="forecastDateInput"
+            onchange="updateForecastGlobalDate()"
+            style="
+              padding: 4px;
+              border-radius: 4px;
+              border: 1px solid #ccc;
+              font-weight: bold;
+              color: #0056b3;
+            "
+          />
         </div>
         <div style="display: flex; gap: 10px">
           <button
@@ -482,5 +490,29 @@
     <!-- Scripts -->
     <script src="js/districts.js"></script>
     <script src="js/detailed_forecast.js"></script>
+    <script>
+      document.addEventListener("DOMContentLoaded", () => {
+        const dateInput = document.getElementById("forecastDateInput");
+        const storedDate = localStorage.getItem("bihar_forecast_date");
+        let d = storedDate ? new Date(storedDate) : new Date();
+
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+
+        if (dateInput) dateInput.value = `${yyyy}-${mm}-${dd}`;
+      });
+
+      function updateForecastGlobalDate() {
+        const val = document.getElementById("forecastDateInput").value;
+        if (val) {
+          localStorage.setItem(
+            "bihar_forecast_date",
+            new Date(val).toISOString(),
+          );
+          if (typeof generateTable === "function") generateTable();
+        }
+      }
+    </script>
   </body>
 </html>

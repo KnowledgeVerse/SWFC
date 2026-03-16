@@ -404,6 +404,7 @@
           <input
             type="date"
             id="reportDate"
+            onchange="updateReportDate()"
             style="padding: 5px; border: 1px solid #ccc; border-radius: 4px"
           />
         </div>
@@ -480,11 +481,17 @@
       }
 
       function initPage() {
-        // Load saved date
-        const savedDate = localStorage.getItem("bihar_observed_report_date");
+        // Use Global Forecast Date by default
+        const savedDate =
+          localStorage.getItem("bihar_forecast_date") ||
+          localStorage.getItem("bihar_observed_report_date");
         const dateInput = document.getElementById("reportDate");
         if (savedDate) {
-          dateInput.value = savedDate;
+          const d = new Date(savedDate);
+          const yyyy = d.getFullYear();
+          const mm = String(d.getMonth() + 1).padStart(2, "0");
+          const dd = String(d.getDate()).padStart(2, "0");
+          dateInput.value = `${yyyy}-${mm}-${dd}`;
         } else {
           if (dateInput) dateInput.valueAsDate = new Date();
         }
@@ -504,6 +511,17 @@
         }
 
         setupPasteListener();
+      }
+
+      function updateReportDate() {
+        const val = document.getElementById("reportDate").value;
+        if (val) {
+          localStorage.setItem(
+            "bihar_forecast_date",
+            new Date(val).toISOString(),
+          );
+          localStorage.setItem("bihar_observed_report_date", val);
+        }
       }
 
       document.getElementById("generateBtn").addEventListener("click", () => {

@@ -1249,8 +1249,14 @@ Or paste table..."
         updateTTPreview("min"); // Init Min
 
         // Init Date
-        const today = new Date().toISOString().split("T")[0];
-        document.getElementById("summaryDateInput").value = today;
+        const storedDate = localStorage.getItem("bihar_forecast_date");
+        let d = storedDate ? new Date(storedDate) : new Date();
+        
+        const yyyy = d.getFullYear();
+        const mm = String(d.getMonth() + 1).padStart(2, "0");
+        const dd = String(d.getDate()).padStart(2, "0");
+        
+        document.getElementById("summaryDateInput").value = `${yyyy}-${mm}-${dd}`;
         handleDateChange(); // Trigger initial load
       });
 
@@ -1326,6 +1332,9 @@ Or paste table..."
       function handleDateChange() {
         const val = document.getElementById("summaryDateInput").value;
         if (!val) return;
+
+        // Save to global storage
+        localStorage.setItem("bihar_forecast_date", new Date(val).toISOString());
 
         const date = new Date(val);
         const monthIndex = date.getMonth();

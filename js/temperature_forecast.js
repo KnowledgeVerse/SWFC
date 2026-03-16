@@ -40,6 +40,14 @@ function init() {
   if (!weeklyData.max) weeklyData.max = Array.from({ length: 7 }, () => ({}));
   if (!weeklyData.min) weeklyData.min = Array.from({ length: 7 }, () => ({}));
 
+  const dateInput = document.getElementById("tempForecastDate");
+  if (dateInput) {
+    const yyyy = baseDate.getFullYear();
+    const mm = String(baseDate.getMonth() + 1).padStart(2, "0");
+    const dd = String(baseDate.getDate()).padStart(2, "0");
+    dateInput.value = `${yyyy}-${mm}-${dd}`;
+  }
+
   updateHeader();
   renderGrid();
   initMaps();
@@ -81,6 +89,31 @@ function setSeason(val) {
   switchTab(currentTab); // Re-render
 }
 window.setSeason = setSeason;
+
+function updateTempDate() {
+  const val = document.getElementById("tempForecastDate").value;
+  if (val) {
+    baseDate = new Date(val);
+    localStorage.setItem("bihar_forecast_date", baseDate.toISOString());
+    determineSeason(baseDate);
+    updateHeader();
+
+    for (let i = 0; i < 7; i++) {
+      const dayNum = i + 1;
+      const d = new Date(baseDate);
+      d.setDate(baseDate.getDate() + i);
+      const dStr = d.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+      const el = document.getElementById(`header-map-${i}`);
+      if (el) el.innerText = `Day ${dayNum} : ${dStr}`;
+    }
+    switchTab(currentTab);
+  }
+}
+window.updateTempDate = updateTempDate;
 
 function switchTab(tab) {
   currentTab = tab;

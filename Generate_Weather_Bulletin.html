@@ -1556,7 +1556,9 @@
         let dateObj = new Date();
 
         if (storedDate) {
-          dateObj = new Date(storedDate);
+          const d = new Date(storedDate);
+          const offset = d.getTimezoneOffset();
+          dateObj = new Date(d.getTime() - offset * 60 * 1000);
         }
 
         // Format: DD.MM.YYYY
@@ -1633,8 +1635,11 @@
       function updateManualDate() {
         const val = document.getElementById("manualDateInput").value;
         if (val) {
-          const dateObj = new Date(val);
-          localStorage.setItem("bihar_forecast_date", dateObj.toISOString());
+          // Store exact value with UTC zero to prevent shift
+          localStorage.setItem(
+            "bihar_forecast_date",
+            new Date(val).toISOString(),
+          );
           loadDate();
         }
       }

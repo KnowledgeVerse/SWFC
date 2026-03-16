@@ -189,6 +189,14 @@ function init() {
   }
   while (weeklyData.length < 7) weeklyData.push({});
 
+  const dateInput = document.getElementById("warningMapDate");
+  if (dateInput) {
+    const yyyy = baseDate.getFullYear();
+    const mm = String(baseDate.getMonth() + 1).padStart(2, "0");
+    const dd = String(baseDate.getDate()).padStart(2, "0");
+    dateInput.value = `${yyyy}-${mm}-${dd}`;
+  }
+
   // Update Header Text
   const headerTitle = document.getElementById("mainHeaderTitle");
   if (headerTitle) {
@@ -214,6 +222,39 @@ function init() {
   initMaps();
   loadShapefile();
 }
+
+function updateWarningMapDate() {
+  const val = document.getElementById("warningMapDate").value;
+  if (val) {
+    baseDate = new Date(val);
+    localStorage.setItem("bihar_forecast_date", baseDate.toISOString());
+
+    const dateOptions = { day: "2-digit", month: "2-digit", year: "numeric" };
+    const dateStr = baseDate
+      .toLocaleDateString("en-GB", dateOptions)
+      .replace(/\//g, ".");
+    const headerTitle = document.getElementById("mainHeaderTitle");
+    const printHeader = document.getElementById("printHeader");
+    if (headerTitle)
+      headerTitle.innerText = `अगले 7 दिनों के लिए मौसम चेतावनी मानचित्र दिनांक : ${dateStr}`;
+    if (printHeader)
+      printHeader.innerText = `अगले 7 दिनों के लिए मौसम चेतावनी मानचित्र दिनांक : ${dateStr}`;
+
+    for (let i = 0; i < 7; i++) {
+      const dayNum = i + 1;
+      const d = new Date(baseDate);
+      d.setDate(baseDate.getDate() + i);
+      const dStr = d.toLocaleDateString("en-IN", {
+        day: "2-digit",
+        month: "short",
+        year: "numeric",
+      });
+      const el = document.getElementById(`header-map-${i}`);
+      if (el) el.innerText = `Day ${dayNum} : ${dStr}`;
+    }
+  }
+}
+window.updateWarningMapDate = updateWarningMapDate;
 
 function loadImage(src) {
   return new Promise((resolve, reject) => {
@@ -762,7 +803,27 @@ function addLegendToMap(map, dayData, index) {
       presentPhenomena.forEach((pId) => {
         const pDef = phenDefs.find((p) => p.id === pId);
         if (pDef) {
-          html += `<div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;"><img src="${pDef.image}" style="width:25px; height:25px;"><span>${pDef.english}</span></div>`;
+          let extraInfo = "";
+          if (pId === "gustywind" && dayData) {
+            const speeds = new Set();
+            Object.values(dayData).forEach((d) => {
+              let hasGusty = false;
+              if (Array.isArray(d.phenomena))
+                hasGusty = d.phenomena.includes("gustywind");
+              else if (d.phenomena && d.phenomena.has)
+                hasGusty = d.phenomena.has("gustywind");
+
+              if (hasGusty) {
+                const idx = (d.intensities && d.intensities["gustywind"]) || 0;
+                const gustySpeeds = ["30-40 kmph", "40-50 kmph", "50-60 kmph"];
+                if (gustySpeeds[idx]) speeds.add(gustySpeeds[idx]);
+              }
+            });
+            if (speeds.size > 0) {
+              extraInfo = `<br><span style="color:#c0392b; font-size:0.85em; font-weight:bold;">(${Array.from(speeds).join(", ")})</span>`;
+            }
+          }
+          html += `<div style="display:flex; align-items:center; gap:6px; margin-bottom:2px;"><img src="${pDef.image}" style="width:25px; height:25px;"><span style="line-height:1.2;">${pDef.english}${extraInfo}</span></div>`;
         }
       });
       html += "<hr style='margin:5px 0; border:0; border-top:1px solid #ccc;'>";
